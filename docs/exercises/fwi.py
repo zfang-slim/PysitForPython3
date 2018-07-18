@@ -90,7 +90,7 @@ config['nt'] = int(config['T']/config['dt'])
 
 # Generate the sources
 sources = list()
-for i in xrange(config['nt']):
+for i in range(config['nt']):
     t = i*config['dt']
     f = point_source(ricker(t, config), config['x_s'], config)
     sources.append(f)

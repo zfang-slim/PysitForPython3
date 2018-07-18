@@ -1,7 +1,7 @@
 import os
 import os.path
-import urllib2
-import urlparse
+import urllib.request, urllib.error, urllib.parse
+import urllib.parse
 import hashlib
 import gzip
 
@@ -532,8 +532,8 @@ class PrecomputedGalleryModel(GalleryModel):
 
             if cls.license_string is not None:
 
-                print cls.license_string
-                agree = raw_input("Continue downloading {0} model '{1}' (yes/[no])?  ".format(cls.model_name, param) ) or 'no'
+                print(cls.license_string)
+                agree = input("Continue downloading {0} model '{1}' (yes/[no])?  ".format(cls.model_name, param) ) or 'no'
                 if agree.strip().lower() != 'yes':
                     raise Exception('Cannot proceed without license agreement.')
 
@@ -542,7 +542,7 @@ class PrecomputedGalleryModel(GalleryModel):
                 try:
                     download_file(url, parameter_path)
                     downloaded = True
-                except urllib2.HTTPError:
+                except urllib.error.HTTPError:
                     continue
 
             # If no source is successful, raise an exception
@@ -595,7 +595,7 @@ class PrecomputedGalleryModel(GalleryModel):
 
         # Resample the array, in each dimension, with nearest neighbor interpolation.
         y = big_arr
-        for i in xrange(big_arr.ndim):
+        for i in range(big_arr.ndim):
 
             x = self.base_physical_origin[i] + np.arange(self.base_pixels[i])*self.base_pixel_scale[i]
             I = scipy.interpolate.interp1d(x, y, copy=False, axis=i, kind='nearest')

@@ -49,7 +49,7 @@ extension_config = {'pysit.solvers.constant_density_acoustic.time.scalar._consta
                           },
                    }
 
-extensions = [Extension(key, **value) for key, value in extension_config.iteritems()]
+extensions = [Extension(key, **value) for key, value in extension_config.items()]
 
 # Setup data inclusion
 package_data = {}

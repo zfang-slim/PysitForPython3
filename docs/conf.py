@@ -52,9 +52,9 @@ templates_path.append('_templates')
 # -- Project information ------------------------------------------------------
 
 # General information about the project.
-project = u'PySIT'
-author = u'MIT, Russell J. Hewett, and The PySIT Developers'
-copyright = u'2011 - 2013, ' + author
+project = 'PySIT'
+author = 'MIT, Russell J. Hewett, and The PySIT Developers'
+copyright = '2011 - 2013, ' + author
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -131,7 +131,7 @@ latex_elements = {
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
-latex_documents = [('index', project + '.tex', project + u' Documentation',
+latex_documents = [('index', project + '.tex', project + ' Documentation',
                     author, 'manual')]
 
 latex_logo = '_static/pysit_logo.pdf'
@@ -141,7 +141,7 @@ latex_logo = '_static/pysit_logo.pdf'
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [('index', project.lower(), project + u' Documentation',
+man_pages = [('index', project.lower(), project + ' Documentation',
               [author], 1)]
 
 

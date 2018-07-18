@@ -2,7 +2,7 @@ import numpy as np
 import sys
 from pysit.util.matrix_helpers import make_diag_mtx
 
-from constant_density_acoustic_frequency_base import *
+from .constant_density_acoustic_frequency_base import *
 from pysit.solvers.solver_data import SolverDataFrequencyBase
 
 from pysit.util.solvers import inherit_dict
@@ -64,7 +64,7 @@ class ConstantDensityAcousticFrequencyScalarBase(ConstantDensityAcousticFrequenc
                 B = PETSc.Mat().createDense([ndof, nshot])
                 B.setUp()
                 for i in range(nshot):
-                    B.setValues(range(0, ndof), [i], rhs_list[i])
+                    B.setValues(list(range(0, ndof)), [i], rhs_list[i])
 
                 B.assemblyBegin()
                 B.assemblyEnd()
@@ -113,7 +113,7 @@ class ConstantDensityAcousticFrequencyScalarBase(ConstantDensityAcousticFrequenc
         B = PETSc.Mat().createDense([ndof, nshot])
         B.setUp()
         for i in range(nshot):
-            B.setValues(range(0, ndof), [i], rhs_list[i])
+            B.setValues(list(range(0, ndof)), [i], rhs_list[i])
 
         B.assemblyBegin()
         B.assemblyEnd()
@@ -126,7 +126,7 @@ class ConstantDensityAcousticFrequencyScalarBase(ConstantDensityAcousticFrequenc
         except:
             raise SyntaxError('petsc = '+str(petsc)+' is not a correct solver you can only use \'superlu_dist\', \'mumps\' or \'mkl_pardiso\' ')               
         
-        Uhat = Uhat[xrange(usize),:]
+        Uhat = Uhat[range(usize),:]
 
         return Uhat
 

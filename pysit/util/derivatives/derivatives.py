@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 
 import numpy as np
 import scipy.sparse as spsp
@@ -119,12 +119,12 @@ def _build_derivative_matrix_part(npoints, derivative, order_accuracy, h=1.0, lb
     if use_shifted_differences:
         # Left side
         odd_even_offset = 1-derivative%2
-        for i in xrange(0, max_shift):
+        for i in range(0, max_shift):
             coeffs = shifted_difference(derivative, order_accuracy, -(max_shift+odd_even_offset)+i)
             mtx[i,0:len(coeffs)] = coeffs/(h**derivative)
 
         # Right side
-        for i in xrange(-1, -max_shift-1,-1):
+        for i in range(-1, -max_shift-1,-1):
             coeffs = shifted_difference(derivative, order_accuracy, max_shift+i+odd_even_offset)
             mtx[i,slice(-1, -(len(coeffs)+1),-1)] = coeffs[::-1]/(h**derivative)
 
@@ -140,7 +140,7 @@ def _build_derivative_matrix_part(npoints, derivative, order_accuracy, h=1.0, lb
     elif type(lbc) is tuple and 'g' in lbc[0]: #ghost
         n_ghost_points = int(lbc[1])
         mtx[0:n_ghost_points,:] = 0
-        for i in xrange(n_ghost_points):
+        for i in range(n_ghost_points):
             mtx[i,i] = 1.0
 
     if 'd' in rbc:
@@ -155,7 +155,7 @@ def _build_derivative_matrix_part(npoints, derivative, order_accuracy, h=1.0, lb
     elif type(rbc) is tuple and 'g' in rbc[0]:
         n_ghost_points = int(rbc[1])
         mtx[slice(-1,-(n_ghost_points+1), -1),:] = 0
-        for i in xrange(n_ghost_points):
+        for i in range(n_ghost_points):
             mtx[-i-1,-i-1] = 1.0
 
     return mtx.tocsr()
@@ -338,8 +338,8 @@ def build_permutation_matrix(nz,nx):
     
     def generate_matrix(nz, nx): #local function
         P = spsp.lil_matrix((nz*nx,nz*nx)) 
-        for i in xrange(nz): #Looping is not efficient, but we only need to do it once as setup
-            for j in xrange(nx):
+        for i in range(nz): #Looping is not efficient, but we only need to do it once as setup
+            for j in range(nx):
                 P[nx*i+j,i+j*nz]=1
     
         return P.tocsr()
@@ -351,7 +351,7 @@ def build_permutation_matrix(nz,nx):
         current_storage_dict = dict()
         build_permutation_matrix.storage_dict = current_storage_dict
     
-    if (nz,nx) not in current_storage_dict.keys(): #Have not precomputed this!
+    if (nz,nx) not in list(current_storage_dict.keys()): #Have not precomputed this!
         mat = generate_matrix(nz,nx)
         current_storage_dict[nz,nx] = mat
  
@@ -378,9 +378,9 @@ def build_offcentered_alpha(sh,alpha):
     
     alpha_perm=P*alpha
     alpha_z,alpha_x=list(),list()
-    for i in xrange(nx):
+    for i in range(nx):
         alpha_z.append(Lz*alpha[nz*i:nz*(i+1)])
-    for i in xrange(nz):
+    for i in range(nz):
         alpha_x.append(Lx*alpha_perm[nx*i:nx*(i+1)])
     return alpha_x, alpha_z
 
@@ -396,7 +396,7 @@ def build_heterogenous_matrices(sh,deltas,alpha=None,rp=None):
     #builds z derivative matrix
     v=-np.ones(nx*nz)/deltas[-1]
     v1=np.ones(nx*nz-1)/deltas[-1]
-    v1[range(nz-1,nz*nx-1,nz)]=0.0  # repair boundary terms.
+    v1[list(range(nz-1,nz*nx-1,nz))]=0.0  # repair boundary terms.
     D2=spsp.diags([v,v1],[0,1])
     
     D2_tilda=-1.0*D2.T
@@ -405,7 +405,7 @@ def build_heterogenous_matrices(sh,deltas,alpha=None,rp=None):
     p=-np.ones(nx*nz)/deltas[0]
     p1=np.ones(nx*nz-1)/deltas[0]
     #p[range(nx-1,nz*nx,nx)]=-1.0
-    p1[range(nx-1,nz*nx-1,nx)]=0.0
+    p1[list(range(nx-1,nz*nx-1,nx))]=0.0
     D1=spsp.diags([p,p1],[0,1])
     
     D1_tilda=-1.0*D1.T
@@ -416,15 +416,15 @@ def build_heterogenous_matrices(sh,deltas,alpha=None,rp=None):
     #builds exact adjoint gradient for z.
     v=-np.ones(nx*nz)/deltas[-1]
     v1=np.ones(nx*nz-1)/deltas[-1]
-    v1[range(nz-1,nz*nx-1,nz)]=0.0
-    v1[range(0,nz*nx-1,nz)]=0.0
+    v1[list(range(nz-1,nz*nx-1,nz))]=0.0
+    v1[list(range(0,nz*nx-1,nz))]=0.0
     D2_adj=spsp.diags([v,v1],[0,1])
 
     #builds exact adjoint gradient for x.
     p=-np.ones(nx*nz)/deltas[0]
     p1=np.ones(nx*nz-1)/deltas[0]
-    p1[range(nx-1,nz*nx-1,nx)]=0.0
-    p1[range(0,nz*nx-1,nx)]=0.0
+    p1[list(range(nx-1,nz*nx-1,nx))]=0.0
+    p1[list(range(0,nz*nx-1,nx))]=0.0
     D1_adj=spsp.diags([p,p1],[0,1])
 
     if rp is not None:
@@ -505,6 +505,6 @@ if __name__ == '__main__':
         y=(Dy*C).reshape(sh)
         z=(Dz*C).reshape(sh)
 
-        print x[:,:,0] # should have ones all in first and last rows
-        print y[:,:,0] # should have ones all in first and last columns
-        print z[0,0,:] # should have ones at the ends
+        print(x[:,:,0]) # should have ones all in first and last rows
+        print(y[:,:,0]) # should have ones all in first and last columns
+        print(z[0,0,:]) # should have ones at the ends

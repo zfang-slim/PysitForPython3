@@ -3,7 +3,7 @@ import scipy.sparse as spsp
 import os
 
 from pysit.solvers.wavefield_vector import *
-from constant_density_acoustic_time_scalar_base import *
+from .constant_density_acoustic_time_scalar_base import *
 
 from pysit.util import Bunch
 from pysit.util import PositiveEvenIntegers
@@ -12,7 +12,7 @@ from pysit.util.matrix_helpers import build_sigma, make_diag_mtx
 
 from pysit.util.solvers import inherit_dict
 
-from constant_density_acoustic_time_scalar_cpp import (
+from .constant_density_acoustic_time_scalar_cpp import (
     constant_density_acoustic_time_scalar_3D_2os,
     constant_density_acoustic_time_scalar_3D_4os,
     constant_density_acoustic_time_scalar_3D_6os,

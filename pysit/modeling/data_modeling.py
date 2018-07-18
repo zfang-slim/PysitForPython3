@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 
 import time
 
@@ -53,8 +53,8 @@ def generate_seismic_data(shots, solver, model, verbose=False, frequencies=None,
 
     if verbose:
         data_tt = time.time() - tt
-        print 'Data generation: {0}s'.format(data_tt)
-        print 'Data generation: {0}s/shot'.format(data_tt/len(shots))
+        print('Data generation: {0}s'.format(data_tt))
+        print('Data generation: {0}s/shot'.format(data_tt/len(shots)))
 
     if verbose:
         print('Saving data...')
@@ -64,7 +64,7 @@ def generate_seismic_data(shots, solver, model, verbose=False, frequencies=None,
         if save_method is not None:
             if save_method=='pickle':
                 try:
-                    import cPickle
+                    import pickle
                 except ImportError:
                     raise ImportError('cPickle is not installed please install it and try again')
 
@@ -75,14 +75,14 @@ def generate_seismic_data(shots, solver, model, verbose=False, frequencies=None,
                 if not os.path.exists(newpath):
                     os.makedirs(newpath)
 
-                for i in xrange(len(shots)):
+                for i in range(len(shots)):
                     fshot =newpath+'/shot_'+str(i+1)+'.save'
                     f = file(fshot, 'wb')
-                    cPickle.dump(shots[i].receivers.data,f, protocol=cPickle.HIGHEST_PROTOCOL)
+                    pickle.dump(shots[i].receivers.data,f, protocol=pickle.HIGHEST_PROTOCOL)
                     f.close()
                     fts =newpath+'/ts_'+str(i+1)+'.save'
                     f = file(fts, 'wb')
-                    cPickle.dump(shots[i].receivers.ts,f, protocol=cPickle.HIGHEST_PROTOCOL)
+                    pickle.dump(shots[i].receivers.ts,f, protocol=pickle.HIGHEST_PROTOCOL)
                     f.close()
             elif save_method=='savemat':
                 try:
@@ -97,7 +97,7 @@ def generate_seismic_data(shots, solver, model, verbose=False, frequencies=None,
                 if not os.path.exists(newpath):
                     os.makedirs(newpath)
 
-                for i in xrange(len(shots)):
+                for i in range(len(shots)):
                     fshot =newpath+'/shot_'+str(i+1)+'.mat'
                     io.savemat(fshot,mdict={fshot:shots[i].receivers.data})
                     fts =newpath+'/ts_'+str(i+1)+'.mat'
@@ -116,7 +116,7 @@ def generate_seismic_data(shots, solver, model, verbose=False, frequencies=None,
                 if not os.path.exists(newpath):
                     os.makedirs(newpath)
 
-                for i in xrange(len(shots)):
+                for i in range(len(shots)):
                     fshot =newpath+'/shot_'+str(i+1)+'.hdf5'
                     f = h5py.File(fshot,"w")
                     dts = f.create_dataset(fshot,shots[i].receivers.data.shape,shots[i].receivers.data.dtype)
@@ -134,7 +134,7 @@ def generate_seismic_data(shots, solver, model, verbose=False, frequencies=None,
         if save_method is not None:
             if save_method=='pickle':
                 try:
-                    import cPickle
+                    import pickle
                 except ImportError:
                     raise ImportError('cPickle is not installed please install it and try again')
 
@@ -145,10 +145,10 @@ def generate_seismic_data(shots, solver, model, verbose=False, frequencies=None,
                 if not os.path.exists(newpath):
                     os.makedirs(newpath)
 
-                for i in xrange(len(shots)):
+                for i in range(len(shots)):
                     fshot =newpath+'/shot_'+str(i+1)+'.save'
                     f = file(fshot, 'wb')
-                    cPickle.dump(shots[i].receivers.data_dft,f, protocol=cPickle.HIGHEST_PROTOCOL)
+                    pickle.dump(shots[i].receivers.data_dft,f, protocol=pickle.HIGHEST_PROTOCOL)
                     f.close()
             elif save_method=='savemat':
                 try:
@@ -163,7 +163,7 @@ def generate_seismic_data(shots, solver, model, verbose=False, frequencies=None,
                 if not os.path.exists(newpath):
                     os.makedirs(newpath)
 
-                for i in xrange(len(shots)):
+                for i in range(len(shots)):
                     data_frequency = shots[i].receivers.data_dft
                     for nu in data_frequency:
                         fshot =newpath+'/shot_'+str(i+1)+'_nu_'+str(nu)+'.mat'
@@ -174,8 +174,8 @@ def generate_seismic_data(shots, solver, model, verbose=False, frequencies=None,
                 raise TypeError('Unknown save_method')
     if verbose:
         save_tt = time.time() - tt
-        print 'Data saving: {0}s'.format(save_tt)
-        print 'Data saving: {0}s/shot'.format(save_tt/len(shots))
+        print('Data saving: {0}s'.format(save_tt))
+        print('Data saving: {0}s/shot'.format(save_tt/len(shots)))
 
 def generate_seismic_data_from_file(shots, solver, verbose=False, save_method=None, **kwargs):
     if verbose:
@@ -186,23 +186,23 @@ def generate_seismic_data_from_file(shots, solver, verbose=False, save_method=No
         if solver.supports['equation_dynamics'] == "time":
             if save_method=='pickle':
                 try:
-                    import cPickle
+                    import pickle
                 except ImportError:
                     raise ImportError('cPickle is not installed please install it and try again')
 
                 path = r'./shots_time'
                 if os.path.exists(path):
                     try:
-                        for i in xrange(len(shots)):                
+                        for i in range(len(shots)):                
                             filename =path+'/ts_'+str(i+1)+'.save'
                             f = file(filename, 'rb')
-                            ts = cPickle.load(f)
+                            ts = pickle.load(f)
                             f.close()
                             shots[i].receivers.clear_data(len(ts))
                             shots[i].receivers.ts = ts
                             filename =path+'/shot_'+str(i+1)+'.save'
                             f = file(filename, 'rb')
-                            shots[i].receivers.data = cPickle.load(f)
+                            shots[i].receivers.data = pickle.load(f)
                             f.close()
                             shots[i].receivers.interpolator = interp1d(ts, np.zeros_like(shots[i].receivers.data),
                                                                        axis=0, kind='linear', copy=False, bounds_error=False,
@@ -221,7 +221,7 @@ def generate_seismic_data_from_file(shots, solver, verbose=False, save_method=No
                 path = r'./shots_time'
                 if os.path.exists(path):
                     try:
-                        for i in xrange(len(shots)):                
+                        for i in range(len(shots)):                
                             filename = path+'/ts_'+str(i+1)+'.mat'
                             ts = io.loadmat(filename)
                             ts = ts[filename]
@@ -249,7 +249,7 @@ def generate_seismic_data_from_file(shots, solver, verbose=False, save_method=No
                 path = r'./shots_time'
                 if os.path.exists(path):
                     try:
-                        for i in xrange(len(shots)):
+                        for i in range(len(shots)):
                             filename =path+'/ts_'+str(i+1)+'.hdf5'
                             f = h5py.File(filename, 'r')
                             dts = f[filename]
@@ -274,17 +274,17 @@ def generate_seismic_data_from_file(shots, solver, verbose=False, save_method=No
         elif solver.supports['equation_dynamics'] == "frequency":
             if save_method=='pickle':
                 try:
-                    import cPickle
+                    import pickle
                 except ImportError:
                     raise ImportError('cPickle is not installed please install it and try again')
 
                 path = r'./shots_frequency'
                 if os.path.exists(path):
                     try:
-                        for i in xrange(len(shots)):                
+                        for i in range(len(shots)):                
                             filename =path+'/shot_'+str(i+1)+'.save'
                             f = file(filename, 'rb')
-                            shots[i].receivers.data_dft = cPickle.load(f)
+                            shots[i].receivers.data_dft = pickle.load(f)
                             f.close()
 
                     except IOError:
@@ -303,7 +303,7 @@ def generate_seismic_data_from_file(shots, solver, verbose=False, save_method=No
                     try:
                         if 'frequencies' in kwargs :
                             data_frequency = kwargs['frequencies']
-                            for i in xrange(len(shots)):
+                            for i in range(len(shots)):
                                 shots[i].receivers.data_dft = dict()
                                 for nu in data_frequency:
                                     fshot =path+'/shot_'+str(i+1)+'_nu_'+str(nu)+'.mat'
@@ -326,8 +326,8 @@ def generate_seismic_data_from_file(shots, solver, verbose=False, save_method=No
 
     if verbose:
         load_tt = time.time() - tt
-        print 'Data Loading: {0}s'.format(load_tt)
-        print 'Data Loading: {0}s/shot'.format(load_tt/len(shots))
+        print('Data Loading: {0}s'.format(load_tt))
+        print('Data Loading: {0}s/shot'.format(load_tt/len(shots)))
 
 
 
@@ -391,7 +391,7 @@ def generate_shot_data_time(shot, solver, model, wavefields=None, wavefields_pad
     rhs_kp1 = np.zeros(mesh.shape(include_bc=True))
 
     # k is the t index.  t = k*dt.
-    for k in xrange(solver.nsteps):
+    for k in range(solver.nsteps):
 #       print "  Computing step {0}...".format(k)
         uk = solver_data.k.primary_wavefield
 
@@ -511,14 +511,14 @@ def generate_shot_data_frequency_list(shots, solver, model, frequencies, verbose
 
         for nu in frequencies:
             del RHS[:]
-            for k in xrange(nshot):
+            for k in range(nshot):
                 shot = shots[k]
                 source = shot.sources
                 rhs = solver.build_rhs(mesh.pad_array(source.f(nu=nu)), rhs_wavefieldvector=rhs)
                 RHS.append(rhs.data.copy())
                 
             Uhat = solver.solve_petsc_uhat(solver, RHS, nu, **kwargs)
-            for k in xrange(nshot):
+            for k in range(nshot):
                     shot = shots[k]
                     uhat = Uhat[:,k]
                     # Giving the good dimension to the array

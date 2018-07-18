@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 
 import numpy as np
 from pysit.util.derivatives import build_derivative_matrix, build_permutation_matrix, build_heterogenous_matrices
@@ -114,7 +114,7 @@ class TemporalModeling(object):
         rhs_k   = np.zeros(mesh.shape(include_bc=True))
         rhs_kp1 = np.zeros(mesh.shape(include_bc=True))
 
-        for k in xrange(nsteps):
+        for k in range(nsteps):
 
             uk = solver_data.k.primary_wavefield
             uk_bulk = mesh.unpad_array(uk)
@@ -289,7 +289,7 @@ class TemporalModeling(object):
 
         # Variable-Density will call this, giving us matrices needed for the ic in terms of m2 (or rho)
         if hasattr(m0, 'kappa') and hasattr(m0,'rho'):
-            print "WARNING: Ian's operators are still used here even though the solver has changed. Gradient may be incorrect. These routines need to be updated."
+            print("WARNING: Ian's operators are still used here even though the solver has changed. Gradient may be incorrect. These routines need to be updated.")
             deltas = [mesh.x.delta,mesh.z.delta]
             sh = mesh.shape(include_bc=True,as_grid=True)
             D1,D2=build_heterogenous_matrices(sh,deltas)
@@ -304,7 +304,7 @@ class TemporalModeling(object):
             operand_model = operand_model.with_padding()
 
         # Loop goes over the valid indices backwards
-        for k in xrange(nsteps-1, -1, -1): #xrange(int(solver.nsteps)):
+        for k in range(nsteps-1, -1, -1): #xrange(int(solver.nsteps)):
 
             # Local reference
             vk = solver_data.k.primary_wavefield
@@ -464,7 +464,7 @@ class TemporalModeling(object):
         else:
             solver_data_u0 = None
 
-        for k in xrange(nsteps):
+        for k in range(nsteps):
             uk = solver_data.k.primary_wavefield
             uk_bulk = mesh.unpad_array(uk)
 
@@ -616,7 +616,7 @@ class TemporalModeling(object):
         else:
             solver_data_u0 = None
 
-        for k in xrange(nsteps):
+        for k in range(nsteps):
             uk = solver_data.k.primary_wavefield
             uk_bulk = mesh.unpad_array(uk)
         
@@ -731,7 +731,7 @@ class TemporalModeling(object):
         model_2=mesh.pad_array(model_2)
 
         #Lap = build_heterogenous_(sh,model_2,[mesh.x.delta,mesh.z.delta])
-        print "WARNING: Ian's operators are still used here even though the solver has changed. These tests need to be updated."
+        print("WARNING: Ian's operators are still used here even though the solver has changed. These tests need to be updated.")
         rp=dict()
         rp['laplacian']=True
         Lap = build_heterogenous_matrices(sh,[mesh.x.delta,mesh.z.delta],model_2.reshape(-1,),rp=rp)
@@ -782,7 +782,7 @@ class TemporalModeling(object):
         else:
             solver_data_u0 = None
 
-        for k in xrange(nsteps):
+        for k in range(nsteps):
             u0k=wavefield[k]
             
             if k < (nsteps-1):
@@ -893,7 +893,7 @@ def adjoint_test_kappa():
     zmin = d.z.lbound
     zmax = d.z.rbound
     
-    for i in xrange(Nshots):
+    for i in range(Nshots):
 
         # Define source location and type
 #       source = PointSource(d, (xmax*(i+1.0)/(Nshots+1.0), 0.1), RickerWavelet(10.0))
@@ -951,9 +951,9 @@ def adjoint_test_kappa():
     
     #m1_C = m1.C
 
-    print "data space ", np.sum(data*lindata)*solver.dt
-    print "model space ", np.dot(v.T, adjmodel).squeeze()*np.prod(m.deltas)
-    print "their diff ", np.dot(v.T, adjmodel).squeeze()*np.prod(m.deltas)-np.sum(data*lindata)*solver.dt
+    print("data space ", np.sum(data*lindata)*solver.dt)
+    print("model space ", np.dot(v.T, adjmodel).squeeze()*np.prod(m.deltas))
+    print("their diff ", np.dot(v.T, adjmodel).squeeze()*np.prod(m.deltas)-np.sum(data*lindata)*solver.dt)
 
 # in this test we perturb m2, while keeping m1 fixed (m1 can still be heterogenous)
 def adjoint_test_rho():
@@ -990,7 +990,7 @@ def adjoint_test_rho():
     zmin = d.z.lbound
     zmax = d.z.rbound
     
-    for i in xrange(Nshots):
+    for i in range(Nshots):
 
         # Define source location and type
 #       source = PointSource(d, (xmax*(i+1.0)/(Nshots+1.0), 0.1), RickerWavelet(10.0))
@@ -1047,9 +1047,9 @@ def adjoint_test_rho():
     #adjmodel = 1.0/adjmodel
     #m1_C = m1.C
 
-    print "data space ", np.sum(data*lindata)*solver.dt
-    print "model space ", np.dot(v.T, adjmodel).squeeze()*np.prod(m.deltas)
-    print "their diff ", np.dot(v.T, adjmodel).squeeze()*np.prod(m.deltas)-np.sum(data*lindata)*solver.dt
+    print("data space ", np.sum(data*lindata)*solver.dt)
+    print("model space ", np.dot(v.T, adjmodel).squeeze()*np.prod(m.deltas))
+    print("their diff ", np.dot(v.T, adjmodel).squeeze()*np.prod(m.deltas)-np.sum(data*lindata)*solver.dt)
 
 
 def adjoint_test():
@@ -1085,7 +1085,7 @@ def adjoint_test():
     zmin = d.z.lbound
     zmax = d.z.rbound
 
-    for i in xrange(Nshots):
+    for i in range(Nshots):
 
         # Define source location and type
 #       source = PointSource(d, (xmax*(i+1.0)/(Nshots+1.0), 0.1), RickerWavelet(10.0))
@@ -1140,24 +1140,24 @@ def adjoint_test():
     adj_field = adjret['adjointfield']
     m1 = m1.asarray()
 
-    print data.shape, solver.nsteps
-    print np.sum(data*lindata)*solver.dt
-    print np.dot(m1.T, adjmodel).squeeze()*np.prod(m.deltas)
-    print np.dot(m1.T, adjmodel).squeeze()*np.prod(m.deltas)-np.sum(data*lindata)*solver.dt
+    print(data.shape, solver.nsteps)
+    print(np.sum(data*lindata)*solver.dt)
+    print(np.dot(m1.T, adjmodel).squeeze()*np.prod(m.deltas))
+    print(np.dot(m1.T, adjmodel).squeeze()*np.prod(m.deltas)-np.sum(data*lindata)*solver.dt)
 
     qs = adj_field
 
     qhat = 0.0
     dt = solver.dt
-    for k in xrange(solver.nsteps):
+    for k in range(solver.nsteps):
         t = k * dt
 
         qhat += qs[k]*(np.exp(-1j*2.0*np.pi*10.0*t)*dt)
 
 if __name__ == '__main__':
-    print "Constant density solver adjoint test:"
+    print("Constant density solver adjoint test:")
     adjoint_test()
-    print "testing pertubation of rho:"
+    print("testing pertubation of rho:")
     adjoint_test_rho()
-    print "testing pertubation of kappa:"
+    print("testing pertubation of kappa:")
     adjoint_test_kappa()
