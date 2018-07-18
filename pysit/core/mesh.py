@@ -772,11 +772,11 @@ class StructuredPML(StructuredBCBase):
         # function an extra node to work with, to ensure that the delta is
         # correct, then we take that extra node off of the sigma function.
         s = domain_bc.evaluate(self._n+1, side)
-        
+
         if side == 'right':
-	       self.sigma = s[1:]
+            self.sigma = s[1:]
         elif side == 'left':
-	       self.sigma= s[:-1]
+            self.sigma= s[:-1]
 
         # Get the physical boundary type
         self._boundary_type = domain_bc.boundary_type
