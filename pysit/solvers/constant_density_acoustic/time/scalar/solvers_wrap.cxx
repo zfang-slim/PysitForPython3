@@ -3142,7 +3142,7 @@ namespace swig {
     if (PyTuple_Check(   py_obj)) return "tuple"       ;
 /*    if (PyFile_Check(    py_obj)) return "file"        ; */
     if (PyModule_Check(  py_obj)) return "module"      ;
-    if (PyInstance_Check(py_obj)) return "instance"    ;
+    // if (PyInstance_Check(py_obj)) return "instance"    ;
 
     return "unkown type";
   }
