@@ -79,7 +79,7 @@ def equispaced_acquisition(mesh, wavelet,
 
         local_sources = sources[0] / parallel_shot_wrap.size, sources[1] / parallel_shot_wrap.size
 
-    print(type(local_sorces[0]))
+    print(type(local_sources[0]))
 
     for i in range(local_sources[0]):
         for j in range(local_sources[1]):
