@@ -10,3 +10,4 @@ def read_model(fname):
     data = segy.readSEGY(fname)
 
     return np.array([tr.data for tr in data.traces])
+    
