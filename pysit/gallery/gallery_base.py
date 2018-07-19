@@ -466,7 +466,7 @@ class PrecomputedGalleryModel(GalleryModel):
     def _build_parameter_patch_filename(cls, param, hash_args, ext=''):
         """ Builds filename for rescaled model parameters of the form <fs_short_name>_<md5_str>.<ext>."""
 
-        hash_str = hashlib.md5(''.join([a.tostring() for a in hash_args])).hexdigest()
+        hash_str = hashlib.md5(b''.join([a.tostring() for a in hash_args])).hexdigest()
 
         return "{0}_{1}_{2}{3}".format(cls.fs_short_name, param, hash_str, ext)
 
