@@ -76,7 +76,7 @@ class TemporalModeling(object):
         * utt is used to generically refer to the derivative of u that is needed to compute the imaging condition.
 
         Forward Model solves:
-        
+
         For constant density: m*u_tt - lap u = f, where m = 1.0/c**2
         For variable density: m1*u_tt - div(m2 grad)u = f, where m1=1.0/kappa, m2=1.0/rho, and C = (kappa/rho)**0.5
         """
@@ -322,8 +322,8 @@ class TemporalModeling(object):
             # can maybe speed up by using only the bulk and not unpadding later
             if do_ic:
                 if k%imaging_period == 0: #Save every 'imaging_period' number of steps
-                    entry = k/imaging_period 
-                    # if we are dealing with variable density, we compute 2 parts to the imagaing condition seperatly. Otherwise, if it is just constant density- we compute only 1. 
+                    entry = k//imaging_period 
+                    # if we are dealing with variable density, we compute 2 parts to the imagaing condition seperatly. Otherwise, if it is just constant density- we compute only 1.
                     if hasattr(m0, 'kappa') and hasattr(m0,'rho'):
                         ic.kappa += vk*dWaveOp[entry]
                         ic.rho += (D1[0]*uk)*(D1[1]*vk)+(D2[0]*uk)*(D2[1]*vk)
@@ -531,7 +531,7 @@ class TemporalModeling(object):
 
     def linear_forward_model_kappa(self, shot, m0, m1, return_parameters=[], dWaveOp0=None):
         """Applies the forward model to the model for the given solver, in terms of a pertubation of kappa.
-        
+
         Parameters
         ----------
         shot : pysit.Shot
@@ -544,27 +544,27 @@ class TemporalModeling(object):
             Values to return.
         u0tt : ndarray
             Derivative field required for the imaging condition to be used as right hand side.
-        
-        
+
+
         Returns
         -------
         retval : dict
             Dictionary whose keys are return_parameters that contains the specified data.
-        
+
         Notes
         -----
-        * u1 is used as the target field universally.  It could be velocity potential, it could be displacement, it could be pressure.  
+        * u1 is used as the target field universally.  It could be velocity potential, it could be displacement, it could be pressure.
         * u1tt is used to generically refer to the derivative of u1 that is needed to compute the imaging condition.
         * If u0tt is not specified, it may be computed on the fly at potentially high expense.
-        
+
         """
 
         # Local references
         solver = self.solver
         solver.model_parameters = m0 # this updates dt and the number of steps so that is appropriate for the current model
-        
+
         mesh = solver.mesh
-        
+
         d = solver.domain
         dt = solver.dt
         nsteps = solver.nsteps
@@ -573,7 +573,7 @@ class TemporalModeling(object):
         # Storage for the field
         if 'wavefield1' in return_parameters:
             us = list()
-        
+
         # Setup data storage for the forward modeled data
         if 'simdata' in return_parameters:
             simdata = np.zeros((solver.nsteps, shot.receivers.receiver_count))
@@ -581,52 +581,52 @@ class TemporalModeling(object):
         # Storage for the time derivatives of p
         if 'dWaveOp0' in return_parameters:
             dWaveOp0ret = list()
-            
+
         if 'dWaveOp1' in return_parameters:
             dWaveOp1 = list()
-        
+
         # Step k = 0
         # p_0 is a zero array because if we assume the input signal is causal
         # and we assume that the initial system (i.e., p_(-2) and p_(-1)) is
         # uniformly zero, then the leapfrog scheme would compute that p_0 = 0 as
         # well. ukm1 is needed to compute the temporal derivative.
         solver_data = solver.SolverData()
-        
+
         if dWaveOp0 is None:
             solver_data_u0 = solver.SolverData()
-            
+
             # For u0, set up the right hand sides
             rhs_u0_k   = np.zeros(mesh.shape(include_bc=True))
-            rhs_u0_kp1 = np.zeros(mesh.shape(include_bc=True))              
+            rhs_u0_kp1 = np.zeros(mesh.shape(include_bc=True))
             rhs_u0_k   = self._setup_forward_rhs(rhs_u0_k,   source.f(0*dt))
             rhs_u0_kp1 = self._setup_forward_rhs(rhs_u0_kp1, source.f(1*dt))
-            
+
             # compute u0_kp1 so that we can compute dWaveOp0_k (needed for u1)
             solver.time_step(solver_data_u0, rhs_u0_k, rhs_u0_kp1)
-            
+
             # compute dwaveop_0 (k=0) and allocate space for kp1 (needed for u1 time step)
-            dWaveOp0_k = solver.compute_dWaveOp('time', solver_data_u0)         
+            dWaveOp0_k = solver.compute_dWaveOp('time', solver_data_u0)
             dWaveOp0_kp1 = dWaveOp0_k.copy()
-            
+
             solver_data_u0.advance()
-            # from here, it makes more sense to refer to rhs_u0 as kp1 and kp2, because those are the values we need 
+            # from here, it makes more sense to refer to rhs_u0 as kp1 and kp2, because those are the values we need
             # to compute u0_kp2, which is what we need to compute dWaveOp0_kp1
             rhs_u0_kp1, rhs_u0_kp2 = rhs_u0_k, rhs_u0_kp1 # to reuse the allocated space and setup the swap that occurs a few lines down
-            
+
         else:
             solver_data_u0 = None
 
         for k in range(nsteps):
             uk = solver_data.k.primary_wavefield
             uk_bulk = mesh.unpad_array(uk)
-        
+
             if 'wavefield1' in return_parameters:
                 us.append(uk_bulk.copy())
-                
+
             # Record the data at t_k
             if 'simdata' in return_parameters:
                 shot.receivers.sample_data_from_array(uk_bulk, k, data=simdata)
-            
+
             # Note, we compute result for k+1 even when k == nsteps-1.  We need
             # it for the time derivative at k=nsteps-1.
             if dWaveOp0 is None:
@@ -634,46 +634,46 @@ class TemporalModeling(object):
                 rhs_u0_kp1, rhs_u0_kp2 = rhs_u0_kp2, rhs_u0_kp1
                 rhs_u0_kp2 = self._setup_forward_rhs(rhs_u0_kp2, source.f((k+2)*dt))
                 solver.time_step(solver_data_u0, rhs_u0_kp1, rhs_u0_kp2)
-                
+
                 # shift the dWaveOp0's (ok at k=0 because they are equal then)
                 dWaveOp0_k, dWaveOp0_kp1 = dWaveOp0_kp1, dWaveOp0_k
                 dWaveOp0_kp1 = solver.compute_dWaveOp('time', solver_data_u0)
-                
+
                 solver_data_u0.advance()
             else:
                 dWaveOp0_k = dWaveOp0[k]
                 dWaveOp0_kp1 = dWaveOp0[k+1] if k < (nsteps-1) else dWaveOp0[k] # incase not enough dWaveOp0's are provided, repeat the last one
-            
+
             if 'dWaveOp0' in return_parameters:
-                dWaveOp0ret.append(dWaveOp0_k)  
+                dWaveOp0ret.append(dWaveOp0_k)
 
             model_1=1.0/m1.kappa
             model_1=mesh.pad_array(model_1)
-            
+
             if k == 0:
-            
+
                 rhs_k   = model_1*(-1.0*dWaveOp0_k)
                 rhs_kp1 = model_1*(-1.0*dWaveOp0_kp1)
             else:
                 rhs_k, rhs_kp1 = rhs_kp1, model_1*(-1.0*dWaveOp0_kp1)
-            
+
             solver.time_step(solver_data, rhs_k, rhs_kp1)
 
             # Compute time derivative of p at time k
             if 'dWaveOp1' in return_parameters:
                 dWaveOp1.append(solver.compute_dWaveOp('time', solver_data))
-        
-            # When k is the nth step, the next step is uneeded, so don't swap 
+
+            # When k is the nth step, the next step is uneeded, so don't swap
             # any values.  This way, uk at the end is always the final step
             if(k == (nsteps-1)): break
-            
+
             # Don't know what data is needed for the solver, so the solver data
             # handles advancing everything forward by one time step.
             # k-1 <-- k, k <-- k+1, etc
             solver_data.advance()
-            
+
         retval = dict()
-        
+
         if 'wavefield1' in return_parameters:
             retval['wavefield1'] = us
         if 'dWaveOp0' in return_parameters:
@@ -682,12 +682,12 @@ class TemporalModeling(object):
             retval['dWaveOp1'] = dWaveOp1
         if 'simdata' in return_parameters:
             retval['simdata'] = simdata
-        
+
         return retval
 
     def linear_forward_model_rho(self, shot, m0, m1, return_parameters=[], dWaveOp0=None, wavefield=None):
         """Applies the forward model to the model for the given solver in terms of a pertubation of rho.
-        
+
         Parameters
         ----------
         shot : pysit.Shot
@@ -700,25 +700,25 @@ class TemporalModeling(object):
             Values to return.
         u0tt : ndarray
             Derivative field required for the imaging condition to be used as right hand side.
-        
-        
+
+
         Returns
         -------
         retval : dict
             Dictionary whose keys are return_parameters that contains the specified data.
-        
+
         Notes
         -----
-        * u1 is used as the target field universally.  It could be velocity potential, it could be displacement, it could be pressure.  
+        * u1 is used as the target field universally.  It could be velocity potential, it could be displacement, it could be pressure.
         * u1tt is used to generically refer to the derivative of u1 that is needed to compute the imaging condition.
         * If u0tt is not specified, it may be computed on the fly at potentially high expense.
-        
+
         """
 
         # Local references
         solver = self.solver
         solver.model_parameters = m0 # this updates dt and the number of steps so that is appropriate for the current model
-        
+
         mesh = solver.mesh
         sh=mesh.shape(include_bc=True,as_grid=True)
 
@@ -726,7 +726,7 @@ class TemporalModeling(object):
         dt = solver.dt
         nsteps = solver.nsteps
         source = shot.sources
-    
+
         model_2=1.0/m1.rho
         model_2=mesh.pad_array(model_2)
 
@@ -739,7 +739,7 @@ class TemporalModeling(object):
         # Storage for the field
         if 'wavefield1' in return_parameters:
             us = list()
-        
+
         # Setup data storage for the forward modeled data
         if 'simdata' in return_parameters:
             simdata = np.zeros((solver.nsteps, shot.receivers.receiver_count))
@@ -747,44 +747,44 @@ class TemporalModeling(object):
         # Storage for the time derivatives of p
         if 'dWaveOp0' in return_parameters:
             dWaveOp0ret = list()
-            
+
         if 'dWaveOp1' in return_parameters:
             dWaveOp1 = list()
-        
+
         # Step k = 0
         # p_0 is a zero array because if we assume the input signal is causal
         # and we assume that the initial system (i.e., p_(-2) and p_(-1)) is
         # uniformly zero, then the leapfrog scheme would compute that p_0 = 0 as
         # well. ukm1 is needed to compute the temporal derivative.
         solver_data = solver.SolverData()
-        
+
         if dWaveOp0 is None:
             solver_data_u0 = solver.SolverData()
-            
+
             # For u0, set up the right hand sides
             rhs_u0_k   = np.zeros(mesh.shape(include_bc=True))
-            rhs_u0_kp1 = np.zeros(mesh.shape(include_bc=True))              
+            rhs_u0_kp1 = np.zeros(mesh.shape(include_bc=True))
             rhs_u0_k   = self._setup_forward_rhs(rhs_u0_k,   source.f(0*dt))
             rhs_u0_kp1 = self._setup_forward_rhs(rhs_u0_kp1, source.f(1*dt))
-            
+
             # compute u0_kp1 so that we can compute dWaveOp0_k (needed for u1)
             solver.time_step(solver_data_u0, rhs_u0_k, rhs_u0_kp1)
-            
+
             # compute dwaveop_0 (k=0) and allocate space for kp1 (needed for u1 time step)
-            dWaveOp0_k = solver.compute_dWaveOp('time', solver_data_u0)         
+            dWaveOp0_k = solver.compute_dWaveOp('time', solver_data_u0)
             dWaveOp0_kp1 = dWaveOp0_k.copy()
-            
+
             solver_data_u0.advance()
-            # from here, it makes more sense to refer to rhs_u0 as kp1 and kp2, because those are the values we need 
+            # from here, it makes more sense to refer to rhs_u0 as kp1 and kp2, because those are the values we need
             # to compute u0_kp2, which is what we need to compute dWaveOp0_kp1
             rhs_u0_kp1, rhs_u0_kp2 = rhs_u0_k, rhs_u0_kp1 # to reuse the allocated space and setup the swap that occurs a few lines down
-            
+
         else:
             solver_data_u0 = None
 
         for k in range(nsteps):
             u0k=wavefield[k]
-            
+
             if k < (nsteps-1):
                 u0kp1=wavefield[k+1]
             else:
@@ -794,14 +794,14 @@ class TemporalModeling(object):
 
             uk = solver_data.k.primary_wavefield
             uk_bulk = mesh.unpad_array(uk)
-        
+
             if 'wavefield1' in return_parameters:
                 us.append(uk_bulk.copy())
-                
+
             # Record the data at t_k
             if 'simdata' in return_parameters:
                 shot.receivers.sample_data_from_array(uk_bulk, k, data=simdata)
-            
+
             # Note, we compute result for k+1 even when k == nsteps-1.  We need
             # it for the time derivative at k=nsteps-1.
             if dWaveOp0 is None:
@@ -809,45 +809,45 @@ class TemporalModeling(object):
                 rhs_u0_kp1, rhs_u0_kp2 = rhs_u0_kp2, rhs_u0_kp1
                 rhs_u0_kp2 = self._setup_forward_rhs(rhs_u0_kp2, source.f((k+2)*dt))
                 solver.time_step(solver_data_u0, rhs_u0_kp1, rhs_u0_kp2)
-                
+
                 # shift the dWaveOp0's (ok at k=0 because they are equal then)
                 dWaveOp0_k, dWaveOp0_kp1 = dWaveOp0_kp1, dWaveOp0_k
                 dWaveOp0_kp1 = solver.compute_dWaveOp('time', solver_data_u0)
-                
+
                 solver_data_u0.advance()
             else:
                 dWaveOp0_k = dWaveOp0[k]
                 dWaveOp0_kp1 = dWaveOp0[k+1] if k < (nsteps-1) else dWaveOp0[k] # incase not enough dWaveOp0's are provided, repeat the last one
-            
+
             if 'dWaveOp0' in return_parameters:
-                dWaveOp0ret.append(dWaveOp0_k)  
+                dWaveOp0ret.append(dWaveOp0_k)
 
             G0=Lap*u0k
             G1=Lap*u0kp1
-            
+
             if k == 0:
                 rhs_k   = G0
                 rhs_kp1 = G1
             else:
                 rhs_k, rhs_kp1 = rhs_kp1, G1
-            
+
             solver.time_step(solver_data, rhs_k, rhs_kp1)
 
             # Compute time derivative of p at time k
             if 'dWaveOp1' in return_parameters:
                 dWaveOp1.append(solver.compute_dWaveOp('time', solver_data))
-        
-            # When k is the nth step, the next step is uneeded, so don't swap 
+
+            # When k is the nth step, the next step is uneeded, so don't swap
             # any values.  This way, uk at the end is always the final step
             if(k == (nsteps-1)): break
-            
+
             # Don't know what data is needed for the solver, so the solver data
             # handles advancing everything forward by one time step.
             # k-1 <-- k, k <-- k+1, etc
             solver_data.advance()
-            
+
         retval = dict()
-        
+
         if 'wavefield1' in return_parameters:
             retval['wavefield1'] = us
         if 'dWaveOp0' in return_parameters:
@@ -856,7 +856,7 @@ class TemporalModeling(object):
             retval['dWaveOp1'] = dWaveOp1
         if 'simdata' in return_parameters:
             retval['simdata'] = simdata
-        
+
         return retval
 
 # In this test we perturb m1, while keeping m2 fixed (but m2 can still be heterogenous)
@@ -870,12 +870,12 @@ def adjoint_test_kappa():
     #   Define Domain
     pmlx = PML(0.1, 1000, ftype='quadratic')
     pmlz = PML(0.1, 1000, ftype='quadratic')
-    
+
     x_config = (0.1, 1.0, pmlx, pmlx)
     z_config = (0.1, .8, pmlz, pmlz)
 
     d = RectangularDomain( x_config, z_config )
-    
+
     m = CartesianMesh(d, 90,70)
     #   Generate true wave speed
     #   (M = C^-2 - C0^-2)
@@ -886,69 +886,69 @@ def adjoint_test_kappa():
     # Set up shots
     Nshots = 1
     shots = []
-    
+
     xmin = d.x.lbound
     xmax = d.x.rbound
     nx   = m.x.n
     zmin = d.z.lbound
     zmax = d.z.rbound
-    
+
     for i in range(Nshots):
 
         # Define source location and type
 #       source = PointSource(d, (xmax*(i+1.0)/(Nshots+1.0), 0.1), RickerWavelet(10.0))
         source = PointSource(m, (.188888, 0.18888), RickerWavelet(10.0))
-    
+
         # Define set of receivers
         zpos = zmin + (1./9.)*zmax
         xpos = np.linspace(xmin, xmax, nx)
         receivers = ReceiverSet(m, [PointReceiver(m, (x, zpos)) for x in xpos])
-    
+
         # Create and store the shot
         shot = Shot(source, receivers)
         shots.append(shot)
-    
-    # Define and configure the wave solver  
+
+    # Define and configure the wave solver
     trange=(0.,3.0)
     solver = VariableDensityAcousticWave(m,
                                          formulation='scalar',
-                                         model_parameters={'kappa': M[0], 'rho' : M[1]}, 
+                                         model_parameters={'kappa': M[0], 'rho' : M[1]},
                                          spatial_accuracy_order=2,
                                          trange=trange,
                                          use_cpp_acceleration=False,
                                          time_accuracy_order=2)
-    
+
     # Generate synthetic Seismic data
     np.random.seed(1)
     print('Generating data...')
     wavefields=[]
     base_model = solver.ModelParameters(m,{'kappa': M[0], 'rho':M[1]})
     generate_seismic_data(shots, solver, base_model, wavefields=wavefields)
-    
+
     tools = TemporalModeling(solver)
     m0 = solver.ModelParameters(m,{'kappa': M[0], 'rho':M[1]})
-    
+
     m1 = m0.perturbation()
-    
+
     v=uniform(0.5,1.8,len(m0.kappa))
     v=v.reshape((len(m0.kappa),1))  #pertubation of m1
     m1.kappa=1.0/v
-    
+
 
     fwdret = tools.forward_model(shot,  m0, 1,  ['wavefield', 'dWaveOp', 'simdata'])
     dWaveOp0 = fwdret['dWaveOp']
     inc_field = fwdret['wavefield']
     data = fwdret['simdata']
     #data += np.random.rand(*data.shape)
-    
+
     linfwdret = tools.linear_forward_model_kappa(shot, m0, m1, ['simdata'])
     lindata = linfwdret['simdata']
-    
+
     adjret = tools.adjoint_model(shot, m0, data, 1,  return_parameters=['imaging_condition', 'adjointfield'], dWaveOp=dWaveOp0,wavefield=inc_field)
-    
+
     # multiplied adjmodel by an additional m2 model.
     adjmodel = adjret['imaging_condition'].kappa
-    
+
     #m1_C = m1.C
 
     print("data space ", np.sum(data*lindata)*solver.dt)
@@ -966,14 +966,14 @@ def adjoint_test_rho():
     #   Define Domain
     pmlx = PML(0.1, 1000, ftype='quadratic')
     pmlz = PML(0.1, 1000, ftype='quadratic')
-    
+
     x_config = (0.1, 1.0, pmlx, pmlx)
     z_config = (0.1, 1.0, pmlz, pmlz)
 
     d = RectangularDomain( x_config, z_config )
-    
+
     m = CartesianMesh(d, 70,80 )
-    
+
     #   Generate true wave speed
     #   (M = C^-2 - C0^-2)
     C,C0,m,d = horizontal_reflector(m)
@@ -983,65 +983,65 @@ def adjoint_test_rho():
     # Set up shots
     Nshots = 1
     shots = []
-    
+
     xmin = d.x.lbound
     xmax = d.x.rbound
     nx   = m.x.n
     zmin = d.z.lbound
     zmax = d.z.rbound
-    
+
     for i in range(Nshots):
 
         # Define source location and type
 #       source = PointSource(d, (xmax*(i+1.0)/(Nshots+1.0), 0.1), RickerWavelet(10.0))
         source = PointSource(m, (.188888, 0.18888), RickerWavelet(10.0))
-    
+
         # Define set of receivers
         zpos = zmin + (1./9.)*zmax
         xpos = np.linspace(xmin, xmax, nx)
         receivers = ReceiverSet(m, [PointReceiver(m, (x, zpos)) for x in xpos])
-    
+
         # Create and store the shot
         shot = Shot(source, receivers)
         shots.append(shot)
-    
-    # Define and configure the wave solver  
+
+    # Define and configure the wave solver
     trange=(0.,3.0)
     solver = VariableDensityAcousticWave(m,
                                          formulation='scalar',
-                                         model_parameters={'kappa': M[0], 'rho' : M[1]}, 
+                                         model_parameters={'kappa': M[0], 'rho' : M[1]},
                                          spatial_accuracy_order=2,
                                          trange=trange,
                                          use_cpp_acceleration=False,
                                          time_accuracy_order=2)
-    
+
     # Generate synthetic Seismic data
     np.random.seed(1)
     print('Generating data...')
     wavefields=[]
     base_model = solver.ModelParameters(m,{'kappa': M[0], 'rho':M[1]})
     generate_seismic_data(shots, solver, base_model, wavefields=wavefields)
-    
+
     tools = TemporalModeling(solver)
     m0 = solver.ModelParameters(m,{'kappa': M[0], 'rho':M[1]})
-    
+
     m1 = m0.perturbation()
-    
+
     v=uniform(.5,2.2,len(m0.rho)).reshape((len(m0.rho),1))  #pertubation of m2
     m1.rho=1.0/v
-    
+
 
     fwdret = tools.forward_model(shot,  m0, 1, ['wavefield', 'dWaveOp', 'simdata'])
     dWaveOp0 = fwdret['dWaveOp']
     inc_field = fwdret['wavefield']
     data = fwdret['simdata']
     #data += np.random.rand(*data.shape)
-    
+
     linfwdret = tools.linear_forward_model_rho(shot, m0, m1, ['simdata'],wavefield=inc_field)
     lindata = linfwdret['simdata']
-    
+
     adjret = tools.adjoint_model(shot, m0, data, 1, return_parameters=['imaging_condition', 'adjointfield'], dWaveOp=dWaveOp0,wavefield=inc_field)
-    
+
     # multiplied adjmodel by an additional m2 model.
     adjmodel = adjret['imaging_condition'].rho
     #adjmodel = 1.0/adjmodel
