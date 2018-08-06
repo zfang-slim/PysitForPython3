@@ -63,7 +63,7 @@ if __name__ == '__main__':
     # Define the inversion algorithm
     grad_test = GradientTest(objective)
     grad_test.base_model = solver.ModelParameters(m, {'C': C0})
-    grad_test.length_ratio = np.power(2.0, range(-10, 0))
+    grad_test.length_ratio = np.power(5.0, range(-14, -6))
 
     dC_vec = copy.deepcopy(grad_test.base_model)
     dC_vec.data = np.random.normal(0, 1, grad_test.base_model.data.shape)
@@ -77,15 +77,21 @@ if __name__ == '__main__':
     tt = time.time()
 
     result = grad_test(shots)
-    #
-    # print('...run time:  {0}s'.format(time.time()-tt))
-    #
-    # plt.figure()
-    # plt.loglog(grad_test.length_ratio, grad_test.zero_order_difference)
-    # plt.title('Zero order difference')
-    #
-    # ply.figure()
-    # plt.loglog(np.power(grad_test.length_ratio, 2.0), grad_test.first_order_difference)
-    # plt.title('First order difference')
-    #
-    # plt.show()
+
+    print('...run time:  {0}s'.format(time.time()-tt))
+
+    print(grad_test.objective_value)
+
+    plt.figure()
+    plt.loglog(grad_test.length_ratio, grad_test.zero_order_difference, 'b',
+               grad_test.length_ratio, grad_test.length_ratio, 'r')
+    plt.title('Zero order difference')
+    plt.gca().legend(('df_0', 'h'))
+
+    plt.figure()
+    plt.loglog(grad_test.length_ratio, grad_test.first_order_difference, 'b',
+               grad_test.length_ratio, np.power(grad_test.length_ratio, 2.0), 'r')
+    plt.title('First order difference')
+    plt.gca().legend(('df_1', 'h^2'))
+
+    plt.show()
