@@ -62,14 +62,14 @@ if __name__ == '__main__':
 
     # Define the inversion algorithm
     grad_test = GradientTest(objective)
-    grad_test.base_model = solver.ModelParameters(m, {'C': C0})
+    grad_test.base_model = solver.ModelParameters(m, {'C': C})
     grad_test.length_ratio = np.power(5.0, range(-14, -6))
 
     dC_vec = copy.deepcopy(grad_test.base_model)
     dC_vec.data = np.random.normal(0, 1, grad_test.base_model.data.shape)
     norm_dC_vec = np.linalg.norm(dC_vec.data)
     norm_base_model = np.linalg.norm(grad_test.base_model.data)
-    dC_vec = dC_vec * 0.1 * (norm_base_model / norm_dC_vec)
+    dC_vec.data = dC_vec.data * 0.1 * (norm_base_model / norm_dC_vec)
     grad_test.model_perturbation = dC_vec
 
     # Execute inversion algorithm

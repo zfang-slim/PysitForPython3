@@ -24,8 +24,9 @@ class SimpleExponetialObjective(ObjectiveFunctionBase):
         return obj_value
 
     def compute_gradient(self, shots, m0, aux_info):
+        grad = copy.deepcopy(m0)
         norm_m = np.linalg.norm(m0.data)
         norm_m2 = norm_m**2.0
-        grad = -np.exp(-0.5 * norm_m2) * m0
+        grad.data = -np.exp(-0.5 * norm_m2) * m0.data
 
         return grad

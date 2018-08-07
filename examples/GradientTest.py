@@ -1,5 +1,6 @@
 
 import numpy as np
+import copy
 
 __all__ = ['TemporalLeastSquares']
 
@@ -26,7 +27,7 @@ class GradientTest(object):
         To verify this property, we first select a random perturbation direction
         p, and set up a step vector alpha. One simple choice for alpha can be
 
-              alpha = 2 .^ [-10, -9, -8, -7, -6, -5, -4, -3, -2 , -1].
+              alpha = 2 ** [-10, -9, -8, -7, -6, -5, -4, -3, -2 , -1].
 
         Therefore, if our gradient is correct, the zero order difference
 
@@ -36,7 +37,7 @@ class GradientTest(object):
 
         Meanwhile, the first order difference
 
-         df1(alpha) = |f(x0) + alpha * p) - f(x0) - \alpha * g(x0)^{T} p|
+         df1(alpha) = |f(x0) + alpha * p) - f(x0) - alpha * g(x0)^{T} p|
 
         should be parallel with the line of alpha^2 in the loglog plot.
 
@@ -100,7 +101,10 @@ class GradientTest(object):
 
         for i in range(0, n_ratio):
             ratio_i = length_ratio[i]
-            model = self.base_model + ratio_i * model_perturbation
+            model_perturbation_i = copy.deepcopy(model_perturbation)
+            model = copy.deepcopy(self.base_model)
+            model_perturbation_i.data = model_perturbation_i.data * ratio_i
+            model.data = self.base_model.data + model_perturbation_i.data
 
             # Compute the objective value f(x0 + alpha * p)
             fi0 = self.objective_function.evaluate(shots,
