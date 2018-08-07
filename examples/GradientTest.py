@@ -97,7 +97,8 @@ class GradientTest(object):
             shots, self.base_model, aux_info=aux_info)
 
         # Compute the objective value f(x0)
-        objective_value_original = aux_info['objective_value'][1]
+        objective_value_original = self.objective_function.evaluate(shots,
+                                                                    self.base_model)
 
         for i in range(0, n_ratio):
             ratio_i = length_ratio[i]
