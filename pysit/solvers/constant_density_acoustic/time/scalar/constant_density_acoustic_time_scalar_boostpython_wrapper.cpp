@@ -2,6 +2,7 @@
 // # include "constant_density_acoustic_time_scalar.i"
 # include "constant_density_acoustic_time_scalar_1D.h"
 using namespace boost::python;
+#define BOOST_PYTHON_MAX_ARITY  30
 
 
 BOOST_PYTHON_MODULE(_constant_density_acoustic_time_scalar_cpp)
