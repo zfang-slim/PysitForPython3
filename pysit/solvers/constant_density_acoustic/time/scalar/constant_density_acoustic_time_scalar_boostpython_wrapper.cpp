@@ -28,6 +28,7 @@ BOOST_PYTHON_MODULE(_constant_density_acoustic_time_scalar_cpp)
     // def("constant_density_acoustic_time_scalar_1D_4omp", constant_density_acoustic_time_scalar_1D_4omp);
     // def("constant_density_acoustic_time_scalar_1D_6omp", constant_density_acoustic_time_scalar_1D_6omp);
     def("constant_density_acoustic_time_scalar_1D_2os", cda_time_scalar_1D<float, 2>);
+    def("constant_density_acoustic_time_scalar_1D_2os", cda_time_scalar_1D<double, 2>);
     // def("constant_density_acoustic_time_scalar_1D_4os", constant_density_acoustic_time_scalar_1D_4os);
     // def("constant_density_acoustic_time_scalar_1D_6os", constant_density_acoustic_time_scalar_1D_6os);
     // def("constant_density_acoustic_time_scalar_1D_8os", constant_density_acoustic_time_scalar_1D_8os);
