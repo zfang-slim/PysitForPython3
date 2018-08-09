@@ -2,7 +2,7 @@
 // # include "constant_density_acoustic_time_scalar.i"
 // # include "constant_density_acoustic_time_scalar_1D.h"
 using namespace boost::python;
-#define BOOST_PYTHON_MAX_ARITY  40
+# define BOOST_PYTHON_MAX_ARITY  19
 
 template< typename T, int ACCURACY >
 void cda_time_scalar_1D(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
