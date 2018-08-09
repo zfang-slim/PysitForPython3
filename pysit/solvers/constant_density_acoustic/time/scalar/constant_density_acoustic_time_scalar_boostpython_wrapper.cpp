@@ -2,7 +2,7 @@
 // # include "constant_density_acoustic_time_scalar.i"
 // # include "constant_density_acoustic_time_scalar_1D.h"
 using namespace boost::python;
-# define BOOST_PYTHON_MAX_ARITY  19
+
 
 template< typename T, int ACCURACY >
 void cda_time_scalar_1D(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
@@ -11,8 +11,12 @@ void cda_time_scalar_1D(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in
                               T* C,      int nr_C,      int nc_C,          // in - padded wavefield shape
                               T* rhs,    int nr_rhs,    int nc_rhs,        // in - padded wavefield shape
                               T* zlpml,  int n_zlpml,                      // in - length is the number of nodes inside the padding that the pml value is defined.
-                              T* zrpml,  int n_zrpml                      // in - length is the number of nodes inside the padding that the pml value is defined.
-                              )  // out
+                              T* zrpml,  int n_zrpml,                      // in - length is the number of nodes inside the padding that the pml value is defined.
+                              double const& dt,                            // in
+                              double const& dz,                            // in
+                              int const& nz,                               // in
+                              T* kp1_Phiz, int nr_kp1_Phiz,  int nc_kp1_Phiz,  // out
+                              T* kp1_u,    int nr_kp1_u,     int nc_kp1_u   )  // out
 {
     return;
 }
