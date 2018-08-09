@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "fd_manual.hpp"
+#include "../../../fd_tools/fd_manual.hpp"
 
 template <typename T>
 class FDArg1D
