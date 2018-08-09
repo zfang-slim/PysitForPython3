@@ -21,8 +21,9 @@ void cda_time_scalar_1D(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in
                               double const& dx,                            // in
                               double const& dz,                            // in
                               int const& nx,                               // in
-                              int const& nz                               // in
-                              )  // out
+                              int const& nz,                               // in
+                              T* kp1_Phix, int nr_kp1_Phix,  int nc_kp1_Phix,  // out
+                              T* kp1_Phiz, int nr_kp1_Phiz,  int nc_kp1_Phiz )  // out
 {
     return;
 }
