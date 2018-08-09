@@ -3,12 +3,18 @@
 # include "constant_density_acoustic_time_scalar_1D.h"
 using namespace boost::python;
 
+template<typename T>
+void printabc(T input)
+{
+    return;
+}
+
 BOOST_PYTHON_MODULE(_constant_density_acoustic_time_scalar_cpp)
 {
     // 1D
     // def("constant_density_acoustic_time_scalar_1D_4omp", constant_density_acoustic_time_scalar_1D_4omp);
     // def("constant_density_acoustic_time_scalar_1D_6omp", constant_density_acoustic_time_scalar_1D_6omp);
-    def("constant_density_acoustic_time_scalar_1D_2os", cda_time_scalar_1D<float, 2>);
+    def("constant_density_acoustic_time_scalar_1D_2os", printabc<float>);
     // def("constant_density_acoustic_time_scalar_1D_4os", constant_density_acoustic_time_scalar_1D_4os);
     // def("constant_density_acoustic_time_scalar_1D_6os", constant_density_acoustic_time_scalar_1D_6os);
     // def("constant_density_acoustic_time_scalar_1D_8os", constant_density_acoustic_time_scalar_1D_8os);
