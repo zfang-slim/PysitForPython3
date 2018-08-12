@@ -5,7 +5,7 @@
 
 
 template< typename T, int ACCURACY >
-void cda_time_scalar_2D_4(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
+void cda_time_scalar_2D_4(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
                               T* k_Phix, int nr_k_Phix, int nc_k_Phix,     // in - padded wavefield shape
                               T* k_Phiz, int nr_k_Phiz, int nc_k_Phiz,     // in - padded wavefield shape
                               T* k_u,    int nr_k_u,    int nc_k_u,        // in - padded wavefield shape
@@ -45,7 +45,7 @@ void cda_time_scalar_2D_4(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // 
     // shared space step square variable
     T dx2 = dx*dx;
     T dz2 = dz*dz;
-    
+
     // private variables
         //non derivatives
     T fac1;
@@ -57,7 +57,7 @@ void cda_time_scalar_2D_4(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // 
     char* NUM = getenv("OMP_NUM_THREADS");
     int Num_Th = atoi (NUM);
 
-    #pragma omp parallel for private(sigmaz, sigmax, i, k, idx, dux, duz, dPhix, dPhiz, lapU, fac1, fac2) shared(dx, dx2, dz, dz2, nz, nx, kp1_Phix, kp1_Phiz, k_Phix, k_Phiz, n_zrpml, n_zlpml, n_xrpml, xrpml, xlpml, zrpml, zlpml, s, rhs, C, dt, dt2, km1_u, k_u, kp1_u) num_threads(Num_Th) collapse(2) 
+    #pragma omp parallel for private(sigmaz, sigmax, i, k, idx, dux, duz, dPhix, dPhiz, lapU, fac1, fac2) shared(dx, dx2, dz, dz2, nz, nx, kp1_Phix, kp1_Phiz, k_Phix, k_Phiz, n_zrpml, n_zlpml, n_xrpml, xrpml, xlpml, zrpml, zlpml, s, rhs, C, dt, dt2, km1_u, k_u, kp1_u) num_threads(Num_Th) collapse(2)
     for(i=0; i < nx; ++i)
     {
         for(k=0; k < nz; k++)
@@ -72,8 +72,8 @@ void cda_time_scalar_2D_4(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // 
             if ((i == 0) || (i == nx-1)) continue;
             if ((k == 0) || (k == nz-1)) continue;
             lapU = 0.0;
-            
-            
+
+
             // Do the X direction
             // Left side
             if (i==0)
@@ -116,7 +116,7 @@ void cda_time_scalar_2D_4(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // 
 
             // Do the Z direction
             // Left side
-           
+
            if (k==0)
             {
                 //decentered derivative 2 ranks on the right
@@ -201,6 +201,46 @@ void cda_time_scalar_2D_4(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // 
         }
     }
 };
+
+template< typename T>
+void cda_time_scalar_2D_OMP_4(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
+                                  T* k_Phix, int nr_k_Phix, int nc_k_Phix,     // in - padded wavefield shape
+                                  T* k_Phiz, int nr_k_Phiz, int nc_k_Phiz,     // in - padded wavefield shape
+                                  T* k_u,    int nr_k_u,    int nc_k_u,        // in - padded wavefield shape
+                                  T* C,      int nr_C,      int nc_C,          // in - padded wavefield shape
+                                  T* rhs,    int nr_rhs,    int nc_rhs,        // in - padded wavefield shape
+                                  T* xlpml,  int n_xlpml,                      // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  T* xrpml,  int n_xrpml,                      // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  T* zlpml,  int n_zlpml,                      // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  T* zrpml,  int n_zrpml,                      // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  double const& dt,                            // in
+                                  double const& dx,                            // in
+                                  double const& dz,                            // in
+                                  int const& nx,                               // in
+                                  int const& nz,                               // in
+                                  T* kp1_Phix, int nr_kp1_Phix,  int nc_kp1_Phix,  // out
+                                  T* kp1_Phiz, int nr_kp1_Phiz,  int nc_kp1_Phiz,  // out
+                                  T* kp1_u,    int nr_kp1_u,     int nc_kp1_u   )  // out
+{
+    cda_time_scalar_2D_4<T,4>(    km1_u,  nr_km1_u,   nc_km1_u,      // in - padded wavefield shape
+                                  k_Phix, nr_k_Phix,  nc_k_Phix,     // in - padded wavefield shape
+                                  k_Phiz, nr_k_Phiz,  nc_k_Phiz,     // in - padded wavefield shape
+                                  k_u,    nr_k_u,     nc_k_u,        // in - padded wavefield shape
+                                  C,      nr_C,       nc_C,          // in - padded wavefield shape
+                                  rhs,    nr_rhs,     nc_rhs,        // in - padded wavefield shape
+                                  xlpml,  n_xlpml,                   // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  xrpml,  n_xrpml,                   // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  zlpml,  n_zlpml,                   // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  zrpml,  n_zrpml,                   // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  dt,                                // in
+                                  dx,                                // in
+                                  dz,                                // in
+                                  nx,                                // in
+                                  nz,                                 // in
+                                  kp1_Phix, nr_kp1_Phix,  nc_kp1_Phix,  // out
+                                  kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,  // out
+                                  kp1_u,    nr_kp1_u,     nc_kp1_u   );  // out
+}
 
 
 #endif

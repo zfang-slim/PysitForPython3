@@ -1,15 +1,15 @@
 #ifndef __CDA_TIME_SCALAR_3D_4__
 #define __CDA_TIME_SCALAR_3D_4__
 
-#include <stdlib.h> 
+#include <stdlib.h>
 
 
 template< typename T, int ACCURACY >
-void cda_time_scalar_3D_4(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
+void cda_time_scalar_3D_4(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
                               T* k_Phix, int nr_k_Phix, int nc_k_Phix,     // in - padded wavefield shape
                               T* k_Phiy, int nr_k_Phiy, int nc_k_Phiy,     // in - padded wavefield shape
                               T* k_Phiz, int nr_k_Phiz, int nc_k_Phiz,     // in - padded wavefield shape
-                              T* k_psi,  int nr_k_psi,  int nc_k_psi,      // in
+                              T* k_psi,  int nr_k_psi,  int nc_k_psi,      // in - padded wavefield shape
                               T* k_u,    int nr_k_u,    int nc_k_u,        // in - padded wavefield shape
                               T* C,      int nr_C,      int nc_C,          // in - padded wavefield shape
                               T* rhs,    int nr_rhs,    int nc_rhs,        // in - padded wavefield shape
@@ -55,9 +55,9 @@ void cda_time_scalar_3D_4(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // 
     T dx2 = dx*dx;
     T dz2 = dz*dz;
     T dy2 = dy*dy;
-    
+
     // private variables
-        //non derivatives 
+        //non derivatives
     T fac1;
     T fac2;
         //derivatives
@@ -72,10 +72,10 @@ void cda_time_scalar_3D_4(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // 
     for(int i=0; i < nx; ++i)
     {
         for(int j=0; j < ny; ++j)
-        {  
+        {
             for(int k=0; k < nz; k++)
             {
-                idx = i*xstride + j*ystride + k;            
+                idx = i*xstride + j*ystride + k;
 
                 kp1_u[idx]    = 0.0;
                 kp1_Phix[idx] = 0.0;
@@ -287,6 +287,63 @@ void cda_time_scalar_3D_4(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // 
         }
     }
 };
+
+template< typename T>
+void cda_time_scalar_3D_OMP_4(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
+                                  T* k_Phix, int nr_k_Phix, int nc_k_Phix,     // in - padded wavefield shape
+                                  T* k_Phiy, int nr_k_Phiy, int nc_k_Phiy,     // in - padded wavefield shape
+                                  T* k_Phiz, int nr_k_Phiz, int nc_k_Phiz,     // in - padded wavefield shape
+                                  T* k_psi,  int nr_k_psi,  int nc_k_psi,      // in - padded wavefield shape
+                                  T* k_u,    int nr_k_u,    int nc_k_u,        // in - padded wavefield shape
+                                  T* C,      int nr_C,      int nc_C,          // in - padded wavefield shape
+                                  T* rhs,    int nr_rhs,    int nc_rhs,        // in - padded wavefield shape
+                                  T* xlpml,  int n_xlpml,                      // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  T* xrpml,  int n_xrpml,                      // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  T* ylpml,  int n_ylpml,                      // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  T* yrpml,  int n_yrpml,                      // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  T* zlpml,  int n_zlpml,                      // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  T* zrpml,  int n_zrpml,                      // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  double const& dt,                            // in
+                                  double const& dx,                            // in
+                                  double const& dy,                            // in
+                                  double const& dz,                            // in
+                                  int const& nx,                               // in
+                                  int const& ny,                               // in
+                                  int const& nz,                               // in
+                                  T* kp1_Phix, int nr_kp1_Phix,  int nc_kp1_Phix,  // out
+                                  T* kp1_Phiy, int nr_kp1_Phiy,  int nc_kp1_Phiy,  // out
+                                  T* kp1_Phiz, int nr_kp1_Phiz,  int nc_kp1_Phiz,  // out
+                                  T* kp1_psi,  int nr_kp1_psi,   int nc_kp1_psi,   // out
+                                  T* kp1_u,    int nr_kp1_u,     int nc_kp1_u   )  // out
+{
+    cda_time_scalar_3D_4<T,4>(    km1_u,  nr_km1_u,   nc_km1_u,      // in - padded wavefield shape
+                                  k_Phix, nr_k_Phix,  nc_k_Phix,     // in - padded wavefield shape
+                                  k_Phiy, nr_k_Phiy,  nc_k_Phiy,     // in - padded wavefield shape
+                                  k_Phiz, nr_k_Phiz,  nc_k_Phiz,     // in - padded wavefield shape
+                                  k_psi,  nr_k_psi,  nc_k_psi,      // in - padded wavefield shape
+                                  k_u,    nr_k_u,     nc_k_u,        // in - padded wavefield shape
+                                  C,      nr_C,       nc_C,          // in - padded wavefield shape
+                                  rhs,    nr_rhs,     nc_rhs,        // in - padded wavefield shape
+                                  xlpml,  n_xlpml,                   // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  xrpml,  n_xrpml,                   // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  ylpml,  n_ylpml,                   // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  yrpml,  n_yrpml,                   // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  zlpml,  n_zlpml,                   // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  zrpml,  n_zrpml,                   // in - length is the number of nodes inside the padding that the pml value is defined.
+                                  dt,                                // in
+                                  dx,                                // in
+                                  dy,                                // in
+                                  dz,                                // in
+                                  nx,                                // in
+                                  ny,                                // in
+                                  nz,                                // in
+                                  kp1_Phix, nr_kp1_Phix,  nc_kp1_Phix,   // out
+                                  kp1_Phiy, nr_kp1_Phiy,  nc_kp1_Phiy,   // out
+                                  kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,   // out
+                                  kp1_psi,  nr_kp1_psi,   nc_kp1_psi,    // out
+                                  kp1_u,    nr_kp1_u,     nc_kp1_u   );  // out
+}
+
 
 
 #endif
