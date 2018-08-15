@@ -2,6 +2,10 @@
 #define __CDA_TIME_SCALAR_2D__
 
 #include <iostream>
+//#include <time.h>
+#include <ctime>
+#include <chrono>
+using namespace std::chrono;
 
 #include "../../../fd_tools/fd_manual.hpp"
 
@@ -200,6 +204,9 @@ void cda_time_scalar_2D_OS_2(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      //
                                   T* kp1_Phiz, int nr_kp1_Phiz,  int nc_kp1_Phiz,  // out
                                   T* kp1_u,    int nr_kp1_u,     int nc_kp1_u   )  // out
 {
+    // time_t start = time(NULL);
+    // int start_s=clock();
+    auto start = high_resolution_clock::now();
     cda_time_scalar_2D<T,2>(      km1_u,  nr_km1_u,   nc_km1_u,      // in - padded wavefield shape
                                   k_Phix, nr_k_Phix,  nc_k_Phix,     // in - padded wavefield shape
                                   k_Phiz, nr_k_Phiz,  nc_k_Phiz,     // in - padded wavefield shape
@@ -218,6 +225,15 @@ void cda_time_scalar_2D_OS_2(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      //
                                   kp1_Phix, nr_kp1_Phix,  nc_kp1_Phix,  // out
                                   kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,  // out
                                   kp1_u,    nr_kp1_u,     nc_kp1_u   );  // out
+
+    // time_t end = time(NULL);
+    // std::cout<<"Execution Time: "<< (double)(end-start)<<" Seconds"<<std::endl;
+
+    // int stop_s=clock();
+    // cout << "time: " << (stop_s-start_s)/double(CLOCKS_PER_SEC)*1000 << endl;
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    cout << duration.count() << endl;
 }
 
 template< typename T>
@@ -240,6 +256,7 @@ void cda_time_scalar_2D_OS_4(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      //
                                   T* kp1_Phiz, int nr_kp1_Phiz,  int nc_kp1_Phiz,  // out
                                   T* kp1_u,    int nr_kp1_u,     int nc_kp1_u   )  // out
 {
+    auto start = high_resolution_clock::now();
     cda_time_scalar_2D<T,4>(      km1_u,  nr_km1_u,   nc_km1_u,      // in - padded wavefield shape
                                   k_Phix, nr_k_Phix,  nc_k_Phix,     // in - padded wavefield shape
                                   k_Phiz, nr_k_Phiz,  nc_k_Phiz,     // in - padded wavefield shape
@@ -258,6 +275,11 @@ void cda_time_scalar_2D_OS_4(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      //
                                   kp1_Phix, nr_kp1_Phix,  nc_kp1_Phix,  // out
                                   kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,  // out
                                   kp1_u,    nr_kp1_u,     nc_kp1_u   );  // out
+
+
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    cout << duration.count() << endl;
 }
 
 template< typename T>
@@ -280,6 +302,7 @@ void cda_time_scalar_2D_OS_6(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      //
                                   T* kp1_Phiz, int nr_kp1_Phiz,  int nc_kp1_Phiz,  // out
                                   T* kp1_u,    int nr_kp1_u,     int nc_kp1_u   )  // out
 {
+    auto start = high_resolution_clock::now();
     cda_time_scalar_2D<T,6>(      km1_u,  nr_km1_u,   nc_km1_u,      // in - padded wavefield shape
                                   k_Phix, nr_k_Phix,  nc_k_Phix,     // in - padded wavefield shape
                                   k_Phiz, nr_k_Phiz,  nc_k_Phiz,     // in - padded wavefield shape
@@ -298,6 +321,10 @@ void cda_time_scalar_2D_OS_6(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      //
                                   kp1_Phix, nr_kp1_Phix,  nc_kp1_Phix,  // out
                                   kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,  // out
                                   kp1_u,    nr_kp1_u,     nc_kp1_u   );  // out
+
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    cout << duration.count() << endl;
 }
 
 template< typename T>
@@ -320,6 +347,7 @@ void cda_time_scalar_2D_OS_8(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      //
                                   T* kp1_Phiz, int nr_kp1_Phiz,  int nc_kp1_Phiz,  // out
                                   T* kp1_u,    int nr_kp1_u,     int nc_kp1_u   )  // out
 {
+    auto start = high_resolution_clock::now();
     cda_time_scalar_2D<T,8>(      km1_u,  nr_km1_u,   nc_km1_u,      // in - padded wavefield shape
                                   k_Phix, nr_k_Phix,  nc_k_Phix,     // in - padded wavefield shape
                                   k_Phiz, nr_k_Phiz,  nc_k_Phiz,     // in - padded wavefield shape
@@ -338,6 +366,11 @@ void cda_time_scalar_2D_OS_8(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      //
                                   kp1_Phix, nr_kp1_Phix,  nc_kp1_Phix,  // out
                                   kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,  // out
                                   kp1_u,    nr_kp1_u,     nc_kp1_u   );  // out
+
+
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    cout << duration.count() << endl;
 }
 
 #endif

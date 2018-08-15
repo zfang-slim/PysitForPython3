@@ -2,8 +2,20 @@
 #define __CDA_TIME_SCALAR_1D__
 
 #include <iostream>
+using namespace std;
 
 #include "../../../fd_tools/fd_manual.hpp"
+
+template <typename T>
+void print_out(T* x, int k)
+{
+    for(int i=0; i < k; i++)
+    {
+        cout << x[i] << " ";
+    }
+    cout << endl;
+}
+
 
 template <typename T>
 class FDArg1D
@@ -56,6 +68,43 @@ void cda_time_scalar_1D(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in
                               T* kp1_u,    int nr_kp1_u,     int nc_kp1_u   )  // out
 {
     enum {MAX_FD_SHIFT = ACCURACY/2};
+
+    // cout << "km1_u" << endl;
+    // print_out<T>(km1_u, nr_km1_u);
+    //
+    // cout << "k_Phiz" << endl;
+    // print_out<T>(k_Phiz, nr_km1_u);
+    //
+    // cout << "k_u" << endl;
+    // print_out<T>(k_u, nr_km1_u);
+    //
+    // cout << "C" << endl;
+    // print_out<T>(C, nr_km1_u);
+    //
+    // cout << "rhs" << endl;
+    // print_out<T>(rhs, nr_km1_u);
+    //
+    // cout << "zlpml" << endl;
+    // print_out<T>(zlpml, n_zlpml);
+    //
+    // cout << "zrpml" << endl;
+    // print_out<T>(zrpml, n_zrpml);
+    //
+    // cout << "dt" << endl;
+    // cout << dt << endl;
+    //
+    // cout << "dz" << endl;
+    // cout << dz << endl;
+    //
+    // cout << "nz" << endl;
+    // cout<< nz << endl;
+    //
+    // cout << "kp1_Phiz" << endl;
+    // print_out<T>(kp1_Phiz, nr_km1_u);
+    //
+    // cout << "kp1_u" << endl;
+    // print_out<T>(kp1_u, nr_km1_u);
+
 
     // Derivative variables
     T dUdz = 0.0;
@@ -131,6 +180,9 @@ void cda_time_scalar_1D(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in
     }
 };
 
+
+
+
 template< typename T>
 void cda_time_scalar_1D_OS_2(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
                                   T* k_Phiz, int nr_k_Phiz, int nc_k_Phiz,     // in - padded wavefield shape
@@ -145,6 +197,8 @@ void cda_time_scalar_1D_OS_2(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      //
                                   T* kp1_Phiz, int nr_kp1_Phiz,  int nc_kp1_Phiz,  // out
                                   T* kp1_u,    int nr_kp1_u,     int nc_kp1_u   )  // out
 {
+    // cout << "zlpml" << endl;
+    // print_out<T>(zlpml, n_zlpml);
     cda_time_scalar_1D<T,2>(      km1_u,  nr_km1_u,   nc_km1_u,      // in - padded wavefield shape
                                   k_Phiz, nr_k_Phiz,  nc_k_Phiz,     // in - padded wavefield shape
                                   k_u,    nr_k_u,     nc_k_u,        // in - padded wavefield shape

@@ -491,6 +491,8 @@ def constant_density_acoustic_time_scalar_1D_2os( km1_u, k_Phiz, k_u,
                                                   C,     rhs,    zlpml,
                                                   zrpml, dt,     dz,
                                                   nz,    kp1_Phiz, kp1_u):
+
+    
     if km1_u.dtype == 'double':
         cda_time_scalar_1D_OS_2( <double*>np.PyArray_DATA(km1_u),  km1_u.size,  1,      # in - padded wavefield shape
                                  <double*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,     # in - padded wavefield shape

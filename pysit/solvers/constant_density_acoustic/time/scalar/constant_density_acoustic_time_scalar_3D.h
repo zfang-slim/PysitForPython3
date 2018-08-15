@@ -5,6 +5,16 @@
 
 #include "../../../fd_tools/fd_manual.hpp"
 
+// template <typename T>
+// void print_out(T* x, int k)
+// {
+//     for(int i=0; i < k; i++)
+//     {
+//         cout << x[i] << " ";
+//     }
+//     cout << endl;
+// }
+
 template <typename T>
 class FDArg3D
 {
@@ -72,6 +82,24 @@ void cda_time_scalar_3D(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in
                               T* kp1_u,    int nr_kp1_u,     int nc_kp1_u   )  // out
 {
     enum {MAX_FD_SHIFT = ACCURACY/2};
+
+    // cout << "zlpml" << endl;
+    // print_out<T>(zlpml, n_zlpml);
+    //
+    // cout << "zrpml" << endl;
+    // print_out<T>(zrpml, n_zrpml);
+    //
+    // cout << "xlpml" << endl;
+    // print_out<T>(xlpml, n_xlpml);
+    //
+    // cout << "xrpml" << endl;
+    // print_out<T>(xrpml, n_xrpml);
+    //
+    // cout << "ylpml" << endl;
+    // print_out<T>(ylpml, n_ylpml);
+    //
+    // cout << "yrpml" << endl;
+    // print_out<T>(yrpml, n_yrpml);
 
     // Derivative variables
     T dUdx = 0.0;
