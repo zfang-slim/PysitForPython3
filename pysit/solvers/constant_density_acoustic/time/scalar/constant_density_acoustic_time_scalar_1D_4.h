@@ -152,7 +152,7 @@ void cda_time_scalar_1D_OMP_4(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      /
                                   dt,                                // in
                                   dz,                                // in
                                   nz,                                 // in
-                                  kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,  // out
+                                  kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,   // out
                                   kp1_u,    nr_kp1_u,     nc_kp1_u   );  // out
 }
 

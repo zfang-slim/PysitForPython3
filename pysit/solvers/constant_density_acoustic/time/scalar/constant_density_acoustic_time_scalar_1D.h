@@ -184,7 +184,7 @@ void cda_time_scalar_1D(      T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in
 
 
 template< typename T>
-void cda_time_scalar_1D_OS_2(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
+void cda_time_scalar_1D_OS_2(     T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
                                   T* k_Phiz, int nr_k_Phiz, int nc_k_Phiz,     // in - padded wavefield shape
                                   T* k_u,    int nr_k_u,    int nc_k_u,        // in - padded wavefield shape
                                   T* C,      int nr_C,      int nc_C,          // in - padded wavefield shape
@@ -209,12 +209,12 @@ void cda_time_scalar_1D_OS_2(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      //
                                   dt,                                // in
                                   dz,                                // in
                                   nz,                                 // in
-                                  kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,  // out
+                                  kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,   // out
                                   kp1_u,    nr_kp1_u,     nc_kp1_u   );  // out
 }
 
 template< typename T>
-void cda_time_scalar_1D_OS_4(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
+void cda_time_scalar_1D_OS_4(     T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
                                   T* k_Phiz, int nr_k_Phiz, int nc_k_Phiz,     // in - padded wavefield shape
                                   T* k_u,    int nr_k_u,    int nc_k_u,        // in - padded wavefield shape
                                   T* C,      int nr_C,      int nc_C,          // in - padded wavefield shape
@@ -236,13 +236,13 @@ void cda_time_scalar_1D_OS_4(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      //
                                   zrpml,  n_zrpml,                   // in - length is the number of nodes inside the padding that the pml value is defined.
                                   dt,                                // in
                                   dz,                                // in
-                                  nz,                                 // in
-                                  kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,  // out
+                                  nz,                                // in
+                                  kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,   // out
                                   kp1_u,    nr_kp1_u,     nc_kp1_u   );  // out
 }
 
 template< typename T>
-void cda_time_scalar_1D_OS_6(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
+void cda_time_scalar_1D_OS_6(     T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
                                   T* k_Phiz, int nr_k_Phiz, int nc_k_Phiz,     // in - padded wavefield shape
                                   T* k_u,    int nr_k_u,    int nc_k_u,        // in - padded wavefield shape
                                   T* C,      int nr_C,      int nc_C,          // in - padded wavefield shape
@@ -264,13 +264,13 @@ void cda_time_scalar_1D_OS_6(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      //
                                   zrpml,  n_zrpml,                   // in - length is the number of nodes inside the padding that the pml value is defined.
                                   dt,                                // in
                                   dz,                                // in
-                                  nz,                                 // in
-                                  kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,  // out
+                                  nz,                                // in
+                                  kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,   // out
                                   kp1_u,    nr_kp1_u,     nc_kp1_u   );  // out
 }
 
 template< typename T>
-void cda_time_scalar_1D_OS_8(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
+void cda_time_scalar_1D_OS_8(     T* km1_u,  int nr_km1_u,  int nc_km1_u,      // in - padded wavefield shape
                                   T* k_Phiz, int nr_k_Phiz, int nc_k_Phiz,     // in - padded wavefield shape
                                   T* k_u,    int nr_k_u,    int nc_k_u,        // in - padded wavefield shape
                                   T* C,      int nr_C,      int nc_C,          // in - padded wavefield shape
@@ -292,8 +292,8 @@ void cda_time_scalar_1D_OS_8(    T* km1_u,  int nr_km1_u,  int nc_km1_u,      //
                                   zrpml,  n_zrpml,                   // in - length is the number of nodes inside the padding that the pml value is defined.
                                   dt,                                // in
                                   dz,                                // in
-                                  nz,                                 // in
-                                  kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,  // out
+                                  nz,                                // in
+                                  kp1_Phiz, nr_kp1_Phiz,  nc_kp1_Phiz,   // out
                                   kp1_u,    nr_kp1_u,     nc_kp1_u   );  // out
 }
 

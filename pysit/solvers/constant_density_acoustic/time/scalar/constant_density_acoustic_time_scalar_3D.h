@@ -296,7 +296,7 @@ void cda_time_scalar_3D_OS_2(     T* km1_u,  int nr_km1_u,  int nc_km1_u,      /
                                   k_Phix, nr_k_Phix,  nc_k_Phix,     // in - padded wavefield shape
                                   k_Phiy, nr_k_Phiy,  nc_k_Phiy,     // in - padded wavefield shape
                                   k_Phiz, nr_k_Phiz,  nc_k_Phiz,     // in - padded wavefield shape
-                                  k_psi,  nr_k_psi,  nc_k_psi,      // in - padded wavefield shape
+                                  k_psi,  nr_k_psi,  nc_k_psi,       // in - padded wavefield shape
                                   k_u,    nr_k_u,     nc_k_u,        // in - padded wavefield shape
                                   C,      nr_C,       nc_C,          // in - padded wavefield shape
                                   rhs,    nr_rhs,     nc_rhs,        // in - padded wavefield shape

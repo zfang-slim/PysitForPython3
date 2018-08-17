@@ -1,3 +1,14 @@
+# This is a Cython wrapper that is used to call the time stepping stencile function
+# (written in C) from Python. In order to compile this wrapper, you may type the
+# command
+#         "python setup.py build_ext -i"
+# in the terminal. After compiling, you will get a shared object file named
+#  "_constant_density_acoustic_time_scalar_cpp.cpython-36m-darwin.so" (Python 3)
+#  or "_constant_density_acoustic_time_scalar_cpp.so" (Python 2).
+# To use this shared object, you can simply type
+#         "import _constant_density_acoustic_time_scalar_cpp"
+# in the Python to import the module.
+
 # import both numpy and the Cython declarations for numpy
 import numpy as np
 cimport numpy as np
@@ -6,12 +17,14 @@ cimport numpy as np
 # (not strictly necessary for this example)
 np.import_array()
 
+# Define a fused type T that includes float and double
 ctypedef fused T:
     float
     double
 
 # cdefine the signature of our c function
 
+# Declare the time stepping stencile function (written in C) in Cython
 # 1D
 cdef extern from "constant_density_acoustic_time_scalar_1D_4.h":
      void cda_time_scalar_1D_OMP_4[T]\
@@ -428,31 +441,31 @@ def constant_density_acoustic_time_scalar_1D_4omp(km1_u, k_Phiz, k_u,
                                                   zrpml, dt,     dz,
                                                   nz,    kp1_Phiz, kp1_u):
     if km1_u.dtype == 'double':
-        cda_time_scalar_1D_OMP_4(<double*>np.PyArray_DATA(km1_u),  km1_u.size,  1,      # in - padded wavefield shape
+        cda_time_scalar_1D_OMP_4(<double*>np.PyArray_DATA(km1_u),  km1_u.size,  1,     # in - padded wavefield shape
                                  <double*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,     # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(k_u),    k_u.size,    1,        # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(C),      C.size,      1,          # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(rhs),    rhs.size,    1,        # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(zlpml),  zlpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
-                                 <double*>np.PyArray_DATA(zrpml),  zrpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
-                                 dt,                            # in
-                                 dz,                            # in
+                                 <double*>np.PyArray_DATA(k_u),    k_u.size,    1,     # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(C),      C.size,      1,     # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(rhs),    rhs.size,    1,     # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(zlpml),  zlpml.size,         # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <double*>np.PyArray_DATA(zrpml),  zrpml.size,         # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 dt,                               # in
+                                 dz,                               # in
                                  nz,                               # in
                                  <double*>np.PyArray_DATA(kp1_Phiz), kp1_Phiz.size,  1,  # out
-                                 <double*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)
+                                 <double*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)  # out
     else:
         cda_time_scalar_1D_OMP_4(<float*>np.PyArray_DATA(km1_u),  km1_u.size,  1,      # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,     # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(k_u),    k_u.size,    1,        # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(C),      C.size,      1,          # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(rhs),    rhs.size,    1,        # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(zlpml),  zlpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
-                                 <float*>np.PyArray_DATA(zrpml),  zrpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <float*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(k_u),    k_u.size,    1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(C),      C.size,      1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(rhs),    rhs.size,    1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(zlpml),  zlpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <float*>np.PyArray_DATA(zrpml),  zrpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
                                  dt,                            # in
                                  dz,                            # in
-                                 nz,                               # in
+                                 nz,                            # in
                                  <float*>np.PyArray_DATA(kp1_Phiz), kp1_Phiz.size,  1,  # out
-                                 <float*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)
+                                 <float*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)  # out
 
 
 def constant_density_acoustic_time_scalar_1D_6omp(km1_u, k_Phiz, k_u,
@@ -461,30 +474,30 @@ def constant_density_acoustic_time_scalar_1D_6omp(km1_u, k_Phiz, k_u,
                                                   nz,    kp1_Phiz, kp1_u):
     if km1_u.dtype == 'double':
         cda_time_scalar_1D_OMP_6(<double*>np.PyArray_DATA(km1_u),  km1_u.size,  1,      # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,     # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(k_u),    k_u.size,    1,        # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(C),      C.size,      1,          # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(rhs),    rhs.size,    1,        # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(zlpml),  zlpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
-                                 <double*>np.PyArray_DATA(zrpml),  zrpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <double*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(k_u),    k_u.size,    1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(C),      C.size,      1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(rhs),    rhs.size,    1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(zlpml),  zlpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <double*>np.PyArray_DATA(zrpml),  zrpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
                                  dt,                            # in
                                  dz,                            # in
-                                 nz,                               # in
+                                 nz,                            # in
                                  <double*>np.PyArray_DATA(kp1_Phiz), kp1_Phiz.size,  1,  # out
-                                 <double*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)
+                                 <double*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)  # out
     else:
         cda_time_scalar_1D_OMP_6(<float*>np.PyArray_DATA(km1_u),  km1_u.size,  1,      # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,     # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(k_u),    k_u.size,    1,        # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(C),      C.size,      1,          # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(rhs),    rhs.size,    1,        # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(zlpml),  zlpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
-                                 <float*>np.PyArray_DATA(zrpml),  zrpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <float*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(k_u),    k_u.size,    1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(C),      C.size,      1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(rhs),    rhs.size,    1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(zlpml),  zlpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <float*>np.PyArray_DATA(zrpml),  zrpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
                                  dt,                            # in
                                  dz,                            # in
-                                 nz,                               # in
+                                 nz,                            # in
                                  <float*>np.PyArray_DATA(kp1_Phiz), kp1_Phiz.size,  1,  # out
-                                 <float*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)
+                                 <float*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)  # out
 
 
 def constant_density_acoustic_time_scalar_1D_2os( km1_u, k_Phiz, k_u,
@@ -492,33 +505,33 @@ def constant_density_acoustic_time_scalar_1D_2os( km1_u, k_Phiz, k_u,
                                                   zrpml, dt,     dz,
                                                   nz,    kp1_Phiz, kp1_u):
 
-    
+
     if km1_u.dtype == 'double':
         cda_time_scalar_1D_OS_2( <double*>np.PyArray_DATA(km1_u),  km1_u.size,  1,      # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,     # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(k_u),    k_u.size,    1,        # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(C),      C.size,      1,          # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(rhs),    rhs.size,    1,        # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(zlpml),  zlpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
-                                 <double*>np.PyArray_DATA(zrpml),  zrpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <double*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(k_u),    k_u.size,    1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(C),      C.size,      1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(rhs),    rhs.size,    1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(zlpml),  zlpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <double*>np.PyArray_DATA(zrpml),  zrpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
                                  dt,                            # in
                                  dz,                            # in
-                                 nz,                               # in
+                                 nz,                            # in
                                  <double*>np.PyArray_DATA(kp1_Phiz), kp1_Phiz.size,  1,  # out
-                                 <double*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)
+                                 <double*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)  # out
     else:
         cda_time_scalar_1D_OS_2( <float*>np.PyArray_DATA(km1_u),  km1_u.size,  1,      # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,     # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(k_u),    k_u.size,    1,        # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(C),      C.size,      1,          # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(rhs),    rhs.size,    1,        # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(zlpml),  zlpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
-                                 <float*>np.PyArray_DATA(zrpml),  zrpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <float*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(k_u),    k_u.size,    1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(C),      C.size,      1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(rhs),    rhs.size,    1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(zlpml),  zlpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <float*>np.PyArray_DATA(zrpml),  zrpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
                                  dt,                            # in
                                  dz,                            # in
-                                 nz,                               # in
+                                 nz,                            # in
                                  <float*>np.PyArray_DATA(kp1_Phiz), kp1_Phiz.size,  1,  # out
-                                 <float*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)
+                                 <float*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)  # out
 
 
 def constant_density_acoustic_time_scalar_1D_4os( km1_u, k_Phiz, k_u,
@@ -527,30 +540,30 @@ def constant_density_acoustic_time_scalar_1D_4os( km1_u, k_Phiz, k_u,
                                                   nz,    kp1_Phiz, kp1_u):
     if km1_u.dtype == 'double':
         cda_time_scalar_1D_OS_4( <double*>np.PyArray_DATA(km1_u),  km1_u.size,  1,      # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,     # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(k_u),    k_u.size,    1,        # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(C),      C.size,      1,          # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(rhs),    rhs.size,    1,        # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(zlpml),  zlpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
-                                 <double*>np.PyArray_DATA(zrpml),  zrpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <double*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(k_u),    k_u.size,    1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(C),      C.size,      1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(rhs),    rhs.size,    1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(zlpml),  zlpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <double*>np.PyArray_DATA(zrpml),  zrpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
                                  dt,                            # in
                                  dz,                            # in
-                                 nz,                               # in
+                                 nz,                            # in
                                  <double*>np.PyArray_DATA(kp1_Phiz), kp1_Phiz.size,  1,  # out
-                                 <double*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)
+                                 <double*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)  # out
     else:
         cda_time_scalar_1D_OS_4( <float*>np.PyArray_DATA(km1_u),  km1_u.size,  1,      # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,     # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(k_u),    k_u.size,    1,        # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(C),      C.size,      1,          # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(rhs),    rhs.size,    1,        # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(zlpml),  zlpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
-                                 <float*>np.PyArray_DATA(zrpml),  zrpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <float*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(k_u),    k_u.size,    1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(C),      C.size,      1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(rhs),    rhs.size,    1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(zlpml),  zlpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <float*>np.PyArray_DATA(zrpml),  zrpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
                                  dt,                            # in
                                  dz,                            # in
-                                 nz,                               # in
+                                 nz,                            # in
                                  <float*>np.PyArray_DATA(kp1_Phiz), kp1_Phiz.size,  1,  # out
-                                 <float*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)
+                                 <float*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)  # out
 
 
 def constant_density_acoustic_time_scalar_1D_6os( km1_u, k_Phiz, k_u,
@@ -559,30 +572,30 @@ def constant_density_acoustic_time_scalar_1D_6os( km1_u, k_Phiz, k_u,
                                                   nz,    kp1_Phiz, kp1_u):
     if km1_u.dtype == 'double':
         cda_time_scalar_1D_OS_6( <double*>np.PyArray_DATA(km1_u),  km1_u.size,  1,      # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,     # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(k_u),    k_u.size,    1,        # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(C),      C.size,      1,          # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(rhs),    rhs.size,    1,        # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(zlpml),  zlpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
-                                 <double*>np.PyArray_DATA(zrpml),  zrpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <double*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(k_u),    k_u.size,    1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(C),      C.size,      1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(rhs),    rhs.size,    1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(zlpml),  zlpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <double*>np.PyArray_DATA(zrpml),  zrpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
                                  dt,                            # in
                                  dz,                            # in
-                                 nz,                               # in
+                                 nz,                            # in
                                  <double*>np.PyArray_DATA(kp1_Phiz), kp1_Phiz.size,  1,  # out
-                                 <double*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)
+                                 <double*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)  # out
     else:
         cda_time_scalar_1D_OS_6( <float*>np.PyArray_DATA(km1_u),  km1_u.size,  1,      # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,     # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(k_u),    k_u.size,    1,        # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(C),      C.size,      1,          # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(rhs),    rhs.size,    1,        # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(zlpml),  zlpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
-                                 <float*>np.PyArray_DATA(zrpml),  zrpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <float*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(k_u),    k_u.size,    1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(C),      C.size,      1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(rhs),    rhs.size,    1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(zlpml),  zlpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <float*>np.PyArray_DATA(zrpml),  zrpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
                                  dt,                            # in
                                  dz,                            # in
-                                 nz,                               # in
+                                 nz,                            # in
                                  <float*>np.PyArray_DATA(kp1_Phiz), kp1_Phiz.size,  1,  # out
-                                 <float*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)
+                                 <float*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)  # out
 
 
 def constant_density_acoustic_time_scalar_1D_8os( km1_u, k_Phiz, k_u,
@@ -591,30 +604,30 @@ def constant_density_acoustic_time_scalar_1D_8os( km1_u, k_Phiz, k_u,
                                                   nz,    kp1_Phiz, kp1_u):
     if km1_u.dtype == 'double':
         cda_time_scalar_1D_OS_8( <double*>np.PyArray_DATA(km1_u),  km1_u.size,  1,      # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,     # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(k_u),    k_u.size,    1,        # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(C),      C.size,      1,          # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(rhs),    rhs.size,    1,        # in - padded wavefield shape
-                                 <double*>np.PyArray_DATA(zlpml),  zlpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
-                                 <double*>np.PyArray_DATA(zrpml),  zrpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <double*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(k_u),    k_u.size,    1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(C),      C.size,      1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(rhs),    rhs.size,    1,      # in - padded wavefield shape
+                                 <double*>np.PyArray_DATA(zlpml),  zlpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <double*>np.PyArray_DATA(zrpml),  zrpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
                                  dt,                            # in
                                  dz,                            # in
-                                 nz,                               # in
+                                 nz,                            # in
                                  <double*>np.PyArray_DATA(kp1_Phiz), kp1_Phiz.size,  1,  # out
-                                 <double*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)
+                                 <double*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)  # out
     else:
         cda_time_scalar_1D_OS_8( <float*>np.PyArray_DATA(km1_u),  km1_u.size,  1,      # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,     # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(k_u),    k_u.size,    1,        # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(C),      C.size,      1,          # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(rhs),    rhs.size,    1,        # in - padded wavefield shape
-                                 <float*>np.PyArray_DATA(zlpml),  zlpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
-                                 <float*>np.PyArray_DATA(zrpml),  zrpml.size,                      # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <float*>np.PyArray_DATA(k_Phiz), k_Phiz.size, 1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(k_u),    k_u.size,    1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(C),      C.size,      1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(rhs),    rhs.size,    1,      # in - padded wavefield shape
+                                 <float*>np.PyArray_DATA(zlpml),  zlpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
+                                 <float*>np.PyArray_DATA(zrpml),  zrpml.size,          # in - length is the number of nodes inside the padding that the pml value is defined.
                                  dt,                            # in
                                  dz,                            # in
-                                 nz,                               # in
+                                 nz,                            # in
                                  <float*>np.PyArray_DATA(kp1_Phiz), kp1_Phiz.size,  1,  # out
-                                 <float*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)
+                                 <float*>np.PyArray_DATA(kp1_u),    kp1_u.size,     1)  # out
 
 
 # 2D
