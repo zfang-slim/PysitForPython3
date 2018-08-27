@@ -209,7 +209,9 @@ class PointRepresentationBase(MeshRepresentationBase):
 
 
         self.sampling_operator = self._sampling_operator_base * self._prod_deltas
-        self.adjoint_sampling_operator = self._sampling_operator_base.T
+        # self.adjoint_sampling_operator = self._sampling_operator_base.T # Zhilong comment out
+        self.adjoint_sampling_operator = self.sampling_operator.T # Zhilong add
+
 
 class PlaneRepresentationBase(MeshRepresentationBase):
     def __init__(self, *args, **kwargs):

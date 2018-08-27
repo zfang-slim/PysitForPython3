@@ -32,7 +32,7 @@ class ConstantDensityAcousticFrequencyScalarBase(ConstantDensityAcousticFrequenc
             _rhs = rhs.data.reshape(-1)
         else:
             _rhs = rhs.reshape(-1)
-
+        
         u = self.solvers[nu](_rhs)
         u.shape = solver_data.k.data.shape
 

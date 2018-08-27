@@ -445,8 +445,8 @@ class FrequencyModeling(object):
                 rhs_ += reshape(operand_model*dWaveOpAdj_nu.reshape(operand_model.shape), rhs_.shape) # for secondary adjoint equation
 
             rhs = solver.build_rhs(rhs_, rhs_wavefieldvector=rhs)
-
-            np.conj(rhs.data, rhs.data)
+            
+            np.conj(rhs.data, rhs.data) 
             result = solver.solve(solver_data, rhs, nu)
 
             vhat = solver_data.k.primary_wavefield
@@ -455,7 +455,8 @@ class FrequencyModeling(object):
             # match the mathematics.  This is done to save computation, as computing
             # the conjufation in place requires no further allocation.  vhats should
             # not be used beyond this point, so it is assigned to None.
-            qhat = np.conj(vhat, vhat)
+            qhat = np.conj(vhat, vhat) 
+            
 
             if 'adjointfield' in return_parameters:
                 qhats[nu] = mesh.unpad_array(qhat, copy=True)
