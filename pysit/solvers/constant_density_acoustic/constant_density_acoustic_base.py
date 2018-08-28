@@ -28,8 +28,13 @@ class ConstantDensityAcousticBase(SolverBase):
         return (ukp1-2*uk+ukm1)/(self.dt**2)
 
     def _compute_dWaveOp_frequency(self, uk_hat, nu):
-        omega2 = (2*np.pi*nu)**2
-        return -1*omega2*uk_hat
+        omega = (2*np.pi*nu)
+        Bmat = -(omega)**2 * self.operator_components.I + \
+             omega * 1j * self.operator_components.sigma_xPz + self.operator_components.sigma_xz
+        return Bmat * uk_hat
+        # Comment out by Zhilong
+        # omega2 = (2*np.pi*nu)**2.0
+        # return -1*omega2*uk_hat
 
     def _compute_dWaveOp_laplace(self, *args):
         raise NotImplementedError('Derivative Laplace domain operator not yet implemented.')
