@@ -207,6 +207,7 @@ class TemporalModeling(object):
 
         # imaging condition is padded, but migration yields an unpadded return
         return ic.without_padding()
+        
 
     def _setup_adjoint_rhs(self, rhs_array, shot, k, operand_simdata, operand_model, operand_dWaveOpAdj):
 
@@ -357,7 +358,8 @@ class TemporalModeling(object):
         if do_ic:
             ic *= (-1*dt)
             ic *= imaging_period #Compensate for doing fewer summations at higher imaging_period
-            ic = ic.without_padding() # gradient is never padded
+            # ic = ic.without_padding() # gradient is never padded comment by Zhilong
+            ic = ic.add_pading()
 
         retval = dict()
 

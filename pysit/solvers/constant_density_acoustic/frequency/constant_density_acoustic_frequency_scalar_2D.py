@@ -144,6 +144,10 @@ class ConstantDensityAcousticFrequencyScalar_2D(ConstantDensityAcousticFrequency
                 oc.sx, oc.sz, oc.sxp, oc.szp = self._sigma_PML(self.mesh)
 
                 oc._numpy_components_built = True
+
+            self.dK = 0
+            self.dC = 0
+            self.dM = oc.I
         else:
             # build intermediates for operator with auxiliary fields
             dof = self.mesh.dof(include_bc=True)
@@ -208,9 +212,13 @@ class ConstantDensityAcousticFrequencyScalar_2D(ConstantDensityAcousticFrequency
                                 [oc.empty,          oc.I,     oc.empty],
                                 [oc.empty,          oc.empty, oc.I]])
 
-            self.M = spsp.bmat([[oc.m, oc.empty, oc.empty],
+            self.M = spsp.bmat([[oc.m,     oc.empty, oc.empty],
                                 [oc.empty, oc.empty, oc.empty],
                                 [oc.empty, oc.empty, oc.empty]])
+
+            self.dK = oc.sigma_xz
+            self.dC = oc.sigma_xPz
+            self.dM = oc.I
 
     class WavefieldVector(WavefieldVectorBase):
 
