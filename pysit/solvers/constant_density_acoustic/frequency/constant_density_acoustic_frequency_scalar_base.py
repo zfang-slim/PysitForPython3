@@ -64,7 +64,8 @@ class ConstantDensityAcousticFrequencyScalarBase(ConstantDensityAcousticFrequenc
                 B = PETSc.Mat().createDense([ndof, nshot])
                 B.setUp()
                 for i in range(nshot):
-                    B.setValues(list(range(0, ndof)), [i], rhs_list[i])
+                    # added by zhilong [0:ndof]
+                    B.setValues(list(range(0, ndof)), [i], rhs_list[i][0:ndof])
 
                 B.assemblyBegin()
                 B.assemblyEnd()
@@ -81,7 +82,8 @@ class ConstantDensityAcousticFrequencyScalarBase(ConstantDensityAcousticFrequenc
                 numb = 0
                 for solver_data in solver_data_list:
                     u = Uhat[:,numb]
-                    u.shape = solver_data.k.data.shape
+                    u = np.append(u, np.zeros(2*ndof)) # added by zhilong, assume that we do not need the auxiliary wavefields
+                    u.shape = solver_data.k.data.shape 
                     solver_data.k.data = u
                     numb += 1
 
@@ -113,7 +115,7 @@ class ConstantDensityAcousticFrequencyScalarBase(ConstantDensityAcousticFrequenc
         B = PETSc.Mat().createDense([ndof, nshot])
         B.setUp()
         for i in range(nshot):
-            B.setValues(list(range(0, ndof)), [i], rhs_list[i])
+            B.setValues(list(range(0, ndof)), [i], rhs_list[i][0:ndof]) # added by zhilong [0:ndof]
 
         B.assemblyBegin()
         B.assemblyEnd()

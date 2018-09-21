@@ -534,7 +534,7 @@ class ModelPerturbationBase(object):
 
         return result
 
-    def add_pading(self):
+    def add_padding(self):
 
         d_shape_in = self.mesh._shapes[(True, True)]
         d_shape_out = self.mesh._shapes[(False, True)]

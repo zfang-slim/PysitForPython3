@@ -112,6 +112,7 @@ class ConstantDensityAcousticFrequencyScalar_2D(ConstantDensityAcousticFrequency
 
             built = oc.get('_numpy_components_built', False)
             oc.M = make_diag_mtx(self.model_parameters.C.squeeze()**-2)
+            oc.I = spsp.eye(dof, dof)
             # build the static components
             if not built:
                 # build Dxx
@@ -153,6 +154,7 @@ class ConstantDensityAcousticFrequencyScalar_2D(ConstantDensityAcousticFrequency
             dof = self.mesh.dof(include_bc=True)
 
             oc = self.operator_components
+            oc.I = spsp.eye(dof, dof)
 
             built = oc.get('_numpy_components_built', False)
 

@@ -130,6 +130,7 @@ class ConstantDensityAcousticFrequencyScalar_3D(ConstantDensityAcousticFrequency
             oc = self.operator_components
             built = oc.get('_numpy_components_built', False)
             oc.M = make_diag_mtx(self.model_parameters.C.squeeze()**-2)
+            oc.I = spsp.eye(dof, dof)
             # build the static components
             if not built:
                 # build Dxx
@@ -183,6 +184,8 @@ class ConstantDensityAcousticFrequencyScalar_3D(ConstantDensityAcousticFrequency
 
             built = oc.get('_numpy_components_built', False)
 
+            oc.I = spsp.eye(dof, dof)
+
             # build the static components
             if not built:
                     # build laplacian
@@ -228,7 +231,6 @@ class ConstantDensityAcousticFrequencyScalar_3D(ConstantDensityAcousticFrequency
                 oc.minus_Dz.data *= -1
 
                 # build other useful things
-                oc.I = spsp.eye(dof, dof)
                 oc.minus_I = -1*oc.I
                 oc.empty = spsp.csr_matrix((dof, dof))
 
@@ -250,9 +252,12 @@ class ConstantDensityAcousticFrequencyScalar_3D(ConstantDensityAcousticFrequency
             oc.m = make_diag_mtx((C**-2).reshape(-1,))
 
             self.K = spsp.bmat([[oc.m*oc.sigma_sum_pair_prod-oc.L, oc.m*oc.sigma_prod,   oc.minus_Dx, oc.minus_Dy, oc.minus_Dz],
-                                [oc.minus_I,                       oc.empty,             oc.empty,    oc.empty,    oc.empty],
-                                [oc.minus_sigma_yPzMx_Dx,          oc.minus_sigma_yz_Dx, oc.sigmax,   oc.empty,    oc.empty],
-                                [oc.minus_sigma_xPzMy_Dy,          oc.minus_sigma_zx_Dy, oc.empty,    oc.sigmay,   oc.empty],
+                                [oc.minus_I,                       oc.empty,
+                                    oc.empty,    oc.empty,    oc.empty],
+                                [oc.minus_sigma_yPzMx_Dx,          oc.minus_sigma_yz_Dx,
+                                    oc.sigmax,   oc.empty,    oc.empty],
+                                [oc.minus_sigma_xPzMy_Dy,          oc.minus_sigma_zx_Dy,
+                                    oc.empty,    oc.sigmay,   oc.empty],
                                 [oc.minus_sigma_xPyMz_Dz,          oc.minus_sigma_xy_Dz, oc.empty,    oc.empty,    oc.sigmaz]])
 
             self.C = spsp.bmat([[oc.m*oc.sigma_sum, oc.empty, oc.empty, oc.empty, oc.empty],

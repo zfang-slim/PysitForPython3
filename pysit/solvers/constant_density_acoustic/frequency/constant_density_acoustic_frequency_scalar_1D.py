@@ -50,6 +50,8 @@ class ConstantDensityAcousticFrequencyScalar_1D(ConstantDensityAcousticFrequency
 
         built = oc.get('_numpy_components_built', False)
 
+        oc.I = spsp.eye(dof, dof)
+
         # build the static components
         if not built:
             # build laplacian
@@ -70,7 +72,6 @@ class ConstantDensityAcousticFrequencyScalar_1D(ConstantDensityAcousticFrequency
                                             use_shifted_differences=self.spatial_shifted_differences)
 
             # build other useful things
-            oc.I = spsp.eye(dof, dof)
             oc.empty = spsp.csr_matrix((dof, dof))
 
             # Stiffness matrix K doesn't change

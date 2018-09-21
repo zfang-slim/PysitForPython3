@@ -11,7 +11,7 @@ from pysit.gallery import marmousi2
 
 if __name__ == '__main__':
     #   Load or generate true wave speed
-    C, C0, m, d = marmousi(patch='mini_square', pixel_scale='large')
+    C, C0, m, d = marmousi(patch='mini_square', pixel_scale='medium')
 #   C, C0, m, d = marmousi2(patch='mini_square')
 
     # Set up shots
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     trange = (0.0, 3.0)
 
     solver = ConstantDensityAcousticWave(m,
-                                         spatial_accuracy_order=6,
+                                         spatial_accuracy_order=2,
                                          trange=trange,
                                          kernel_implementation='cpp')
 
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     print('Generating data...')
     base_model = solver.ModelParameters(m, {'C': C})
     tt = time.time()
-    wavefields = []
+    wavefields = None
     generate_seismic_data(shots, solver, base_model, wavefields=wavefields)
     print('Data generation: {0}s'.format(time.time()-tt))
 
