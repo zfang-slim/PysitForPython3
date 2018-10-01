@@ -1,67 +1,156 @@
-## Installation instruction
+# Installation
 
-You may install the Pysit toolbox directly on your system and use the python of
-your system. However, we recommend to install the Pysit toolbox on a virtual environment
-to avoid possible conflicts. There are several different virtual environments that
-you may choose. In this instruction, we provide a way to use the miniconda. Additionally,
-although this version of Pysit is for Python 3. The installation of a required
-external toolbox -- petsc -- still needs Python 2.  
+## Dependencies
 
-1. Please go to the website <https://conda.io/miniconda.html> and select the miniconda
-   that works for your platform. There are two version `Python 3.7` and `Python 2.7`.
-   We recommend to install `Python 3.7`. Therefore, the default Python for a new virtual
-   environment is `Python 3.7`. Download the one that best fits you to your local directory,
-   for example `~/Download` (In this example, we assume that the installation file of miniconda
-   is located at `~/Download`. You can change it to any directory that you want). You will
-   find a file named similar as `Miniconda3-latest-MacOSX-x86_64.sh` in your directory.
+PySIT has the following dependencies
 
-2. Open your terminal. Go to the directory `~/Download` by the following command:
+    - Python 3.6 (So far we still need Python 2.7 to install the toolbox ––– PETSC)
 
-    `cd ~/Download`
+    - NumPy 1.14 (or greater)
 
-   then, start to install Miniconda by the following command:
+    - SciPy 1.1 (or greater)
 
-   `source ./Miniconda3-latest-MacOSX-x86_64.sh`
+    - matplotlib 2.2 (or greater)
 
-   You can check if the miniconda has been installed successfully by the command
+    - PyAMG 3.3 (or greater)
 
-   `which conda`
+    - ObsPy 1.1 (or greater)
 
-   If it has been installed, then you will the following output
+    - PETSC4Py 3.6 (for Mac) and PETSC4Py 3.9 (for Linux)
 
-   `/YOURHOMEDIRECTORY/miniconda3/bin/conda`
+External packages:
 
-   Otherwise, you may have some problems with the installation.
+    - PETSC 3.6 (for Mac) and PETSC 3.9 (for Linux)
 
-3. Create a Python3 virtual environment named with `myenv` with necessary packages
-   by the following command
+For optional parallel support, PySIT can depend on
 
-    `conda create -n myenv numpy=1.14.5 scipy=1.1.0 matplotlib=2.2.2 pyamg=3.3.2 cython=0.28.3`
+    - MPI4Py 3.0.0
 
 
-4. Activate your environment by the following command:
+## Installing Python and PySIT Dependencies
 
-    `source activate myenv`
+On all platforms (Linux, Windows 7 or greater, and MacOS X), we recommend a preassembled scientific python distribution, such as [Continuum IO’s Anaconda] or [Enthought’s Canopy]. These collections already include compatible (and in some cases accelerated) versions of most of PySIT’s dependencies. Download and follow the appropriate instructions for your operating system/distribution. In this instruction, we will show a step by step example that uses Miniconda to install PySIT.
 
-5. Install obspy by pip:
+### Step 1: Install Miniconda3
 
-    `pip install obspy`
+1. The easiest way to install Miniconda3 is to download it from the [download page of Miniconda]. Please select the Miniconda that works for your platform. There are two versions **Python 3.7** and **Python 2.7**. Please download the one with **Python 3.7** that corresponds to Miniconda3, while the one with **Python 2.7** corresponds to **Python 2.7**.
 
-5. Install necessary external softwares including petsc and mumps. First go to
-   your Pysit directory
+2. Download the proper installation file to your local directory, for example `~/Download` (In this example, we assume that the installation file of miniconda is located at `~/Download`. You can change it to any directory that you want). You will find a file named similar as `Miniconda3-latest-MacOSX-x86_64.sh` (for MAC OS users) or `Miniconda3-latest-Linux-x86_64.sh` (for Linux users) in your directory.
 
-   `cd /PATHTOPYSIT`
+3. Open your terminal. Go to the directory `~/Download` by executing the  following command:
 
-   then, run the following command:
+    ```sh
+    $ cd ~/Download
+    ```
 
-   `source ./install_petsc4py_linux.sh` for Linux platform,
+    Then, install Miniconda3 by executing the following command for MAC OS users:
 
-   `source ./install_petsc4py_OSx.sh` for Mac OS platform.
+    ```sh
+    $ source ./Miniconda3-latest-MacOSX-x86_64.sh
+    ```
 
-6. Install the Pysit toolbox. First, make sure to go to your Pysit directory by
+    and executing the following command for Linux useres:
 
-    `cd /PATHTOPYSIT`
+    ```sh
+    $ source ./Miniconda3-latest-Linux-x86_64.sh
+    ```
 
-   Then, run the following command:
+    After the installation, you can check if Miniconda3 has been installed successfully by executing the command:
 
-   `python setup.py install`
+    ```sh
+    $ which conda
+    ```
+
+    If it has been installed, then you will see the following output on the screen:
+
+    ```
+    $ /YOURHOMEDIRECTORY/miniconda3/bin/conda
+    ```
+
+### Step 2: Create a Python3 virtual environment by Miniconda3 and install PySIT
+
+1. Create a Python3 virtual environment named with `myenv` with necessary packages by excuting the following command
+
+    ```sh
+    $ conda create -n myenv numpy=1.14.5 scipy=1.1.0 matplotlib=2.2.2 pyamg=3.3.2 `
+    ```
+
+    This command will create a virtual Python environment with most of the dependencies.
+
+2. Activate your environment by the following command:
+
+    ```sh
+    $ source activate myenv
+    ```
+
+    If the environment is created successfully, you would see the following sentence at the left bottom of your terminal:
+
+    ```sh
+    $(myenv)YourComputerName:
+    ```
+
+    where `YourComputerName` stands for the actual name of your computer.
+
+3. Install ObsPy by pip. We assume that you already have **pip** installed. If not, please go to the [webpage of pip] to install **pip** first. With **pip** installed, you can install ObsPy by executing the following command:
+
+    ```sh
+    $ pip install obspy
+    ```
+
+4. Install necessary external softwares including [PETSC] and [MUMPS]. Assume that you clone or download the PySIT package at directory `/PATHTOPYSIT`. First go to the directory by executing the following command:
+
+    ```sh
+    $ cd /PATHTOPYSIT
+    ```
+
+    Then, execute the following commands to install PETSC and MUMPS. For linux users please use:
+
+    ```sh
+    $ source ./install_petsc4py_linux.sh
+    ```
+
+    For MacOS users:
+
+    ```sh
+    $ source ./install_petsc4py_OSx.sh
+
+    ```
+
+5. Install the PySIT toolbox. First, make sure that you are in the PySIT directory by executing the following command:
+
+    ```sh
+    $ cd /PATHTOPYSIT
+    ```
+
+   Then, execute the following command:
+
+   ```sh
+   $ python setup.py install
+   ```
+
+
+6. Check if PySIT has been successfully installed. Please open a python by
+
+   ```sh
+   $ python
+   ```
+
+   Then try to import the PySIT toolbox by
+
+   ```sh
+   $ import pysit
+   ```
+
+   If there are no warnings or errors on the screen, then congratulations, you have successfully installed the PySIT toolbox. Please feel free to work with this powerful toolbox from the [examples].    
+
+
+
+
+
+[Continuum IO’s Anaconda]: <https://www.anaconda.com/>
+[Enthought’s Canopy]: <https://www.enthought.com/product/canopy/>
+[download page of Miniconda]:<https://conda.io/miniconda.html>
+[webpage of pip]:<https://pip.pypa.io/en/stable/installing/>
+[PETSC]: <https://www.mcs.anl.gov/petsc/>
+[MUMPS]: <http://mumps.enseeiht.fr/>
+[examples]: <https://github.com/pysit/pysit/tree/master/examples>
