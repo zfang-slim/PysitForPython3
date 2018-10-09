@@ -8,27 +8,33 @@ __all__ = ['ModelParameterBase', 'ModelPerturbationBase',
            'ConstantDensityAcousticParameters', 'AcousticParameters'
            ]
 
+
 def finite(x):
     """ Checks to see if an array is entirely finite, e.g., no NaN and no inf. """
 
     return np.all(np.isfinite(x))
 
+
 def positivity(x):
     """ Checks to see if an array is entirely strictly positive. """
     return np.all(x > 0)
 
+
 def reasonability(x, val, mode):
     """ Checks to see if an array is within a set of bounds. """
     if mode == 'high':
-        return  np.all(x <= val)
+        return np.all(x <= val)
     if mode == 'low':
-        return  np.all(x >= val)
+        return np.all(x >= val)
+
 
 def enforce_upper_bound(x, val):
     x[np.where(x >= val)] = val
 
+
 def enforce_lower_bound(x, val):
     x[np.where(x <= val)] = val
+
 
 class ModelParameterDescription(object):
     """ Base class for describing a wave model.
@@ -46,7 +52,7 @@ class ModelParameterDescription(object):
     """
     name = None
     constraints = tuple()
-    postprocessing_steps = []       #Steps can be added
+    postprocessing_steps = []  # Steps can be added
 
     @classmethod
     def linearize(cls, data):
@@ -69,7 +75,7 @@ class ModelParameterDescription(object):
 
     @classmethod
     def postprocess(cls, data):
-        """ This function is called after each addition, subtraction, etc. 
+        """ This function is called after each addition, subtraction, etc.
             By default 'postprocessing_steps' is empty and nothing is done.
             postprocessing_steps can be appended so that for instance
             bounds are enforced by all objects of the specific class. """
@@ -77,13 +83,14 @@ class ModelParameterDescription(object):
         for cfunc, cargs in cls.postprocessing_steps:
             cfunc(data, *cargs)
 
+
 class WaveSpeed(ModelParameterDescription):
     name = 'C'
     constraints = tuple(((finite, tuple(), 'finite'),
                          (positivity, tuple(), 'positivity'),
-#                       (reasonability, (300.0, 'low'), 'lower bound'),
-#                       (reasonability, (7500.0, 'high'), 'upper bound')
-                        ))
+                         #                       (reasonability, (300.0, 'low'), 'lower bound'),
+                         #                       (reasonability, (7500.0, 'high'), 'upper bound')
+                         ))
 
     @classmethod
     def linearize(cls, data): return data**-2
@@ -94,16 +101,17 @@ class WaveSpeed(ModelParameterDescription):
     @classmethod
     def add_upper_bound(cls, val):
         cls.postprocessing_steps.append((enforce_upper_bound, (val,)))
-    
-    @classmethod    
+
+    @classmethod
     def add_lower_bound(cls, val):
-        cls.postprocessing_steps.append((enforce_lower_bound, (val,)))        
+        cls.postprocessing_steps.append((enforce_lower_bound, (val,)))
+
 
 class BulkModulus(ModelParameterDescription):
     name = 'kappa'
     constraints = tuple(((finite, tuple(), 'finite'),
                          (positivity, tuple(), 'positivity'),
-                        ))
+                         ))
 
     @classmethod
     def linearize(cls, data): return 1./data
@@ -116,15 +124,16 @@ class Density(ModelParameterDescription):
     name = 'rho'
     constraints = tuple(((finite, tuple(), 'finite'),
                          (positivity, tuple(), 'positivity'),
-#                       (reasonability, (300.0, 'low'), 'lower bound'),
-#                       (reasonability, (7500.0, 'low'), 'upper bound')
-                        ))
+                         #                       (reasonability, (300.0, 'low'), 'lower bound'),
+                         #                       (reasonability, (7500.0, 'low'), 'upper bound')
+                         ))
 
     @classmethod
     def linearize(cls, data): return 1./data
 
     @classmethod
     def unlinearize(cls, data): return 1./data
+
 
 class ModelParameterBase(object):
     """Container class for the model parameters for the wave and Helmholtz
@@ -153,10 +162,12 @@ class ModelParameterBase(object):
     def add_property(self, attr, idx, default=None):
 
         setattr(self, "_{0}_idx".format(attr), idx)
+
         def setter(self, value):
             dof = self.mesh.dof(include_bc=self.padded)
             idx = getattr(self, "_{0}_idx".format(attr))
             self.data[(dof*idx):((idx+1)*dof)] = value
+
         def getter(self):
             dof = self.mesh.dof(include_bc=self.padded)
             idx = getattr(self, "_{0}_idx".format(attr))
@@ -171,18 +182,18 @@ class ModelParameterBase(object):
         dof = mesh.dof(include_bc=self.padded)
         self.parameter_count = len(self.parameter_list)
 
-        self.data = np.ones((self.parameter_count*dof,1))*np.inf
+        self.data = np.ones((self.parameter_count*dof, 1))*np.inf
 
         # nonlinear inputs has priority
         # inputs must match the shape correctly, eg padded if padded is set
         if inputs is not None:
             if type(inputs) in (tuple, list):
-                for p,inp,cnt in zip(self.parameter_list,inputs,itertools.count()):
+                for p, inp, cnt in zip(self.parameter_list, inputs, itertools.count()):
                     sl = slice(cnt*dof, (cnt+1)*dof)
                     self.data[sl] = 0
                     self.data[sl] += inp
             elif type(inputs) is dict:
-                for p,cnt in zip(self.parameter_list,itertools.count()):
+                for p, cnt in zip(self.parameter_list, itertools.count()):
                     if p.name in inputs:
                         sl = slice(cnt*dof, (cnt+1)*dof)
                         self.data[sl] = 0
@@ -190,7 +201,7 @@ class ModelParameterBase(object):
             elif type(inputs) is np.ndarray:
                 if inputs.size == self.data.size:
                     self.data = inputs
-                    self.data.shape=-1,1
+                    self.data.shape = -1, 1
                 else:
                     raise ValueError("Improper dimensions for input array.")
             else:
@@ -199,13 +210,13 @@ class ModelParameterBase(object):
         # can initialize with a linear model
         if linear_inputs is not None:
             if type(linear_inputs) in (tuple, list):
-                for p,inp,cnt in zip(self.parameter_list,linear_inputs,itertools.count()):
+                for p, inp, cnt in zip(self.parameter_list, linear_inputs, itertools.count()):
                     sl = slice(cnt*dof, (cnt+1)*dof)
                     self.data[sl] = 0
                     self.data[sl] += p.unlinearize(inp)
             elif type(linear_inputs) is np.ndarray:
                 if linear_inputs.size == self.data.size:
-                    for p,cnt in zip(self.parameter_list,itertools.count()):
+                    for p, cnt in zip(self.parameter_list, itertools.count()):
                         sl = slice(cnt*dof, (cnt+1)*dof)
                         self.data[sl] = 0
                         self.data[sl] += p.unlinearize(linear_inputs[sl])
@@ -215,11 +226,10 @@ class ModelParameterBase(object):
                 raise ValueError("Invalid format for collection of input parameters.")
 
         # set up the accessors for the model properties
-        for p,idx in zip(self.parameter_list,itertools.count()):
+        for p, idx in zip(self.parameter_list, itertools.count()):
             self.add_property(p.name, idx)
-            sl=slice(idx*dof,(idx+1)*dof)
-            p.postprocess(self.data[sl])            
-            
+            sl = slice(idx*dof, (idx+1)*dof)
+            p.postprocess(self.data[sl])
 
     def perturbation(self, data=None, *args, **kwargs):
         if data is None:
@@ -232,8 +242,8 @@ class ModelParameterBase(object):
         # output is always an array since models store nonlinear things (even though they act like linear things)
 
         dof = self.mesh.dof(include_bc=self.padded)
-        out_arr = np.zeros((self.parameter_count*dof,1))
-        for p,cnt in zip(self.parameter_list,itertools.count()):
+        out_arr = np.zeros((self.parameter_count*dof, 1))
+        for p, cnt in zip(self.parameter_list, itertools.count()):
             sl = slice(cnt*dof, (cnt+1)*dof)
             out_arr[sl] += p.linearize(self.data[sl])
 
@@ -259,9 +269,9 @@ class ModelParameterBase(object):
         olddof = self.mesh.dof(include_bc=False)
         newdof = self.mesh.dof(include_bc=True)
         result = type(self)(self.mesh, padded=True)
-        for p,idx in zip(self.parameter_list, itertools.count()):
-            oldsl=slice(idx*olddof,(idx+1)*olddof)
-            newsl=slice(idx*newdof,(idx+1)*newdof)
+        for p, idx in zip(self.parameter_list, itertools.count()):
+            oldsl = slice(idx*olddof, (idx+1)*olddof)
+            newsl = slice(idx*newdof, (idx+1)*newdof)
             result.data[newsl] = 0
             result.data[newsl] += self.mesh.pad_array(self.data[oldsl], **kwargs)
 
@@ -274,9 +284,9 @@ class ModelParameterBase(object):
         olddof = self.mesh.dof(include_bc=True)
         newdof = self.mesh.dof(include_bc=False)
         result = type(self)(self.mesh, padded=False)
-        for p,idx in zip(self.parameter_list, itertools.count()):
-            oldsl=slice(idx*olddof,(idx+1)*olddof)
-            newsl=slice(idx*newdof,(idx+1)*newdof)
+        for p, idx in zip(self.parameter_list, itertools.count()):
+            oldsl = slice(idx*olddof, (idx+1)*olddof)
+            newsl = slice(idx*newdof, (idx+1)*newdof)
             result.data[newsl] = 0
             result.data[newsl] += self.mesh.unpad_array(self.data[oldsl])
 
@@ -287,9 +297,10 @@ class ModelParameterBase(object):
         if type(i) is not int:
             raise TypeError("__call__ method used for indexing the list of models")
         if (i < self.parameter_count) and (i >= 0):
-            return self.data[(i*dof):((i+1)*dof),0].reshape(-1,1)
+            return self.data[(i*dof):((i+1)*dof), 0].reshape(-1, 1)
         else:
-            raise IndexError("Parameter index out of bounds. (requires {0} > idx >= 0)".format(self.parameter_count))
+            raise IndexError(
+                "Parameter index out of bounds. (requires {0} > idx >= 0)".format(self.parameter_count))
 
     def __mul__(self, rhs):
 
@@ -297,10 +308,10 @@ class ModelParameterBase(object):
         if type(rhs) in (list, tuple, np.ndarray) and (len(rhs) == self.parameter_count):
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
-                result.data[sl] += p.unlinearize(rhs[idx] * p.linearize(self.data[sl]) )
+                result.data[sl] += p.unlinearize(rhs[idx] * p.linearize(self.data[sl]))
         # product with an array is OK, but will return an array
         elif type(rhs) is np.ndarray and (rhs.shape == self.data.shape):
             result = self.linearize() * rhs
@@ -311,18 +322,19 @@ class ModelParameterBase(object):
         else:
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
-                result.data[sl] += p.unlinearize(rhs * p.linearize(self.data[sl]) )
+                result.data[sl] += p.unlinearize(rhs * p.linearize(self.data[sl]))
 
-        for p,idx in zip(result.parameter_list,itertools.count()): #Postprocess. In most cases this does nothing. But it could enforce bounds if specified for instance.
-            sl=slice(idx*dof,(idx+1)*dof)
+        # Postprocess. In most cases this does nothing. But it could enforce bounds if specified for instance.
+        for p, idx in zip(result.parameter_list, itertools.count()):
+            sl = slice(idx*dof, (idx+1)*dof)
             p.postprocess(result.data[sl])
 
         return result
 
-    def __rmul__(self,lhs):
+    def __rmul__(self, lhs):
         return self.__mul__(lhs)
 
     def __add__(self, rhs):
@@ -330,50 +342,52 @@ class ModelParameterBase(object):
         if type(rhs) in (list, tuple, np.ndarray) and (len(rhs) == self.parameter_count):
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
-                result.data[sl] += p.unlinearize( p.linearize(self.data[sl]) + rhs[idx] )
+                result.data[sl] += p.unlinearize(p.linearize(self.data[sl]) + rhs[idx])
         # addition with a model parameter yeilds a model parameter
         elif type(rhs) is type(self) and (rhs.data.shape == self.data.shape):
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
-                result.data[sl] += p.unlinearize(p.linearize(self.data[sl])+p.linearize(rhs.data[sl]))
+                result.data[sl] += p.unlinearize(p.linearize(self.data[sl]) +
+                                                 p.linearize(rhs.data[sl]))
         # array rhs is treated as LINEAR
         elif type(rhs) is np.ndarray and (rhs.shape == self.data.shape):
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
                 result.data[sl] += p.unlinearize(p.linearize(self.data[sl])+rhs[sl])
         # Perturbation RHS is LINEAR
         elif type(rhs) is self.Perturbation and (rhs.data.shape == self.data.shape):
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
                 result.data[sl] += p.unlinearize(p.linearize(self.data[sl])+rhs.data[sl])
         # any other sort of legal sum (usually a single scalar or an array) will return a new model instance
         else:
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
-                result.data[sl] += p.unlinearize(rhs + p.linearize(self.data[sl]) )
+                result.data[sl] += p.unlinearize(rhs + p.linearize(self.data[sl]))
 
-        for p,idx in zip(result.parameter_list,itertools.count()): #Postprocess. In most cases this does nothing. But it could enforce bounds if specified for instance.
-            sl=slice(idx*dof,(idx+1)*dof)
+        # Postprocess. In most cases this does nothing. But it could enforce bounds if specified for instance.
+        for p, idx in zip(result.parameter_list, itertools.count()):
+            sl = slice(idx*dof, (idx+1)*dof)
             p.postprocess(result.data[sl])
 
         return result
 
-    def __radd__(self,lhs):
+    def __radd__(self, lhs):
         return self.__add__(lhs)
 
     def __sub__(self, rhs):
@@ -381,42 +395,43 @@ class ModelParameterBase(object):
         if type(rhs) in (list, tuple, np.ndarray) and (len(rhs) == self.parameter_count):
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
-                result.data[sl] += p.unlinearize( p.linearize(self.data[sl]) - rhs[idx] )
+                result.data[sl] += p.unlinearize(p.linearize(self.data[sl]) - rhs[idx])
         # difference with a ModelParamter or self.Perturbation is OK, but will return a perturbation
         elif type(rhs) in [type(self), self.Perturbation] and (rhs.data.shape == self.data.shape):
             dof = self.mesh.dof(include_bc=self.padded)
             arr = np.zeros_like(self.data)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 arr[sl] += p.linearize(self.data[sl])-p.linearize(rhs.data[sl])
             result = self.perturbation(data=arr)
-            return result   #RETURN HERE ALREADY, BECAUSE OTHERWISE THE RESULT WILL BE POSTPROCESSED EVEN THOUGH IT IS NOT A NONLINEAR MODEL_PARAMETER, BUT A PERTURBATION WITH LINEAR DATA   
-        
+            return result  # RETURN HERE ALREADY, BECAUSE OTHERWISE THE RESULT WILL BE POSTPROCESSED EVEN THOUGH IT IS NOT A NONLINEAR MODEL_PARAMETER, BUT A PERTURBATION WITH LINEAR DATA
+
         # difference with a ModelParamter is OK, but will return an array
         elif type(rhs) is np.ndarray and (rhs.shape == self.data.shape):
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
                 result.data[sl] += p.unlinearize(p.linearize(self.data[sl])-rhs[sl])
         # any other sort of legal difference (usually a single scalar or an array) will return a perturbation
         else:
             dof = self.mesh.dof(include_bc=self.padded)
             arr = np.zeros_like(self.data)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 arr[sl] = 0
                 arr[sl] += p.linearize(self.data[sl]) - rhs
             result = self.perturbation(data=arr)
-            return result   #RETURN HERE ALREADY, BECAUSE OTHERWISE THE RESULT WILL BE POSTPROCESSED EVEN THOUGH IT IS NOT A NONLINEAR MODEL_PARAMETER, BUT A PERTURBATION WITH LINEAR DATA
+            return result  # RETURN HERE ALREADY, BECAUSE OTHERWISE THE RESULT WILL BE POSTPROCESSED EVEN THOUGH IT IS NOT A NONLINEAR MODEL_PARAMETER, BUT A PERTURBATION WITH LINEAR DATA
 
-        #Not sure if the other types of subtractions should have the bounds checked though...
-        for p,idx in zip(result.parameter_list,itertools.count()): #Postprocess. In most cases this does nothing. But it could enforce bounds if specified for instance.
-            sl=slice(idx*dof,(idx+1)*dof)
+        # Not sure if the other types of subtractions should have the bounds checked though...
+        # Postprocess. In most cases this does nothing. But it could enforce bounds if specified for instance.
+        for p, idx in zip(result.parameter_list, itertools.count()):
+            sl = slice(idx*dof, (idx+1)*dof)
             p.postprocess(result.data[sl])
 
         return result
@@ -427,7 +442,7 @@ class ModelParameterBase(object):
     def norm(self, ord=None):
         return np.linalg.norm(self.data, ord=ord)
 
-    @property #so m.T works
+    @property  # so m.T works
     def T(self):
         return self.data.T
 
@@ -440,6 +455,7 @@ class ModelParameterBase(object):
     def __repr__(self):
         return self.data.__repr__()
 
+
 class ModelPerturbationBase(object):
     # ModelPertubation instances have the convienient property that the model of interest, (ie. C, rho, kappa, etc) can be referenced as a member variable.
     parameter_list = []
@@ -450,12 +466,14 @@ class ModelPerturbationBase(object):
         dof = self.mesh.dof(include_bc=self.padded)
 
         setattr(self, "_{0}_idx".format(attr), idx)
+
         def setter(self, value):
             idx = getattr(self, "_{0}_idx".format(attr))
             self.data[(dof*idx):((idx+1)*dof)] = value
+
         def getter(self):
             idx = getattr(self, "_{0}_idx".format(attr))
-            return self.data[(dof*idx):((idx+1)*dof),0].reshape(-1,1)
+            return self.data[(dof*idx):((idx+1)*dof), 0].reshape(-1, 1)
         setattr(type(self), "{0}".format(attr), property(getter, setter))
         setattr(type(self), "_{0}_description".format(attr), self.parameter_list[idx])
 
@@ -470,12 +488,12 @@ class ModelPerturbationBase(object):
         if 'dtype' in kwargs:
             self.dtype = kwargs['dtype']
 
-        self.data = np.zeros((self.parameter_count*dof,1), dtype=self.dtype)
+        self.data = np.zeros((self.parameter_count*dof, 1), dtype=self.dtype)
 
         # nonlinear inputs has priority
         if inputs is not None:
             if type(inputs) in (tuple, list):
-                for p,inp,cnt in zip(self.parameter_list,inputs,itertools.count()):
+                for p, inp, cnt in zip(self.parameter_list, inputs, itertools.count()):
                     sl = slice(cnt*dof, (cnt+1)*dof)
                     self.data[sl] = 0
                     self.data[sl] += inp
@@ -492,7 +510,7 @@ class ModelPerturbationBase(object):
                 raise ValueError("Invalid format for collection of input parameters.")
 
         # set up the accessors for the model properties
-        for p,idx in zip(self.parameter_list,itertools.count()):
+        for p, idx in zip(self.parameter_list, itertools.count()):
             self.add_property(p.name, idx)
 
     def M(self, i):
@@ -500,9 +518,10 @@ class ModelPerturbationBase(object):
         if type(i) is not int:
             raise TypeError("__call__ method used for indexing the list of models")
         if (i < self.parameter_count) and (i >= 0):
-            return self.data[(i*dof):((i+1)*dof),0].reshape(-1,1)
+            return self.data[(i*dof):((i+1)*dof), 0].reshape(-1, 1)
         else:
-            raise IndexError("Parameter index out of bounds. (requires {0} > idx >= 0)".format(self.parameter_count))
+            raise IndexError(
+                "Parameter index out of bounds. (requires {0} > idx >= 0)".format(self.parameter_count))
 
     def with_padding(self, **kwargs):
         if self.padded:
@@ -511,9 +530,9 @@ class ModelPerturbationBase(object):
         olddof = self.mesh.dof(include_bc=False)
         newdof = self.mesh.dof(include_bc=True)
         result = type(self)(self.mesh, padded=True, dtype=self.dtype)
-        for p,idx in zip(self.parameter_list, itertools.count()):
-            oldsl=slice(idx*olddof,(idx+1)*olddof)
-            newsl=slice(idx*newdof,(idx+1)*newdof)
+        for p, idx in zip(self.parameter_list, itertools.count()):
+            oldsl = slice(idx*olddof, (idx+1)*olddof)
+            newsl = slice(idx*newdof, (idx+1)*newdof)
             result.data[newsl] = 0
             result.data[newsl] += self.mesh.pad_array(self.data[oldsl], **kwargs)
 
@@ -526,9 +545,9 @@ class ModelPerturbationBase(object):
         olddof = self.mesh.dof(include_bc=True)
         newdof = self.mesh.dof(include_bc=False)
         result = type(self)(self.mesh, padded=False, dtype=self.dtype)
-        for p,idx in zip(self.parameter_list, itertools.count()):
-            oldsl=slice(idx*olddof,(idx+1)*olddof)
-            newsl=slice(idx*newdof,(idx+1)*newdof)
+        for p, idx in zip(self.parameter_list, itertools.count()):
+            oldsl = slice(idx*olddof, (idx+1)*olddof)
+            newsl = slice(idx*newdof, (idx+1)*newdof)
             result.data[newsl] = 0
             result.data[newsl] += self.mesh.unpad_array(self.data[oldsl])
 
@@ -543,11 +562,11 @@ class ModelPerturbationBase(object):
         if self.mesh.dim == 1:
             n_z_lb = self.mesh.z['lbc']._n
             n_z_rb = self.mesh.z['rbc']._n
-            
 
             data_out = self.data[n_z_lb: n_z_lb+d_shape_out[0]]
             data_out[0] = data_out[0] + np.sum(self.data[0:n_z_lb])
-            data_out[d_shape_out[0]-1] = data_out[d_shape_out[0]-1] + np.sum(self.data[n_z_lb+d_shape_out[0]: d_shape_in[0]])
+            data_out[d_shape_out[0]-1] = data_out[d_shape_out[0]-1] + \
+                np.sum(self.data[n_z_lb+d_shape_out[0]: d_shape_in[0]])
 
         elif self.mesh.dim == 2:
             n_z_lb = self.mesh.z['lbc']._n
@@ -556,9 +575,11 @@ class ModelPerturbationBase(object):
             n_x_rb = self.mesh.x['rbc']._n
 
             data_in[n_z_lb, :] = data_in[n_z_lb, :] + np.sum(data_in[0:n_z_lb, :], axis=0)
-            data_in[n_z_lb+d_shape_out[0]-1, :] = data_in[n_z_lb+d_shape_out[0]-1, :] + np.sum(data_in[n_z_lb+d_shape_out[0] : d_shape_in[0], :], axis=0)
+            data_in[n_z_lb+d_shape_out[0]-1, :] = data_in[n_z_lb+d_shape_out[0]-1, :] + \
+                np.sum(data_in[n_z_lb+d_shape_out[0]: d_shape_in[0], :], axis=0)
             data_in[:, n_x_lb] = data_in[:, n_x_lb] + np.sum(data_in[:, 0:n_x_lb], axis=1)
-            data_in[:, n_x_lb+d_shape_out[1]-1] = data_in[:, n_x_lb+d_shape_out[1]-1] + np.sum(data_in[:, n_x_lb+d_shape_out[1] : d_shape_in[1]], axis=1)
+            data_in[:, n_x_lb+d_shape_out[1]-1] = data_in[:, n_x_lb+d_shape_out[1]-1] + \
+                np.sum(data_in[:, n_x_lb+d_shape_out[1]: d_shape_in[1]], axis=1)
 
             data_out = data_in[n_z_lb:n_z_lb+d_shape_out[0], n_x_lb:n_x_lb+d_shape_out[1]]
 
@@ -572,15 +593,18 @@ class ModelPerturbationBase(object):
             n_y_rb = self.mesh.y['rbc']._n
 
             data_in[n_z_lb, :, :] = data_in[n_z_lb, :, :] + np.sum(data_in[0:n_z_lb, :, :], axis=0)
-            data_in[n_z_lb+d_shape_out[0]-1, :, :] = data_in[n_z_lb+d_shape_out[0]-1, :, :] + np.sum(data_in[n_z_lb+d_shape_out[0]: d_shape_in[0], :, :], axis=0)
+            data_in[n_z_lb+d_shape_out[0]-1, :, :] = data_in[n_z_lb+d_shape_out[0]-1, :,
+                                                             :] + np.sum(data_in[n_z_lb+d_shape_out[0]: d_shape_in[0], :, :], axis=0)
             data_in[:, n_x_lb, :] = data_in[:, n_x_lb, :] + np.sum(data_in[:, 0:n_x_lb, :], axis=1)
-            data_in[:, n_x_lb+d_shape_out[1]-1, :] = data_in[:, n_x_lb+d_shape_out[1]-1, :] + np.sum(data_in[:, n_x_lb+d_shape_out[1]: d_shape_in[1], :], axis=1)
+            data_in[:, n_x_lb+d_shape_out[1]-1, :] = data_in[:, n_x_lb+d_shape_out[1]-1,
+                                                             :] + np.sum(data_in[:, n_x_lb+d_shape_out[1]: d_shape_in[1], :], axis=1)
             data_in[:, :, n_y_lb] = data_in[:, :, n_y_lb] + np.sum(data_in[:, :, 0:n_y_lb], axis=2)
-            data_in[:, :, n_y_lb+d_shape_out[2]-1] = data_in[:, :, n_y_lb+d_shape_out[2]-1] + np.sum(data_in[:, :, n_y_lb+d_shape_out[2]: d_shape_in[2]], axis=2)
+            data_in[:, :, n_y_lb+d_shape_out[2]-1] = data_in[:, :, n_y_lb+d_shape_out[2] -
+                                                             1] + np.sum(data_in[:, :, n_y_lb+d_shape_out[2]: d_shape_in[2]], axis=2)
 
-            data_out = data_in[n_z_lb:n_z_lb+d_shape_out[0], n_x_lb:n_x_lb+d_shape_out[1], n_y_lb:n_y_lb+d_shape_out[2]]
-            
-        
+            data_out = data_in[n_z_lb:n_z_lb+d_shape_out[0],
+                               n_x_lb:n_x_lb+d_shape_out[1], n_y_lb:n_y_lb+d_shape_out[2]]
+
         # # Correct one for 2D
         # d_shape_in = self.mesh._shapes[(True, True)]
         # d_shape_out = self.mesh._shapes[(False, True)]
@@ -600,41 +624,38 @@ class ModelPerturbationBase(object):
         # x_col_ind = np.concatenate((x_col_ind_l, x_col_ind_m, x_col_ind_r), axis=0)
         # x_row_ind = np.array(range(0, d_shape_in[1]))
         # S_op_x = spsp.csr_matrix((vec_interp_x, (x_row_ind, x_col_ind)), shape=(d_shape_in[1], d_shape_out[1]))
-             
 
         # data = self.data.reshape(d_shape_in)
         # data = S_op_z * data * S_op_x
-
 
         result = type(self)(self.mesh, padded=False, dtype=self.dtype)
         result.data = data_out.reshape((np.prod(d_shape_out), 1))
 
         return result
 
-
     def __add__(self, rhs):
         # iterables of scalars, so models can be rescaled differently are OK
         if type(rhs) in (list, tuple, np.ndarray) and (len(rhs) == self.parameter_count):
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded, dtype=self.dtype)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
                 result.data[sl] += self.data[sl] + rhs[idx]
         # addition with an array is OK
         elif type(rhs) is np.ndarray and (rhs.shape == self.data.shape):
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded, dtype=self.dtype)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
                 result.data[sl] += self.data[sl]+rhs[sl]
         # Perturbation RHS is LINEAR
         elif type(rhs) is type(self) and (rhs.data.shape == self.data.shape):
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded, dtype=self.dtype)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
                 result.data[sl] += self.data[sl]+rhs.data[sl]
         # if the rhs has its own add routing, try that...(should handle perturbations + model_parameters
@@ -644,40 +665,40 @@ class ModelPerturbationBase(object):
         else:
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded, dtype=self.dtype)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
                 result.data[sl] += rhs + self.data[sl]
 
         return result
 
-    def __radd__(self,lhs):
+    def __radd__(self, lhs):
         return self.__add__(lhs)
 
     def __iadd__(self, rhs):
         # iterables of scalars, so models can be rescaled differently are OK
         if type(rhs) in (list, tuple, np.ndarray) and (len(rhs) == self.parameter_count):
             dof = self.mesh.dof(include_bc=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 self.data[sl] += rhs[idx]
         # addition with an array is OK
         elif type(rhs) is np.ndarray and (rhs.shape == self.data.shape):
             dof = self.mesh.dof(include_bc=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 self.data[sl] += rhs[sl]
         # Perturbation RHS is LINEAR
         elif type(rhs) is type(self) and (rhs.data.shape == self.data.shape):
             dof = self.mesh.dof(include_bc=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 self.data[sl] += rhs.data[sl]
         # any other sort of legal sum (usually a single scalar or an array) will return a new model instance
         else:
             dof = self.mesh.dof(include_bc=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 self.data[sl] += rhs
 
         return self
@@ -687,32 +708,32 @@ class ModelPerturbationBase(object):
         if type(rhs) in (list, tuple, np.ndarray) and (len(rhs) == self.parameter_count):
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded, dtype=self.dtype)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
                 result.data[sl] += self.data[sl] - rhs[idx]
         # addition with an array is OK
         elif type(rhs) is np.ndarray and (rhs.shape == self.data.shape):
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded, dtype=self.dtype)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
                 result.data[sl] += self.data[sl]-rhs[sl]
         # Perturbation RHS is LINEAR
         elif type(rhs) is type(self) and (rhs.data.shape == self.data.shape):
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded, dtype=self.dtype)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
                 result.data[sl] += self.data[sl]-rhs.data[sl]
         # any other sort of legal sum (usually a single scalar or an array) will return a new model instance
         else:
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded, dtype=self.dtype)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
                 result.data[sl] += self.data[sl] - rhs
 
@@ -722,30 +743,29 @@ class ModelPerturbationBase(object):
         # iterables of scalars, so models can be rescaled differently are OK
         if type(rhs) in (list, tuple, np.ndarray) and (len(rhs) == self.parameter_count):
             dof = self.mesh.dof(include_bc=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 self.data[sl] -= rhs[idx]
         # addition with an array is OK
         elif type(rhs) is np.ndarray and (rhs.shape == self.data.shape):
             dof = self.mesh.dof(include_bc=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 self.data[sl] -= rhs[sl]
         # Perturbation RHS is LINEAR
         elif type(rhs) is type(self) and (rhs.data.shape == self.data.shape):
             dof = self.mesh.dof(include_bc=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 self.data[sl] -= rhs.data[sl]
         # any other sort of legal sum (usually a single scalar or an array) will return a new model instance
         else:
             dof = self.mesh.dof(include_bc=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 self.data[sl] -= rhs
 
         return self
-
 
     def __mul__(self, rhs):
 
@@ -753,8 +773,8 @@ class ModelPerturbationBase(object):
         if type(rhs) in (list, tuple, np.ndarray) and (len(rhs) == self.parameter_count):
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded, dtype=self.dtype)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
                 result.data[sl] += rhs[idx] * self.data[sl]
         # product with an array is OK, but will return an array
@@ -767,14 +787,14 @@ class ModelPerturbationBase(object):
         else:
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded, dtype=self.dtype)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
                 result.data[sl] += rhs * self.data[sl]
 
         return result
 
-    def __rmul__(self,lhs):
+    def __rmul__(self, lhs):
         return self.__mul__(lhs)
 
     def __imul__(self, rhs):
@@ -782,8 +802,8 @@ class ModelPerturbationBase(object):
         # iterables of scalars, so models can be rescaled differently are OK
         if type(rhs) in (list, tuple, np.ndarray) and (len(rhs) == self.parameter_count):
             dof = self.mesh.dof(include_bc=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 self.data[sl] *= rhs[idx]
         # product with an array is OK, but will return an array
         elif type(rhs) is np.ndarray and (rhs.shape == self.data.shape):
@@ -794,8 +814,8 @@ class ModelPerturbationBase(object):
         # any other sort of legal product (usually a single scalar) will return a new model instance
         else:
             dof = self.mesh.dof(include_bc=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 self.data[sl] *= rhs
 
         return self
@@ -806,7 +826,7 @@ class ModelPerturbationBase(object):
     def norm(self, ord=None):
         return np.linalg.norm(self.data, ord=ord)
 
-    @property #so p.T works
+    @property  # so p.T works
     def T(self):
         return self.data.T
 
@@ -819,8 +839,8 @@ class ModelPerturbationBase(object):
         if type(other) is type(self):
             ip = 0.0
             dof = self.mesh.dof(include_bc=self.padded)
-            for p,idx in zip(self.parameter_list, itertools.count()):
-                sl=slice(idx*dof,(idx+1)*dof)
+            for p, idx in zip(self.parameter_list, itertools.count()):
+                sl = slice(idx*dof, (idx+1)*dof)
                 ip += self.mesh.inner_product(self.data[sl], other.data[sl])
         else:
             raise ValueError('Perturbation inner product is only defined for perturbations.')
@@ -832,6 +852,7 @@ class ModelPerturbationBase(object):
 
         return new_copy
 
+
 class ConstantDensityAcousticParameters(ModelParameterBase):
 
     parameter_list = [WaveSpeed]
@@ -840,12 +861,47 @@ class ConstantDensityAcousticParameters(ModelParameterBase):
 
         parameter_list = [WaveSpeed]
 
-# AcousticParameters is the standard model class for VariableDensity solvers. 
+# AcousticParameters is the standard model class for VariableDensity solvers.
+
+
 class AcousticParameters(ModelParameterBase):
 
-   parameter_list = [BulkModulus, Density]
+    parameter_list = [BulkModulus, Density]
 
-   class Perturbation(ModelPerturbationBase):
+    class Perturbation(ModelPerturbationBase):
 
-       parameter_list = [BulkModulus, Density]
+        parameter_list = [BulkModulus, Density]
 
+
+# Extended Modeling parameters
+class ExtendedModelingParameter2D(object):
+    # A struct to store the extended modeling parameter
+    def __init__(self, vec_input=None, mesh, max_sub_offset, padded=False, **kwargs):
+
+        p = mesh.parameters[0]
+        nbc_z = [p.lbc.n, p.rbc.n]
+        nz = p.n
+
+        p = mesh.parameters[1]
+        hx = p.delta
+        nx = p.n
+
+        # Set extended subsurface offset and the corresponding grids number
+        tmp = int(max_sub_offset / hx)
+        n_bc_extra = tmp + 1
+        n_h_extend = 2*tmp + 1
+        h_extend = range(-tmp, tmp+1, 1)
+        dof_sub = nz * (nx - 2*n_bc_extra)
+
+        self.dtype = np.double
+        if 'dtype' in kwargs:
+            self.dtype = kwargs['dtype']
+        self.data = np.zeros((dof_sub, n_h_extend), dtype=self.dtype)
+
+        if vec_input is not None:
+            self.data = np.reshape(vec_input, (dof_sub, n_h_extend))
+
+        self.n_bcx_extend = np.zeros((n_h_extend, 2), dtype=int)
+
+        for i in range(0, n_h_extend, 1):
+            self.n_bcx_extend[i, :] = []
