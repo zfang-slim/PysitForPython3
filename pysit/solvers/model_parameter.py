@@ -5,7 +5,8 @@ import numpy as np
 
 __all__ = ['ModelParameterBase', 'ModelPerturbationBase',
            'WaveSpeed', 'BulkModulus', 'Density',
-           'ConstantDensityAcousticParameters', 'AcousticParameters'
+           'ConstantDensityAcousticParameters', 'AcousticParameters',
+           'ExtendedModelingParameter2D'
            ]
 
 
@@ -876,15 +877,24 @@ class AcousticParameters(ModelParameterBase):
 # Extended Modeling parameters
 class ExtendedModelingParameter2D(object):
     # A struct to store the extended modeling parameter
-    def __init__(self, vec_input=None, mesh, max_sub_offset, padded=False, **kwargs):
+    def __init__(self, mesh, max_sub_offset, h=None, vec_input=None, **kwargs):
 
         p = mesh.parameters[0]
-        nbc_z = [p.lbc.n, p.rbc.n]
+        nbc_z = (p.lbc.n, p.rbc.n)
         nz = p.n
+        self.n_bcz_extend = nbc_z
 
         p = mesh.parameters[1]
-        hx = p.delta
+        nbc_x = (p.lbc.n, p.rbc.n)
         nx = p.n
+
+        if h is None:
+            hx = p.delta
+        else:
+            hx = h 
+
+
+        self.sh_full = np.add(mesh._shapes[(False, True)], (np.sum(nbc_z), np.sum(nbc_x)))
 
         # Set extended subsurface offset and the corresponding grids number
         tmp = int(max_sub_offset / hx)
@@ -892,16 +902,32 @@ class ExtendedModelingParameter2D(object):
         n_h_extend = 2*tmp + 1
         h_extend = range(-tmp, tmp+1, 1)
         dof_sub = nz * (nx - 2*n_bc_extra)
+        sh_sub = (nz, nx-2*n_bc_extra)
 
         self.dtype = np.double
         if 'dtype' in kwargs:
             self.dtype = kwargs['dtype']
+
         self.data = np.zeros((dof_sub, n_h_extend), dtype=self.dtype)
+        self.sh_data = (dof_sub, n_h_extend)
+        self.sh_sub = sh_sub
+        self.dof_sub = dof_sub
 
         if vec_input is not None:
             self.data = np.reshape(vec_input, (dof_sub, n_h_extend))
 
-        self.n_bcx_extend = np.zeros((n_h_extend, 2), dtype=int)
+        self.n_bcx_extend_u = np.zeros((n_h_extend, 2), dtype=int)
+        self.n_bcx_extend_v = np.zeros((n_h_extend, 2), dtype=int)
 
         for i in range(0, n_h_extend, 1):
-            self.n_bcx_extend[i, :] = []
+            self.n_bcx_extend_u[i, :] = (nbc_x[0]+n_bc_extra+h_extend[i],
+                                           nbc_x[1]+n_bc_extra-h_extend[i]
+            )
+            self.n_bcx_extend_v[i, :] = (nbc_x[0]+n_bc_extra-h_extend[i],
+                                           nbc_x[1]+n_bc_extra+h_extend[i]
+            )
+
+    def setter(self, value):
+        self.data = np.reshape(value, self.sh_data)
+
+    # def unpad_wavefield(inputs, sh_in, sh_out, n_bcz, n_bcx)
