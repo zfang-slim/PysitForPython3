@@ -880,21 +880,20 @@ class ExtendedModelingParameter2D(object):
     def __init__(self, mesh, max_sub_offset, h=None, vec_input=None, **kwargs):
 
         p = mesh.parameters[0]
-        nbc_z = (p.lbc.n, p.rbc.n)
-        nz = p.n
-        self.n_bcz_extend = nbc_z
-
-        p = mesh.parameters[1]
         nbc_x = (p.lbc.n, p.rbc.n)
         nx = p.n
+        self.n_bcx_extend = nbc_x
+
+        p = mesh.parameters[1]
+        nbc_z = (p.lbc.n, p.rbc.n)
+        nz = p.n
 
         if h is None:
             hx = p.delta
         else:
-            hx = h 
+            hx = h
 
-
-        self.sh_full = np.add(mesh._shapes[(False, True)], (np.sum(nbc_z), np.sum(nbc_x)))
+        self.sh_full = np.add(mesh._shapes[(False, True)], (np.sum(nbc_x), np.sum(nbc_z)))
 
         # Set extended subsurface offset and the corresponding grids number
         tmp = int(max_sub_offset / hx)
@@ -902,7 +901,8 @@ class ExtendedModelingParameter2D(object):
         n_h_extend = 2*tmp + 1
         h_extend = range(-tmp, tmp+1, 1)
         dof_sub = nz * (nx - 2*n_bc_extra)
-        sh_sub = (nz, nx-2*n_bc_extra)
+        # sh_sub = (nz, nx-2*n_bc_extra)
+        sh_sub = (nx-2*n_bc_extra, nz)
 
         self.dtype = np.double
         if 'dtype' in kwargs:
@@ -921,11 +921,11 @@ class ExtendedModelingParameter2D(object):
 
         for i in range(0, n_h_extend, 1):
             self.n_bcx_extend_u[i, :] = (nbc_x[0]+n_bc_extra+h_extend[i],
-                                           nbc_x[1]+n_bc_extra-h_extend[i]
-            )
+                                         nbc_x[1]+n_bc_extra-h_extend[i]
+                                         )
             self.n_bcx_extend_v[i, :] = (nbc_x[0]+n_bc_extra-h_extend[i],
-                                           nbc_x[1]+n_bc_extra+h_extend[i]
-            )
+                                         nbc_x[1]+n_bc_extra+h_extend[i]
+                                         )
 
     def setter(self, value):
         self.data = np.reshape(value, self.sh_data)

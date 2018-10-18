@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     shots = equispaced_acquisition(m,
                                    RickerWavelet(10.0),
-                                   sources=1,
+                                   sources=2,
                                    source_depth=zpos,
                                    source_kwargs={},
                                    receivers='max',

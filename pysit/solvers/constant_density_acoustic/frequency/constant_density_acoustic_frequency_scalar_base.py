@@ -49,8 +49,11 @@ class ConstantDensityAcousticFrequencyScalarBase(ConstantDensityAcousticFrequenc
         except ImportError:
             raise ImportError('petsc4py is not installed, please install it and try again')
 
-
-        petsc = kwargs['petsc']
+        flag = 'petsc' in kwargs
+        if flag == 0:
+            petsc = None
+        else:
+            petsc = kwargs['petsc']
         if petsc is not None:
             if len(solver_data_list) != len(rhs_list):
                 raise ValueError('solver and right hand side list must be the same size')

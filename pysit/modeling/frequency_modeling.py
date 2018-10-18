@@ -2,7 +2,9 @@
 
 import itertools
 from pysit.util.derivatives import build_derivative_matrix, build_permutation_matrix, build_heterogenous_matrices
+from pysit.solvers.model_parameter import *
 import sys
+import copy
 import numpy as np
 from numpy.random import uniform
 
@@ -10,11 +12,13 @@ __all__ = ['FrequencyModeling']
 
 __docformat__ = "restructuredtext en"
 
+
 class FrequencyModeling(object):
 
     # read only class description
     @property
     def solver_type(self): return "frequency"
+
     @property
     def modeling_type(self): return "frequency"
 
@@ -30,7 +34,8 @@ class FrequencyModeling(object):
         if self.solver_type == solver.supports['equation_dynamics']:
             self.solver = solver
         else:
-            raise TypeError("Argument 'solver' type {1} does not match modeling solver type {0}.".format(self.solver_type, solver.supports['equation_dynamics']))
+            raise TypeError("Argument 'solver' type {1} does not match modeling solver type {0}.".format(
+                self.solver_type, solver.supports['equation_dynamics']))
 
     def forward_model(self, shot, m0, frequencies, return_parameters=[]):
         """Applies the forward model to the model for the given solver.
@@ -61,7 +66,8 @@ class FrequencyModeling(object):
 
         # Local references
         solver = self.solver
-        solver.model_parameters = m0 # this updates dt and the number of steps so that is appropriate for the current model
+        # this updates dt and the number of steps so that is appropriate for the current model
+        solver.model_parameters = m0
 
         mesh = solver.mesh
 
@@ -83,7 +89,6 @@ class FrequencyModeling(object):
         # Initialize the DFT components
         uhats = dict()
 
-
         # Step k = 0
         # p_0 is a zero array because if we assume the input signal is causal
         # and we assume that the initial system (i.e., p_(-2) and p_(-1)) is
@@ -91,7 +96,7 @@ class FrequencyModeling(object):
         # well. ukm1 is needed to compute the temporal derivative.
 
         solver_data = solver.SolverData()
-        rhs = solver.WavefieldVector(mesh,dtype=solver.dtype)
+        rhs = solver.WavefieldVector(mesh, dtype=solver.dtype)
         for nu in frequencies:
             rhs = solver.build_rhs(mesh.pad_array(source.f(nu=nu)), rhs_wavefieldvector=rhs)
             result = solver.solve(solver_data, rhs, nu)
@@ -100,7 +105,7 @@ class FrequencyModeling(object):
             # Save the unpadded wavefield
             if 'wavefield' in return_parameters:
                 uhats[nu] = mesh.unpad_array(uhat, copy=True)
-                
+
             # Record the data at t_k
             if 'simdata' in return_parameters:
                 simdata[nu] = shot.receivers.sample_data_from_array(mesh.unpad_array(uhat))
@@ -152,9 +157,16 @@ class FrequencyModeling(object):
         except ImportError:
             raise ImportError('petsc4py is not installed, please install it and try again')
 
+        flag = 'petsc' in kwargs
+        if flag == 0:
+            petsc = None
+        else:
+            petsc = kwargs['petsc']
+
         # Local references
         solver = self.solver
-        solver.model_parameters = m0 # this updates dt and the number of steps so that is appropriate for the current model
+        # this updates dt and the number of steps so that is appropriate for the current model
+        solver.model_parameters = m0
 
         mesh = solver.mesh
 
@@ -176,7 +188,6 @@ class FrequencyModeling(object):
         # Uhats is a dictionnary of dictionnary
         Uhats = dict()
 
-
         # Step k = 0
         # p_0 is a zero array because if we assume the input signal is causal
         # and we assume that the initial system (i.e., p_(-2) and p_(-1)) is
@@ -193,18 +204,22 @@ class FrequencyModeling(object):
 
             if 'dWaveOp' in return_parameters:
                 DWaveOp[i] = dict()
-        
+
         rhs_list = list()
-        
+
         for nu in frequencies:
             del rhs_list[:]
-            rhs = solver.WavefieldVector(mesh,dtype=solver.dtype)
+            rhs = solver.WavefieldVector(mesh, dtype=solver.dtype)
             for i in range(len(shot_list)):
-                source = shot_list[i].sources                
+                source = shot_list[i].sources
                 rhs = solver.build_rhs(mesh.pad_array(source.f(nu=nu)), rhs_wavefieldvector=rhs)
                 rhs_list.append(rhs.data.copy())
 
-            result = solver.solve_petsc(solver_data_list , rhs_list, nu, **kwargs)
+            if petsc is True:
+                result = solver.solve_petsc(solver_data_list, rhs_list, nu, **kwargs)
+            else:
+                for i in range(len(shot_list)):
+                    result = solver.solve(solver_data_list[i], rhs_list[i], nu)
 
             for i in range(len(shot_list)):
 
@@ -215,7 +230,8 @@ class FrequencyModeling(object):
 
                 # Record the data at t_k
                 if 'simdata' in return_parameters:
-                    Simdata[i][nu] = shot_list[i].receivers.sample_data_from_array(mesh.unpad_array(uhat))
+                    Simdata[i][nu] = shot_list[i].receivers.sample_data_from_array(
+                        mesh.unpad_array(uhat))
 
                 # Save the derivative
                 if 'dWaveOp' in return_parameters:
@@ -233,10 +249,10 @@ class FrequencyModeling(object):
         return retval
 
     def migrate_shot(self, shot, m0, operand_simdata, frequencies,
-                           operand_dWaveOpAdj=None, operand_model=None,
-                           frequency_weights=None,
-                           dWaveOp=None,
-                           adjointfield=None, dWaveOpAdj=None, wavefield=None):
+                     operand_dWaveOpAdj=None, operand_model=None,
+                     frequency_weights=None,
+                     dWaveOp=None,
+                     adjointfield=None, dWaveOpAdj=None, wavefield=None):
         """Performs migration on a single shot.
 
         Parameters
@@ -271,7 +287,8 @@ class FrequencyModeling(object):
         if dWaveOpAdj is not None:
             rp.append('dWaveOpAdj')
 
-        rv = self.adjoint_model(shot, m0, operand_simdata, frequencies, operand_dWaveOpAdj=operand_dWaveOpAdj, operand_model=operand_model, frequency_weights=frequency_weights, return_parameters=rp, dWaveOp=dWaveOp, wavefield=wavefield)
+        rv = self.adjoint_model(shot, m0, operand_simdata, frequencies, operand_dWaveOpAdj=operand_dWaveOpAdj, operand_model=operand_model,
+                                frequency_weights=frequency_weights, return_parameters=rp, dWaveOp=dWaveOp, wavefield=wavefield)
 
         # If the adjoint field is desired as output.
         for nu in frequencies:
@@ -286,10 +303,10 @@ class FrequencyModeling(object):
         return ic
 
     def migrate_shot_list(self, shots_list, m0, operand_simdata, frequencies,
-                           operand_dWaveOpAdj=None, operand_model=None,
-                           frequency_weights=None,
-                           dWaveOp=None,
-                           adjointfield=None, dWaveOpAdj=None, wavefield=None, **kwargs):
+                          operand_dWaveOpAdj=None, operand_model=None,
+                          frequency_weights=None,
+                          dWaveOp=None,
+                          adjointfield=None, dWaveOpAdj=None, wavefield=None, **kwargs):
         """Performs migration a list of shot shot.
 
         Parameters
@@ -324,7 +341,8 @@ class FrequencyModeling(object):
         if dWaveOpAdj is not None:
             rp.append('dWaveOpAdj')
 
-        rv = self.adjoint_model_list(shots_list, m0, operand_simdata, frequencies, operand_dWaveOpAdj=operand_dWaveOpAdj, operand_model=operand_model, frequency_weights=frequency_weights, return_parameters=rp, dWaveOp=dWaveOp, wavefield=wavefield, **kwargs)
+        rv = self.adjoint_model_list(shots_list, m0, operand_simdata, frequencies, operand_dWaveOpAdj=operand_dWaveOpAdj, operand_model=operand_model,
+                                     frequency_weights=frequency_weights, return_parameters=rp, dWaveOp=dWaveOp, wavefield=wavefield, **kwargs)
 
         # If the adjoint field is desired as output.
         for nu in frequencies:
@@ -338,13 +356,81 @@ class FrequencyModeling(object):
 
         return ic
 
+    def migrate_shot_extend(self, shots_list, m0, operand_simdata, frequencies,
+                            max_sub_offset, h, operand_dWaveOpAdj=None, operand_model=None,
+                            frequency_weights=None,
+                            dWaveOp=None,
+                            adjointfield=None, dWaveOpAdj=None, wavefield=None, **kwargs):
+        """Performs migration a list of shot shot.
+
+        Parameters
+        ----------
+        shots_list : list of pysit.Shot
+            Shot for which to compute migration.
+        m0 : background model, solver.ModelParameters (should be velocity [km/s])
+        operand_simdata : ndarray
+            Operand, i.e., b in F*b. This data is in TIME to properly compute the adjoint.
+        frequencies : list of 2-tuples
+            2-tuple, first element is the frequency to use, second element the weight.
+        max_sub_offset : maximum subsurface offset for extended modeling
+        h : subsurface offset interval
+        utt : list
+            Imaging condition components from the forward model for each receiver in the shot.
+        qs : list
+            Optional return list allowing us to retrieve the adjoint field as desired.
+
+        output:
+        ic: the extended migrated images
+
+        """
+
+        flag = 'petsc' in kwargs
+        if flag == 0:
+            petsc = None
+        else:
+            petsc = kwargs['petsc']
+
+        # If the imaging component has not already been computed, compute it.
+        prep_rp = list()
+        if dWaveOp is None:
+            prep_rp.append('dWaveOp')
+            dWaveOp = dict()
+
+        if len(prep_rp) > 0:
+            retval = self.forward_model_list(
+                shots_list, m0, frequencies, return_parameters=prep_rp)
+            if 'dWaveOp' in prep_rp:
+                dWaveOp = retval['dWaveOp']
+
+        rp = ['imaging_condition']
+        if adjointfield is not None:
+            rp.append('adjointfield')
+        if dWaveOpAdj is not None:
+            rp.append('dWaveOpAdj')
+
+        rv = self.adjoint_model_extend(shots_list, m0, operand_simdata, frequencies, max_sub_offset, h, operand_dWaveOpAdj=operand_dWaveOpAdj, operand_model=operand_model,
+                                       frequency_weights=frequency_weights, return_parameters=rp, dWaveOp=dWaveOp, wavefield=wavefield)
+
+        # rv = self.adjoint_model_extend(shots_list, m0, operand_simdata, frequencies, max_sub_offset, h, return_parameters=rp)
+
+        # If the adjoint field is desired as output.
+        for nu in frequencies:
+            if adjointfield is not None:
+                adjointfield[nu] = rv['adjointfield'][nu]
+            if dWaveOpAdj is not None:
+                dWaveOpAdj[nu] = rv['dWaveOpAdj'][nu]
+
+        # Get the imaging condition part from the result, this is the migrated image.
+        ic = rv['imaging_condition']
+
+        return ic
 
     def adjoint_model(self, shot, m0,
-                           operand_simdata, frequencies,
-                           operand_dWaveOpAdj=None, operand_model=None,
-                           frequency_weights=None,
-                           return_parameters=[],
-                           dWaveOp=None, wavefield=None):
+                      operand_simdata, frequencies,
+                      operand_dWaveOpAdj=None, operand_model=None,
+                      frequency_weights=None,
+                      return_parameters=[],
+                      dWaveOp=None, wavefield=None):
         """Solves for the adjoint field in frequency.
 
         For constant density: -m*(omega**2)*q - lap q = resid, where m = 1.0/c**2
@@ -414,39 +500,40 @@ class FrequencyModeling(object):
             if frequency_weights is None:
                 frequency_weights = itertools.repeat(1.0)
 
-            freq_weights = {nu: weight for nu,weight in zip(frequencies,frequency_weights)}
+            freq_weights = {nu: weight for nu, weight in zip(frequencies, frequency_weights)}
 
         # if we are dealing with variable density, we need to collect the gradient operators, D1 and D2. (note: D2 is the negative adjoint of the leftmost gradient used in our heterogenous laplacian)
-        if hasattr(m0, 'kappa') and hasattr(m0,'rho'):
+        if hasattr(m0, 'kappa') and hasattr(m0, 'rho'):
             print("WARNING: Ian's operators are still used here even though the solver has changed. Gradient may be incorrect. These routines need to be updated.")
-            deltas = [mesh.x.delta,mesh.z.delta]
-            sh = mesh.shape(include_bc=True,as_grid=True)
-            D1, D2 = build_heterogenous_matrices(sh,deltas)
-
+            deltas = [mesh.x.delta, mesh.z.delta]
+            sh = mesh.shape(include_bc=True, as_grid=True)
+            D1, D2 = build_heterogenous_matrices(sh, deltas)
 
         if operand_model is not None:
             operand_model = operand_model.with_padding()
 
         # Time-reversed wave solver
         solver_data = solver.SolverData()
-        rhs = solver.WavefieldVector(mesh,dtype=solver.dtype)
+        rhs = solver.WavefieldVector(mesh, dtype=solver.dtype)
         for nu in frequencies:
-            
+
             # If we are dealing with variable density, we will need these values computed for the imagining condition in terms of m2.
-            if hasattr(m0, 'kappa') and hasattr(m0,'rho'):
+            if hasattr(m0, 'kappa') and hasattr(m0, 'rho'):
                 uhat = wavefield[nu]
                 uhat = mesh.pad_array(uhat)
                 D1u, D2u = np.conj(D1[0]*uhat), np.conj(D2[0]*uhat)  # Need the conj. of grad (uhat)
 
             # Compute the rhs array.
-            rhs_ = mesh.pad_array(shot.receivers.extend_data_to_array(data=operand_simdata[nu])) # for primary adjoint equation
+            rhs_ = mesh.pad_array(shot.receivers.extend_data_to_array(
+                data=operand_simdata[nu]))  # for primary adjoint equation
             if (operand_dWaveOpAdj is not None) and (operand_model is not None):
                 dWaveOpAdj_nu = operand_dWaveOpAdj[nu]
-                rhs_ += reshape(operand_model*dWaveOpAdj_nu.reshape(operand_model.shape), rhs_.shape) # for secondary adjoint equation
+                rhs_ += reshape(operand_model*dWaveOpAdj_nu.reshape(operand_model.shape),
+                                rhs_.shape)  # for secondary adjoint equation
 
             rhs = solver.build_rhs(rhs_, rhs_wavefieldvector=rhs)
-            
-            np.conj(rhs.data, rhs.data) 
+
+            np.conj(rhs.data, rhs.data)
             result = solver.solve(solver_data, rhs, nu)
 
             vhat = solver_data.k.primary_wavefield
@@ -455,24 +542,24 @@ class FrequencyModeling(object):
             # match the mathematics.  This is done to save computation, as computing
             # the conjufation in place requires no further allocation.  vhats should
             # not be used beyond this point, so it is assigned to None.
-            qhat = np.conj(vhat, vhat) 
-            
+            qhat = np.conj(vhat, vhat)
 
             if 'adjointfield' in return_parameters:
                 qhats[nu] = mesh.unpad_array(qhat, copy=True)
 
             if 'dWaveOpAdj' in return_parameters:
-                dWaveOpAdj[nu] = solver.compute_dWaveOp('frequency', qhat,nu)
+                dWaveOpAdj[nu] = solver.compute_dWaveOp('frequency', qhat, nu)
 
             # If the imaging component needs to be computed, do it
             if 'imaging_condition' in return_parameters:
                 weight = freq_weights[nu]
-                # if we are dealing with variable density, we compute 2 parts to the imagaing condition seperatly. Otherwise, if it is just constant density- we compute only 1. 
+                # if we are dealing with variable density, we compute 2 parts to the imagaing condition seperatly. Otherwise, if it is just constant density- we compute only 1.
                 if hasattr(m0, 'kappa') and hasattr(m0, 'rho'):
                     ic.rho -= weight*((D1u)*(D1[1]*qhat)+(D2u)*(D2[1]*qhat))
                     ic.kappa -= weight*qhat*np.conj(dWaveOp[nu])
                 else:
-                    ic -= weight*qhat*np.conj(dWaveOp[nu]) # note, no dnu here because the nus are not generally the complete set, so dnu makes little sense, otherwise dnu = 1./(nsteps*dt)
+                    # note, no dnu here because the nus are not generally the complete set, so dnu makes little sense, otherwise dnu = 1./(nsteps*dt)
+                    ic -= weight*qhat*np.conj(dWaveOp[nu])
 
         retval = dict()
 
@@ -486,7 +573,7 @@ class FrequencyModeling(object):
         if 'imaging_condition' in return_parameters:
             # retval['imaging_condition'] = ic.without_padding() # Comment out by Zhilong, simply cutting the pml can not produce a correct gradient
             # In order to make the gradient correct, you should add all the weights in the pml to the last layer of the computational grid
-            retval['imaging_condition'] = ic.add_padding() 
+            retval['imaging_condition'] = ic.add_padding()
 
         return retval
 
@@ -532,7 +619,7 @@ class FrequencyModeling(object):
             ic.m1 = omegas**2 * conj(u) * q
             ic.m2 = conj(grad(u)) dot grad(q), summed over all shots and frequencies.
         """
-        
+
         # Sanitize the input
         if not np.iterable(frequencies):
             frequencies = [frequencies]
@@ -564,15 +651,15 @@ class FrequencyModeling(object):
             if frequency_weights is None:
                 frequency_weights = itertools.repeat(1.0)
 
-            freq_weights = {nu: weight for nu,weight in zip(frequencies,frequency_weights)}
+            freq_weights = {nu: weight for nu, weight in zip(frequencies, frequency_weights)}
 
-        if hasattr(m0, 'kappa') and hasattr(m0,'rho'):
-            deltas = [mesh.x.delta,mesh.z.delta]
-            sh = mesh.shape(include_bc=True,as_grid=True)
-            D1, D2 = build_heterogenous_matrices(sh,deltas)
+        if hasattr(m0, 'kappa') and hasattr(m0, 'rho'):
+            deltas = [mesh.x.delta, mesh.z.delta]
+            sh = mesh.shape(include_bc=True, as_grid=True)
+            D1, D2 = build_heterogenous_matrices(sh, deltas)
 
         solver_data_list = list()
-        #initialisation for the muliple rhs resolution
+        # initialisation for the muliple rhs resolution
         for i in range(len(shots_list)):
             solver_data = solver.SolverData()
             solver_data_list.append(solver_data)
@@ -589,13 +676,16 @@ class FrequencyModeling(object):
 
         for nu in frequencies:
 
-            del rhs_list[:]            
+            del rhs_list[:]
             for i in range(len(shots_list)):
-                rhs = solver.WavefieldVector(mesh,dtype=solver.dtype)
-                rhs_ = mesh.pad_array(shots_list[i].receivers.extend_data_to_array(data=operand_simdata[i][nu]))
+                rhs = solver.WavefieldVector(mesh, dtype=solver.dtype)
+                rhs_ = mesh.pad_array(shots_list[i].receivers.extend_data_to_array(
+                    data=operand_simdata[i][nu]))
                 if (operand_dWaveOpAdj is not None) and (operand_model is not None):
                     dWaveOpAdj_nu = operand_dWaveOpAdj[nu]
-                    rhs_ += reshape(operand_model*dWaveOpAdj_nu.reshape(operand_model.shape), rhs_.shape) # for secondary adjoint equation
+                    # for secondary adjoint equation
+                    rhs_ += reshape(operand_model *
+                                    dWaveOpAdj_nu.reshape(operand_model.shape), rhs_.shape)
 
                 rhs = solver.build_rhs(rhs_, rhs_wavefieldvector=rhs)
                 np.conj(rhs.data, rhs.data)
@@ -603,31 +693,30 @@ class FrequencyModeling(object):
 
             result = solver.solve_petsc(solver_data_list, rhs_list, nu, **kwargs)
 
-
             for i in range(len(shots_list)):
                 # If we are dealing with variable density, we will need these values computed for the imagining condition in terms of m2.
-                if hasattr(m0, 'kappa') and hasattr(m0,'rho'):
+                if hasattr(m0, 'kappa') and hasattr(m0, 'rho'):
                     uhat = wavefield[i][nu]
                     uhat = mesh.pad_array(uhat)
-                    D1u, D2u = np.conj(D1[0]*uhat), np.conj(D2[0]*uhat)  # Need the conj. of grad (uhat)
+                    # Need the conj. of grad (uhat)
+                    D1u, D2u = np.conj(D1[0]*uhat), np.conj(D2[0]*uhat)
 
                 vhat = solver_data_list[i].k.primary_wavefield
                 qhat = np.conj(vhat, vhat)
                 if 'adjointfield' in return_parameters:
                     Qhats[i][nu] = mesh.unpad_array(qhat, copy=True)
                 if 'dWaveOpAdj' in return_parameters:
-                    DWaveOpAdj[i][nu] = solver.compute_dWaveOp('frequency', qhat,nu)
+                    DWaveOpAdj[i][nu] = solver.compute_dWaveOp('frequency', qhat, nu)
                 if 'imaging_condition' in return_parameters:
                     weight = freq_weights[nu]
                     if hasattr(m0, 'kappa') and hasattr(m0, 'rho'):
                         Ic[i].rho -= weight*((D1u)*(D1[1]*qhat)+(D2u)*(D2[1]*qhat))
                         Ic[i].kappa -= weight*qhat*np.conj(dWaveOp[i][nu])
                     else:
-                        Ic[i] -= weight*qhat*np.conj(dWaveOp[i][nu]) # note, no dnu here because the nus are not generally the complete set, so dnu makes little sense, otherwise dnu = 1./(nsteps*dt)
-            
-            
+                        # note, no dnu here because the nus are not generally the complete set, so dnu makes little sense, otherwise dnu = 1./(nsteps*dt)
+                        Ic[i] -= weight*qhat*np.conj(dWaveOp[i][nu])
 
-            # If the imaging component needs to be computed, do it            
+            # If the imaging component needs to be computed, do it
 
         retval = dict()
 
@@ -639,13 +728,216 @@ class FrequencyModeling(object):
 
         for i in range(len(Ic)):
             Ic[i] = Ic[i].without_padding()
-        
+
         # If the imaging component needs to be computed, do it
         if 'imaging_condition' in return_parameters:
             retval['imaging_condition'] = Ic
 
         return retval
 
+    def adjoint_model_extend(self, shots_list, m0, operand_simdata,
+                             frequencies, max_sub_offset, h,
+                             operand_dWaveOpAdj=None, operand_model=None,
+                             frequency_weights=None,
+                             return_parameters=[],
+                             dWaveOp=None, wavefield=None, **kwargs):
+        """Solves for the extend adjoint modeling in frequency.
+
+        For constant density: -m*(omega**2)*q - lap q = resid, where m = 1.0/c**2
+        For variable density: -m1*(omega**2)*q - div(m2 grad)q = resid, where m1=1.0/kappa, m2=1.0/rho, and C = (kappa/rho)**0.5
+
+        Parameters
+        ----------
+        shot : pysit.Shot
+            Gives the receiver model for the right hand side.
+        operand : ndarray
+            Right hand side, usually the residual.
+        frequencies : list of 2-tuples
+            2-tuple, first element is the frequency to use, second element the weight.
+        return_parameters : list of {'q', 'qhat', 'ic'}
+        dWaveOp : ndarray
+            Imaging component from the forward model (in frequency).
+
+        Returns
+        -------
+        retval : dict
+            Dictionary whose keys are return_parameters that contains the specified data.
+
+        Notes
+        -----
+        * q is the adjoint field.
+        * qhat is the DFT of oq at the specified frequencies
+        * ic is the imaging component.  Because this function computes many of
+        the things required to compute the imaging condition, there is an option
+        to compute the imaging condition as we go.  This should be used to save
+        computational effort.  If the imaging condition is to be computed, the
+        optional argument utt must be present.
+
+        Imaging Condition for variable density has terms:
+            ic.m1 = omegas**2 * conj(u) * q
+            ic.m2 = conj(grad(u)) dot grad(q), summed over all shots and frequencies.
+        """
+
+        flag = 'petsc' in kwargs
+        if flag == 0:
+            petsc = None
+        else:
+            petsc = kwargs['petsc']
+
+        # Sanitize the input
+        if not np.iterable(frequencies):
+            frequencies = [frequencies]
+
+        # Local references
+        solver = self.solver
+        solver.model_parameters = m0
+
+        mesh = solver.mesh
+
+        d = solver.domain
+
+        nh = 2*int(max_sub_offset / h) + 1
+
+        # Sanitize the input
+        if not np.iterable(frequencies):
+            frequencies = [frequencies]
+
+        Qhats = dict()
+
+        if 'dWaveOpAdj' in return_parameters:
+            DWaveOpAdj = dict()
+
+        # If we are computing the imaging condition, ensure that all of the parts are there.
+        if dWaveOp is None and 'imaging_condition' in return_parameters:
+            raise ValueError(
+                'To compute imaging condition, forward component must be specified.')
+
+        if 'imaging_condition' in return_parameters:
+            kwargs = {'dtype': 'complex'}
+            Ic = ExtendedModelingParameter2D(mesh, max_sub_offset, h, **kwargs)
+            Ic_data_tmp = np.zeros(Ic.sh_data)
+
+            if frequency_weights is None:
+                frequency_weights = itertools.repeat(1.0)
+
+            freq_weights = {nu: weight for nu, weight in zip(
+                frequencies, frequency_weights)}
+
+        sh_sub = Ic.sh_sub
+        dof_sub = Ic.dof_sub
+
+        # Create a fake mesh structrue to perform intermediate padding and unpadding operators
+        mesh_ih = copy.deepcopy(mesh)
+
+        if hasattr(m0, 'kappa') and hasattr(m0, 'rho'):
+            deltas = [mesh.x.delta, mesh.z.delta]
+            sh = mesh.shape(include_bc=True, as_grid=True)
+            D1, D2 = build_heterogenous_matrices(sh, deltas)
+
+        solver_data_list = list()
+        # initialisation for the muliple rhs resolution
+        for i in range(len(shots_list)):
+            solver_data = solver.SolverData()
+            solver_data_list.append(solver_data)
+            Qhats[i] = dict()
+            # if 'imaging_condition' in return_parameters:
+
+            if 'dWaveOpAdj' in return_parameters:
+                DWaveOpAdj[i] = dict()
+
+        rhs_list = list()
+        if operand_model is not None:
+            operand_model = operand_model.with_padding()
+
+        for nu in frequencies:
+
+            del rhs_list[:]
+            for i in range(len(shots_list)):
+                rhs = solver.WavefieldVector(mesh, dtype=solver.dtype)
+                rhs_ = mesh.pad_array(shots_list[i].receivers.extend_data_to_array(data=operand_simdata[i][nu]))
+                if (operand_dWaveOpAdj is not None) and (operand_model is not None):
+                    dWaveOpAdj_nu = operand_dWaveOpAdj[nu]
+                    # for secondary adjoint equation
+                    rhs_ += np.reshape(operand_model * dWaveOpAdj_nu.reshape(operand_model.shape), rhs_.shape)
+
+                rhs = solver.build_rhs(rhs_, rhs_wavefieldvector=rhs)
+                np.conj(rhs.data, rhs.data)
+                rhs_list.append(rhs.data.copy())
+
+            if petsc is True:
+                result = solver.solve_petsc(solver_data_list, rhs_list, nu, **kwargs)
+
+            else:
+                for i in range(len(shots_list)):
+                    result = solver.solve(solver_data_list[i], rhs_list[i], nu, **kwargs)
+
+            for i in range(len(shots_list)):
+                # If we are dealing with variable density, we will need these values computed for the imagining condition in terms of m2.
+                if hasattr(m0, 'kappa') and hasattr(m0, 'rho'):
+                    uhat = wavefield[i][nu]
+                    uhat = mesh.pad_array(uhat)
+                    # Need the conj. of grad (uhat)
+                    D1u, D2u = np.conj(D1[0]*uhat), np.conj(D2[0]*uhat)
+
+                vhat = solver_data_list[i].k.primary_wavefield
+                qhat = np.conj(vhat, vhat)
+                if 'adjointfield' in return_parameters:
+                    Qhats[i][nu] = mesh.unpad_array(qhat, copy=True)
+                if 'dWaveOpAdj' in return_parameters:
+                    DWaveOpAdj[i][nu] = solver.compute_dWaveOp('frequency', qhat, nu)
+                if 'imaging_condition' in return_parameters:
+                    weight = freq_weights[nu]
+
+                    # The extended imaging for variational density is not implemented yet
+                    if hasattr(m0, 'kappa') and hasattr(m0, 'rho'):
+                        Ic[i].rho -= weight * \
+                            ((D1u)*(D1[1]*qhat)+(D2u)*(D2[1]*qhat))
+                        Ic[i].kappa -= weight*qhat*np.conj(dWaveOp[i][nu])
+                    else:
+                        # note, no dnu here because the nus are not generally the complete set, so dnu makes little sense, otherwise dnu = 1./(nsteps*dt)
+                        for ih in range(0, nh):
+                            n_bcx_extend_u_ih = Ic.n_bcx_extend_u[ih, :]
+                            n_bcx_extend_v_ih = Ic.n_bcx_extend_v[ih, :]
+
+                            mesh._shapes[(False, False)] = (dof_sub, 1)
+                            mesh._shapes[(False, True)] = sh_sub
+                            mesh.parameters[0].lbc._n = n_bcx_extend_u_ih[0]
+                            mesh.parameters[0].rbc._n = n_bcx_extend_u_ih[1]
+
+                            u_tmp = mesh.unpad_array(np.conj(dWaveOp[i][nu]))
+
+                            mesh.parameters[0].lbc._n = n_bcx_extend_v_ih[0]
+                            mesh.parameters[0].rbc._n = n_bcx_extend_v_ih[1]
+                            v_tmp = mesh.unpad_array(qhat)
+
+                            mesh._shapes[(False, False)] = mesh_ih._shapes[(False, False)]
+                            mesh._shapes[(False, True)] = mesh_ih._shapes[(False, True)]
+                            mesh.parameters[0].lbc._n = mesh_ih.parameters[0]['lbc'].n
+                            mesh.parameters[0].rbc._n = mesh_ih.parameters[0]['rbc'].n
+
+                            Ic_data_tmp[:, ih] = (weight*v_tmp*u_tmp).reshape((-1,))
+
+                        Ic.data -= Ic_data_tmp
+
+            # If the imaging component needs to be computed, do it
+
+        retval = dict()
+
+        if 'adjointfield' in return_parameters:
+            retval['adjointfield'] = Qhats
+
+        if 'dWaveOpAdj' in return_parameters:
+            retval['dWaveOpAdj'] = DWaveOpAdj
+
+        # for i in range(len(Ic)):
+        #     Ic[i] = Ic[i].without_padding()
+        Ic.data = np.real(Ic.data)
+
+        # If the imaging component needs to be computed, do it
+        if 'imaging_condition' in return_parameters:
+            retval['imaging_condition'] = Ic
+
+        return retval
 
     def linear_forward_model(self, shot, m0, m1, frequencies, return_parameters=[], dWaveOp0=None):
         """Applies the forward model to the model for the given solver.
@@ -680,14 +972,16 @@ class FrequencyModeling(object):
 
         # Local references
         solver = self.solver
-        solver.model_parameters = m0 # this updates dt and the number of steps so that is appropriate for the current model
+        # this updates dt and the number of steps so that is appropriate for the current model
+        solver.model_parameters = m0
 
         mesh = solver.mesh
 
         d = solver.domain
         source = shot.sources
 
-        m1_padded = m1.with_padding(padding_mode='edge') # added the padding_mode by Zhilong, still needs to discuss which padding mode to use
+        # added the padding_mode by Zhilong, still needs to discuss which padding mode to use
+        m1_padded = m1.with_padding(padding_mode='edge')
 
         # Storage for the field
         u1hats = dict()
@@ -709,7 +1003,7 @@ class FrequencyModeling(object):
 
         solver_data = solver.SolverData()
 
-        rhs = solver.WavefieldVector(mesh,dtype=solver.dtype)
+        rhs = solver.WavefieldVector(mesh, dtype=solver.dtype)
 
         for nu in frequencies:
             if dWaveOp0 is None:
@@ -724,8 +1018,9 @@ class FrequencyModeling(object):
                 dWaveOp0ret[nu] = dWaveOp0_nu
 
             rhs_ = m1_padded*(-1*dWaveOp0_nu)
-            rhs = solver.build_rhs(rhs_, rhs_wavefieldvector=rhs) # make the rhs vector the correct length
-            solver.solve(solver_data,rhs,nu)
+            # make the rhs vector the correct length
+            rhs = solver.build_rhs(rhs_, rhs_wavefieldvector=rhs)
+            solver.solve(solver_data, rhs, nu)
 
             u1hat = solver_data.k.primary_wavefield
 
@@ -754,10 +1049,173 @@ class FrequencyModeling(object):
 
         return retval
 
+    def linear_forward_model_extend(self, shots, m0, m1_extend, frequencies, max_sub_offset, h, return_parameters=[], DWaveOp0In=None):
+        """Applies the extended linear forward model to the model for the given solver.
 
-    def linear_forward_model_kappa(self, shot, m0, m1, frequencies, return_parameters=[], dWaveOp0=None,wavefield=None):
+        Parameters
+        ----------
+        shots : a list of pysit.Shot
+            Gives the source signal approximation for the right hand side.
+        m0 : background model, solver.ModelParameters
+        m1_extend : extended model perturbation, it is a structure of ExtendedModelingParameter2D
+        max_offset: maximum subsurface offset for extended modeling
+        h  : subsurface offest interval
+        frequencies : list of 2-tuples
+            2-tuple, first element is the frequency to use, second element the weight.
+        return_parameters : list of {'dWaveOp0', 'wavefield1', 'dWaveOp1', 'simdata', 'simdata_time'}, optional
+            Values to return.
+
+
+        Returns
+        -------
+        retval : dict
+            Dictionary whose keys are return_parameters that contains the specified data.
+
+        Notes
+        -----
+        * u1 is used as the target field universally.  It could be velocity potential, it could be displacement, it could be pressure.
+        * u1tt is used to generically refer to the derivative of u1 that is needed to compute the imaging condition.
+        * If u0tt is not specified, it may be computed on the fly at potentially high expense.
+
+        """
+
+        # Sanitize the input
+        if not np.iterable(frequencies):
+            frequencies = [frequencies]
+
+        # Local references
+        solver = self.solver
+        # this updates dt and the number of steps so that is appropriate for the current model
+        solver.model_parameters = m0
+
+        mesh = solver.mesh
+
+        d = solver.domain
+
+        nh = 2*int(max_sub_offset / h) + 1
+
+        # # added the padding_mode by Zhilong, still needs to discuss which padding mode to use
+        # m1_padded = m1.with_padding(padding_mode='edge')
+
+        # Storage for the field
+        u1hats = dict()
+
+        # Setup data storage for the forward modeled data
+        if 'simdata' in return_parameters:
+            Simdata = dict()
+
+        # Storage for the time derivatives of p
+        if 'dWaveOp0' in return_parameters:
+            DWaveOp0ret = dict()
+
+        # Storage for the time derivatives of p
+        if 'dWaveOp1' in return_parameters:
+            DWaveOp1 = dict()
+
+        if 'wavefield1' in return_parameters:
+            U1hats = dict()
+
+        if DWaveOp0 is None:
+            solver_data_u0 = solver.SolverData()
+
+        solver_data = solver.SolverData()
+
+        rhs = solver.WavefieldVector(mesh, dtype=solver.dtype)
+        rhslin = solver.WavefieldVector(mesh, dtype=solver.dtype)
+
+        sh_sub = m1_extend.sh_sub
+        dof_sub = m1_extend.dof_sub
+
+        # Create a fake mesh structrue to perform intermediate padding and unpadding operators
+        mesh_ih = copy.deepcopy(mesh)
+
+        for i in range(len(shots)):
+            shot = shots[i]
+            source = shot.sources
+            if 'simdata' in return_parameters:
+                Simdata[i] = dict()
+
+            if 'dWaveOp0' in return_parameters:
+                DWaveOp0ret[i] = dict()
+
+            if 'dWaveOp1' in return_parameters:
+                DWaveOp1[i] = dict()
+
+            if 'wavefield1' in return_parameters:
+                U1hats[i] = dict()
+
+            for nu in frequencies:
+                # m1_padded = m1.with_padding(padding_mode='edge')
+
+                if DWaveOp0In is None:
+                    rhs = solver.build_rhs(mesh.pad_array(source.f(nu=nu)), rhs_wavefieldvector=rhs)
+                    solver.solve(solver_data_u0, rhs, nu)
+                    u0hat = solver_data_u0.k.primary_wavefield
+                    dWaveOp0_nu = solver.compute_dWaveOp('frequency', u0hat, nu)
+                else:
+                    dWaveOp0_nu = DWaveOp0In[i][nu]
+
+                if 'dWaveOp0' in return_parameters:
+                    DWaveOp0ret[i][nu] = dWaveOp0_nu
+
+                for ih in range(0, nh):
+                    m1_ih = m1_extend.data[:, ih]
+                    m1_ih = m1_ih.reshape((m1_ih.size, 1))
+                    n_bcx_extend_u_ih = m1_extend.n_bcx_extend_u[ih, :]
+                    n_bcx_extend_v_ih = m1_extend.n_bcx_extend_v[ih, :]
+
+                    mesh._shapes[(False, False)] = (dof_sub, 1)
+                    mesh._shapes[(False, True)] = sh_sub
+                    mesh.parameters[0].lbc._n = n_bcx_extend_u_ih[0]
+                    mesh.parameters[0].rbc._n = n_bcx_extend_u_ih[1]
+                    rhs_ = m1_ih * (mesh.unpad_array(-1*dWaveOp0_nu))
+
+                    mesh.parameters[0].lbc._n = n_bcx_extend_v_ih[0]
+                    mesh.parameters[0].rbc._n = n_bcx_extend_v_ih[1]
+                    rhs_ = mesh.pad_array(rhs_)
+
+                    mesh._shapes[(False, False)] = mesh_ih._shapes[(False, False)]
+                    mesh._shapes[(False, True)] = mesh_ih._shapes[(False, True)]
+                    mesh.parameters[0].lbc._n = mesh_ih.parameters[0]['lbc'].n
+                    mesh.parameters[0].rbc._n = mesh_ih.parameters[0]['rbc'].n
+
+                    # rhs_ = m1_padded*(-1*dWaveOp0_nu)
+                    # make the rhs vector the correct length
+                    rhs_tmp = solver.build_rhs(rhs_, rhs_wavefieldvector=rhs)
+                    rhslin.data = rhslin.data + rhs_tmp.data
+
+                solver.solve(solver_data, rhslin, nu)
+
+                u1hat = solver_data.k.primary_wavefield
+
+                # Store the wavefield
+                if 'wavefield1' in return_parameters:
+                    U1hats[i][nu] = mesh.unpad_array(u1hat, copy=True)
+
+                # Compute the derivative
+                if 'dWaveOp1' in return_parameters:
+                    DWaveOp1[i][nu] = solver.compute_dWaveOp('frequency', u1hat, nu)
+
+                # Extract the data
+                if 'simdata' in return_parameters:
+                    Simdata[i][nu] = shot.receivers.sample_data_from_array(mesh.unpad_array(u1hat))
+
+        retval = dict()
+
+        if 'dWaveOp0' in return_parameters:
+            retval['dWaveOp0'] = DWaveOp0ret
+        if 'wavefield1' in return_parameters:
+            retval['wavefield1'] = U1hats
+        if 'dWaveOp1' in return_parameters:
+            retval['dWaveOp1'] = DWaveOp1
+        if 'simdata' in return_parameters:
+            retval['simdata'] = Simdata
+
+        return retval
+
+    def linear_forward_model_kappa(self, shot, m0, m1, frequencies, return_parameters=[], dWaveOp0=None, wavefield=None):
         """Applies the forward model to the model for the given solver in terms of a pertubation of kappa
-        
+
         Parameters
         ----------
         shot : pysit.Shot
@@ -767,40 +1225,41 @@ class FrequencyModeling(object):
             2-tuple, first element is the frequency to use, second element the weight.
         return_parameters : list of {'dWaveOp0', 'wavefield1', 'dWaveOp1', 'simdata', 'simdata_time'}, optional
             Values to return.
-        
-        
+
+
         Returns
         -------
         retval : dict
             Dictionary whose keys are return_parameters that contains the specified data.
-        
+
         Notes
         -----
-        * u1 is used as the target field universally.  It could be velocity potential, it could be displacement, it could be pressure.  
+        * u1 is used as the target field universally.  It could be velocity potential, it could be displacement, it could be pressure.
         * u1tt is used to generically refer to the derivative of u1 that is needed to compute the imaging condition.
         * If u0tt is not specified, it may be computed on the fly at potentially high expense.
-        
+
         """
 
         # Sanitize the input
         if not np.iterable(frequencies):
-            frequencies = [frequencies] 
-            
+            frequencies = [frequencies]
+
         # Local references
         solver = self.solver
-        solver.model_parameters = m0 # this updates dt and the number of steps so that is appropriate for the current model
-        
+        # this updates dt and the number of steps so that is appropriate for the current model
+        solver.model_parameters = m0
+
         mesh = solver.mesh
-        
+
         d = solver.domain
         source = shot.sources
 
         model_1 = 1.0/m1.kappa
         model_1 = mesh.pad_array(model_1)
-        
-        # Storage for the field     
+
+        # Storage for the field
         u1hats = dict()
-        
+
         # Setup data storage for the forward modeled data
         if 'simdata' in return_parameters:
             simdata = dict()
@@ -812,14 +1271,14 @@ class FrequencyModeling(object):
         # Storage for the time derivatives of p
         if 'dWaveOp1' in return_parameters:
             dWaveOp1 = dict()
-                
+
         if dWaveOp0 is None:
             solver_data_u0 = solver.SolverData()
-            
+
         solver_data = solver.SolverData()
-        
-        rhs = solver.WavefieldVector(mesh,dtype=solver.dtype)
-        
+
+        rhs = solver.WavefieldVector(mesh, dtype=solver.dtype)
+
         for nu in frequencies:
             if dWaveOp0 is None:
                 rhs = solver.build_rhs(mesh.pad_array(source.f(nu=nu)), rhs_wavefieldvector=rhs)
@@ -828,30 +1287,31 @@ class FrequencyModeling(object):
                 dWaveOp0_nu = solver.compute_dWaveOp('frequency', u0hat, nu)
             else:
                 dWaveOp0_nu = dWaveOp0[nu]
-                
+
             if 'dWaveOp0' in return_parameters:
                 dWaveOp0ret[nu] = dWaveOp0_nu
-            
+
             rhs_ = model_1*(-1*dWaveOp0_nu)
-            rhs = solver.build_rhs(rhs_, rhs_wavefieldvector=rhs) # make the rhs vector the correct length
-            solver.solve(solver_data,rhs,nu)
-            
+            # make the rhs vector the correct length
+            rhs = solver.build_rhs(rhs_, rhs_wavefieldvector=rhs)
+            solver.solve(solver_data, rhs, nu)
+
             u1hat = solver_data.k.primary_wavefield
-            
+
             # Store the wavefield
             if 'wavefield1' in return_parameters:
                 u1hats[nu] = mesh.unpad_array(u1hat, copy=True)
-            
+
             # Compute the derivative
             if 'dWaveOp1' in return_parameters:
                 dWaveOp1[nu] = solver.compute_dWaveOp('frequency', u1hat, nu)
-            
+
             # Extract the data
             if 'simdata' in return_parameters:
                 simdata[nu] = shot.receivers.sample_data_from_array(mesh.unpad_array(u1hat))
 
         retval = dict()
-        
+
         if 'dWaveOp0' in return_parameters:
             retval['dWaveOp0'] = dWaveOp0ret
         if 'wavefield1' in return_parameters:
@@ -860,12 +1320,12 @@ class FrequencyModeling(object):
             retval['dWaveOp1'] = dWaveOp1
         if 'simdata' in return_parameters:
             retval['simdata'] = simdata
-        
+
         return retval
 
     def linear_forward_model_rho(self, shot, m0, m1, frequencies, return_parameters=[], dWaveOp0=None, wavefield=None):
         """Applies the forward model to the model for the given solver in terms of a pertubation of rho
-        
+
         Parameters
         ----------
         shot : pysit.Shot
@@ -875,44 +1335,46 @@ class FrequencyModeling(object):
             2-tuple, first element is the frequency to use, second element the weight.
         return_parameters : list of {'dWaveOp0', 'wavefield1', 'dWaveOp1', 'simdata', 'simdata_time'}, optional
             Values to return.
-        
-        
+
+
         Returns
         -------
         retval : dict
             Dictionary whose keys are return_parameters that contains the specified data.
-        
+
         Notes
         -----
-        * u1 is used as the target field universally.  It could be velocity potential, it could be displacement, it could be pressure.  
+        * u1 is used as the target field universally.  It could be velocity potential, it could be displacement, it could be pressure.
         * u1tt is used to generically refer to the derivative of u1 that is needed to compute the imaging condition.
         * If u0tt is not specified, it may be computed on the fly at potentially high expense.
-        
+
         """
         # Sanitize the input
         if not np.iterable(frequencies):
-            frequencies = [frequencies] 
-            
+            frequencies = [frequencies]
+
         # Local references
         solver = self.solver
-        solver.model_parameters = m0 # this updates dt and the number of steps so that is appropriate for the current model
-        
+        # this updates dt and the number of steps so that is appropriate for the current model
+        solver.model_parameters = m0
+
         mesh = solver.mesh
-        sh = mesh.shape(include_bc=True,as_grid=True)
+        sh = mesh.shape(include_bc=True, as_grid=True)
 
         d = solver.domain
         source = shot.sources
 
-        model_2=1.0/m1.rho
-        model_2=mesh.pad_array(model_2)
+        model_2 = 1.0/m1.rho
+        model_2 = mesh.pad_array(model_2)
 
-        rp=dict()
-        rp['laplacian']=True
+        rp = dict()
+        rp['laplacian'] = True
         print("WARNING: Ian's operators are still used here even though the solver has changed. These tests need to be updated.")
-        Lap = build_heterogenous_matrices(sh,[mesh.x.delta,mesh.z.delta],model_2.reshape(-1,),rp=rp)
-        # Storage for the field     
+        Lap = build_heterogenous_matrices(
+            sh, [mesh.x.delta, mesh.z.delta], model_2.reshape(-1,), rp=rp)
+        # Storage for the field
         u1hats = dict()
-        
+
         # Setup data storage for the forward modeled data
         if 'simdata' in return_parameters:
             simdata = dict()
@@ -924,18 +1386,18 @@ class FrequencyModeling(object):
         # Storage for the time derivatives of p
         if 'dWaveOp1' in return_parameters:
             dWaveOp1 = dict()
-                
+
         if dWaveOp0 is None:
             solver_data_u0 = solver.SolverData()
-            
+
         solver_data = solver.SolverData()
-        
-        rhs = solver.WavefieldVector(mesh,dtype=solver.dtype)
-        
+
+        rhs = solver.WavefieldVector(mesh, dtype=solver.dtype)
+
         for nu in frequencies:
-            
-            u0_hat=wavefield[nu]
-            u0_hat=mesh.pad_array(u0_hat)
+
+            u0_hat = wavefield[nu]
+            u0_hat = mesh.pad_array(u0_hat)
 
             if dWaveOp0 is None:
                 rhs = solver.build_rhs(mesh.pad_array(source.f(nu=nu)), rhs_wavefieldvector=rhs)
@@ -944,31 +1406,31 @@ class FrequencyModeling(object):
                 dWaveOp0_nu = solver.compute_dWaveOp('frequency', u0hat, nu)
             else:
                 dWaveOp0_nu = dWaveOp0[nu]
-                
+
             if 'dWaveOp0' in return_parameters:
                 dWaveOp0ret[nu] = dWaveOp0_nu
-                
 
             rhs_ = Lap*u0_hat
-            rhs = solver.build_rhs(rhs_, rhs_wavefieldvector=rhs) # make the rhs vector the correct length
-            solver.solve(solver_data,rhs,nu)
-            
+            # make the rhs vector the correct length
+            rhs = solver.build_rhs(rhs_, rhs_wavefieldvector=rhs)
+            solver.solve(solver_data, rhs, nu)
+
             u1hat = solver_data.k.primary_wavefield
-            
+
             # Store the wavefield
             if 'wavefield1' in return_parameters:
                 u1hats[nu] = mesh.unpad_array(u1hat, copy=True)
-            
+
             # Compute the derivative
             if 'dWaveOp1' in return_parameters:
                 dWaveOp1[nu] = solver.compute_dWaveOp('frequency', u1hat, nu)
-            
+
             # Extract the data
             if 'simdata' in return_parameters:
                 simdata[nu] = shot.receivers.sample_data_from_array(mesh.unpad_array(u1hat))
 
         retval = dict()
-        
+
         if 'dWaveOp0' in return_parameters:
             retval['dWaveOp0'] = dWaveOp0ret
         if 'wavefield1' in return_parameters:
@@ -979,248 +1441,253 @@ class FrequencyModeling(object):
             retval['simdata'] = simdata
         return retval
 
+
 def adjoint_test_kappa():
-#if __name__ == '__main__':
-#   from pysit import *
+    # if __name__ == '__main__':
+    #   from pysit import *
     import numpy as np
     import matplotlib.pyplot as plt
     from numpy.random import uniform
-    from pysit import PML, Dirichlet, RectangularDomain, CartesianMesh, PointSource, ReceiverSet, Shot, ConstantDensityAcousticWave,VariableDensityHelmholtz, generate_seismic_data, PointReceiver, RickerWavelet
+    from pysit import PML, Dirichlet, RectangularDomain, CartesianMesh, PointSource, ReceiverSet, Shot, ConstantDensityAcousticWave, VariableDensityHelmholtz, generate_seismic_data, PointReceiver, RickerWavelet
     from pysit.gallery.horizontal_reflector import horizontal_reflector
 
     #   Define Domain
     bc = PML(0.3, 100, ftype='quadratic')
 #   bc = Dirichlet()
-    
+
     x_config = (0.1, 1.0, bc, bc)
     z_config = (0.1, 0.8, bc, bc)
 
-    d = RectangularDomain( x_config, z_config )
-    
+    d = RectangularDomain(x_config, z_config)
+
     m = CartesianMesh(d, 70, 90)
 
     #   Generate true wave speed
     #   (M = C^-2 - C0^-2)
-    C,C0,m,d = horizontal_reflector(m)
-    w=1.3
+    C, C0, m, d = horizontal_reflector(m)
+    w = 1.3
     M = [w*C, C/w]
     M0 = [C0, C0]
 
     # Set up shots
     Nshots = 1
     shots = []
-    
+
     xmin = d.x.lbound
     xmax = d.x.rbound
-    nx   = m.x.n
+    nx = m.x.n
     zmin = d.z.lbound
     zmax = d.z.rbound
-    
+
     point_approx = 'delta'
-    
+
     for i in range(Nshots):
 
         # Define source location and type
         source = PointSource(m, (.188888, 0.18888), RickerWavelet(10.0), approximation=point_approx)
-    
+
         # Define set of receivers
         zpos = zmin + (1./9.)*zmax
         xpos = np.linspace(xmin, xmax, nx)
         receivers = ReceiverSet(m, [PointReceiver(m, (x, zpos)) for x in xpos])
-    
+
         # Create and store the shot
         shot = Shot(source, receivers)
         shots.append(shot)
-    
+
     # Define and configure the wave solver
-    #trange=(0.,3.0)
-    freqs = [3.0,5.0,7.0]
+    # trange=(0.,3.0)
+    freqs = [3.0, 5.0, 7.0]
 
     solver = VariableDensityHelmholtz(m,
-                                                model_parameters={'kappa': M[0], 'rho' : M[1]},
-                                                spatial_shifted_differences=False,
-                                                spatial_accuracy_order=2)
+                                      model_parameters={'kappa': M[0], 'rho': M[1]},
+                                      spatial_shifted_differences=False,
+                                      spatial_accuracy_order=2)
     # Generate synthetic Seismic data
     print('Generating data...')
-    base_model = solver.ModelParameters(m,{'kappa': M[0], 'rho' : M[1]})
-    generate_seismic_data(shots, solver, base_model,frequencies=freqs)
-    
-    
+    base_model = solver.ModelParameters(m, {'kappa': M[0], 'rho': M[1]})
+    generate_seismic_data(shots, solver, base_model, frequencies=freqs)
+
     tools = FrequencyModeling(solver)
-    m0 = solver.ModelParameters(m,{'kappa': M[0], 'rho' : M[1]})
-    
+    m0 = solver.ModelParameters(m, {'kappa': M[0], 'rho': M[1]})
+
     np.random.seed(0)
-    
-    m1 = m0.perturbation() 
-    v = uniform(0.5,1.5,len(m0.kappa)).reshape((len(m0.kappa),1))
-    
-    # v is pertubation of model 1/kappa. (which we have declared as m1). Thus, kappa is 1/v. 
-    m1.kappa  += 1.0/v
-    
-    
+
+    m1 = m0.perturbation()
+    v = uniform(0.5, 1.5, len(m0.kappa)).reshape((len(m0.kappa), 1))
+
+    # v is pertubation of model 1/kappa. (which we have declared as m1). Thus, kappa is 1/v.
+    m1.kappa += 1.0/v
+
+
 #   freqs = np.linspace(3,20,20)
-        
+
     fwdret = tools.forward_model(shot, m0, freqs, ['wavefield', 'dWaveOp', 'simdata'])
     data = fwdret['simdata']
     dWaveOp0 = fwdret['dWaveOp']
     u0hat = fwdret['wavefield']
 
 #   data -= shot.receivers.interpolate_data(solver.ts())
-#   data *= -1  
+#   data *= -1
 
 #   for nu in freqs:
 #       data[nu] += np.random.rand(*data[nu].shape)
-        
-    linfwdret = tools.linear_forward_model_kappa(shot, m0, m1, freqs, ['simdata','wavefield1'])
+
+    linfwdret = tools.linear_forward_model_kappa(shot, m0, m1, freqs, ['simdata', 'wavefield1'])
     lindata = linfwdret['simdata']
     u1hat = linfwdret['wavefield1'][freqs[0]]
-    
-    adjret = tools.adjoint_model(shot, m0, data, freqs, return_parameters=['imaging_condition', 'adjointfield'], dWaveOp=dWaveOp0, wavefield=u0hat)
+
+    adjret = tools.adjoint_model(shot, m0, data, freqs, return_parameters=[
+                                 'imaging_condition', 'adjointfield'], dWaveOp=dWaveOp0, wavefield=u0hat)
     qhat = adjret['adjointfield'][freqs[0]]
     adjmodel = adjret['imaging_condition'].kappa
-    
+
 #   adjret2 = tools.adjoint_model(shot, m0, lindata_time, freqs, return_parameters=['imaging_condition', 'adjointfield'], dWaveOp=dWaveOp0)
 ##  qhat = adjret['adjointfield'][freqs[0]]
 #   adjmodel2 = adjret2['imaging_condition'].view(np.ndarray)
-    
+
     temp_data_prod = 0.0
     for nu in freqs:
         temp_data_prod += np.dot(lindata[nu].reshape(data[nu].shape).T, np.conj(data[nu]))
-    
+
     print("data space: ", temp_data_prod.squeeze())
     print("model space: ", np.dot(v.T, np.conj(adjmodel)).squeeze()*np.prod(m.deltas))
-    print("their diff: ", np.dot(v.T, np.conj(adjmodel)).squeeze()*np.prod(m.deltas) - temp_data_prod.squeeze())
+    print("their diff: ", np.dot(v.T, np.conj(adjmodel)).squeeze()
+          * np.prod(m.deltas) - temp_data_prod.squeeze())
+
 
 def adjoint_test_rho():
-#if __name__ == '__main__':
-#   from pysit import *
+    # if __name__ == '__main__':
+    #   from pysit import *
     import numpy as np
     import matplotlib.pyplot as plt
     from numpy.random import uniform
-    from pysit import PML, Dirichlet, RectangularDomain, CartesianMesh, PointSource, ReceiverSet, Shot, ConstantDensityAcousticWave,VariableDensityHelmholtz, generate_seismic_data, PointReceiver, RickerWavelet
+    from pysit import PML, Dirichlet, RectangularDomain, CartesianMesh, PointSource, ReceiverSet, Shot, ConstantDensityAcousticWave, VariableDensityHelmholtz, generate_seismic_data, PointReceiver, RickerWavelet
     from pysit.gallery.horizontal_reflector import horizontal_reflector
 
     #   Define Domain
     bc = PML(0.3, 100, ftype='quadratic')
 #   bc = Dirichlet()
-    
+
     x_config = (0.1, 1.0, bc, bc)
     z_config = (0.1, 0.8, bc, bc)
 
-    d = RectangularDomain( x_config, z_config )
-    
+    d = RectangularDomain(x_config, z_config)
+
     m = CartesianMesh(d, 70, 90)
 
     #   Generate true wave speed
     #   (M = C^-2 - C0^-2)
-    C,C0,m,d = horizontal_reflector(m)
-    w=1.3
+    C, C0, m, d = horizontal_reflector(m)
+    w = 1.3
     M = [w*C, C/w]
     M0 = [C0, C0]
 
     # Set up shots
     Nshots = 1
     shots = []
-    
+
     xmin = d.x.lbound
     xmax = d.x.rbound
-    nx   = m.x.n
+    nx = m.x.n
     zmin = d.z.lbound
     zmax = d.z.rbound
-    
+
     point_approx = 'delta'
-    
+
     for i in range(Nshots):
 
         # Define source location and type
         source = PointSource(m, (.188888, 0.18888), RickerWavelet(10.0), approximation=point_approx)
-    
+
         # Define set of receivers
         zpos = zmin + (1./9.)*zmax
         xpos = np.linspace(xmin, xmax, nx)
         receivers = ReceiverSet(m, [PointReceiver(m, (x, zpos)) for x in xpos])
-    
+
         # Create and store the shot
         shot = Shot(source, receivers)
         shots.append(shot)
-    
+
     # Define and configure the wave solver
-    #trange=(0.,3.0)
-    freqs = [3.0,5.0,7.0]
+    # trange=(0.,3.0)
+    freqs = [3.0, 5.0, 7.0]
     solver = VariableDensityHelmholtz(m,
-                                                model_parameters={'kappa': M[0], 'rho' : M[1]},
-                                                spatial_shifted_differences=False,
-                                                spatial_accuracy_order=2)
+                                      model_parameters={'kappa': M[0], 'rho': M[1]},
+                                      spatial_shifted_differences=False,
+                                      spatial_accuracy_order=2)
     # Generate synthetic Seismic data
     print('Generating data...')
-    base_model = solver.ModelParameters(m,{'kappa': M[0], 'rho' : M[1]})
-    generate_seismic_data(shots, solver, base_model,frequencies=freqs)
-    
-    
+    base_model = solver.ModelParameters(m, {'kappa': M[0], 'rho': M[1]})
+    generate_seismic_data(shots, solver, base_model, frequencies=freqs)
+
     tools = FrequencyModeling(solver)
-    m0 = solver.ModelParameters(m,{'kappa': M[0], 'rho' : M[1]})
-    
+    m0 = solver.ModelParameters(m, {'kappa': M[0], 'rho': M[1]})
+
     np.random.seed(0)
-    
+
     m1 = m0.perturbation()
 
-    # v is pertubation of model 1/rho. (which we have declared as m1). Thus, rho is 1/v. 
-    v = uniform(0.5,1.5,len(m0.rho)).reshape((len(m0.rho),1))
-    
-    m1.rho  += 1.0/v
-    
-    
+    # v is pertubation of model 1/rho. (which we have declared as m1). Thus, rho is 1/v.
+    v = uniform(0.5, 1.5, len(m0.rho)).reshape((len(m0.rho), 1))
+
+    m1.rho += 1.0/v
+
+
 #   freqs = np.linspace(3,20,20)
-        
+
     fwdret = tools.forward_model(shot, m0, freqs, ['wavefield', 'dWaveOp', 'simdata'])
     data = fwdret['simdata']
     dWaveOp0 = fwdret['dWaveOp']
     u0hat = fwdret['wavefield']
 
 #   data -= shot.receivers.interpolate_data(solver.ts())
-#   data *= -1  
+#   data *= -1
 
 #   for nu in freqs:
 #       data[nu] += np.random.rand(*data[nu].shape)
-        
-    linfwdret = tools.linear_forward_model_rho(shot, m0, m1, freqs, ['simdata','wavefield1'], wavefield=u0hat)
+
+    linfwdret = tools.linear_forward_model_rho(
+        shot, m0, m1, freqs, ['simdata', 'wavefield1'], wavefield=u0hat)
     lindata = linfwdret['simdata']
     #u1hat = linfwdret['wavefield1'][freqs[0]]
-    
-    adjret = tools.adjoint_model(shot, m0, data, freqs, return_parameters=['imaging_condition', 'adjointfield'], dWaveOp=dWaveOp0,wavefield=u0hat)
+
+    adjret = tools.adjoint_model(shot, m0, data, freqs, return_parameters=[
+                                 'imaging_condition', 'adjointfield'], dWaveOp=dWaveOp0, wavefield=u0hat)
     qhat = adjret['adjointfield'][freqs[0]]
     adjmodel = adjret['imaging_condition'].rho
-    
+
 #   adjret2 = tools.adjoint_model(shot, m0, lindata_time, freqs, return_parameters=['imaging_condition', 'adjointfield'], dWaveOp=dWaveOp0)
 ##  qhat = adjret['adjointfield'][freqs[0]]
 #   adjmodel2 = adjret2['imaging_condition'].view(np.ndarray)
-    
+
     temp_data_prod = 0.0
     for nu in freqs:
         temp_data_prod += np.dot(lindata[nu].reshape(data[nu].shape).T, np.conj(data[nu]))
-    
+
     print("data space: ", temp_data_prod.squeeze())
     print("model space: ", np.dot(v.T, np.conj(adjmodel)).squeeze()*np.prod(m.deltas))
-    print("their diff: ", np.dot(v.T, np.conj(adjmodel)).squeeze()*np.prod(m.deltas) - temp_data_prod.squeeze())
+    print("their diff: ", np.dot(v.T, np.conj(adjmodel)).squeeze()
+          * np.prod(m.deltas) - temp_data_prod.squeeze())
 
 
 def adjoint_test():
-#if __name__ == '__main__':
-#   from pysit import *
+    # if __name__ == '__main__':
+    #   from pysit import *
     import numpy as np
     import matplotlib.pyplot as plt
 
-    from pysit import PML, Dirichlet, RectangularDomain, CartesianMesh, PointSource, ReceiverSet, Shot, ConstantDensityAcousticWave,ConstantDensityHelmholtz, generate_seismic_data, PointReceiver, RickerWavelet
+    from pysit import PML, Dirichlet, RectangularDomain, CartesianMesh, PointSource, ReceiverSet, Shot, ConstantDensityAcousticWave, ConstantDensityHelmholtz, generate_seismic_data, PointReceiver, RickerWavelet
     from pysit.gallery import horizontal_reflector
 
     #   Define Domain
     bc = PML(0.3, 100, ftype='quadratic')
-#   bc = Dirichlet()
+    #   bc = Dirichlet()
 
     x_config = (0.1, 1.0, bc, bc)
     z_config = (0.1, 0.8, bc, bc)
 
-    d = RectangularDomain( x_config, z_config )
+    d = RectangularDomain(x_config, z_config)
 
     m = CartesianMesh(d, 90, 70)
 
@@ -1234,7 +1701,7 @@ def adjoint_test():
 
     xmin = d.x.lbound
     xmax = d.x.rbound
-    nx   = m.x.n
+    nx = m.x.n
     zmin = d.z.lbound
     zmax = d.z.rbound
 
@@ -1255,7 +1722,7 @@ def adjoint_test():
         shots.append(shot)
 
     # Define and configure the wave solver
-    trange=(0.,3.0)
+    trange = (0., 3.0)
     solver = ConstantDensityAcousticWave(m,
                                          formulation='scalar',
                                          model_parameters={'C': C},
@@ -1265,7 +1732,7 @@ def adjoint_test():
 
     # Generate synthetic Seismic data
     print('Generating data...')
-    base_model = solver.ModelParameters(m,{'C': C})
+    base_model = solver.ModelParameters(m, {'C': C})
     generate_seismic_data(shots, solver, base_model)
 
     solver_frequency = ConstantDensityHelmholtz(m,
@@ -1273,13 +1740,13 @@ def adjoint_test():
                                                 spatial_shifted_differences=True,
                                                 spatial_accuracy_order=4)
     tools = FrequencyModeling(solver_frequency)
-    m0 = solver_frequency.ModelParameters(m,{'C': C0})
+    m0 = solver_frequency.ModelParameters(m, {'C': C0})
 
     np.random.seed(0)
 
     m1 = m0.perturbation()
 #   m1 += M
-    m1  += np.random.rand(*m1.data.shape)
+    m1 += np.random.rand(*m1.data.shape)
 
     freqs = [10.0, 10.5, 10.123334145252]
 #   freqs = np.linspace(3,20,20)
@@ -1295,11 +1762,12 @@ def adjoint_test():
 #   for nu in freqs:
 #       data[nu] += np.random.rand(*data[nu].shape)
 
-    linfwdret = tools.linear_forward_model(shot, m0, m1, freqs, ['simdata','wavefield1'])
+    linfwdret = tools.linear_forward_model(shot, m0, m1, freqs, ['simdata', 'wavefield1'])
     lindata = linfwdret['simdata']
     u1hat = linfwdret['wavefield1'][freqs[0]]
 
-    adjret = tools.adjoint_model(shot, m0, data, freqs, return_parameters=['imaging_condition', 'adjointfield'], dWaveOp=dWaveOp0)
+    adjret = tools.adjoint_model(shot, m0, data, freqs, return_parameters=[
+                                 'imaging_condition', 'adjointfield'], dWaveOp=dWaveOp0)
     qhat = adjret['adjointfield'][freqs[0]]
     adjmodel = adjret['imaging_condition'].data
 
@@ -1316,7 +1784,6 @@ def adjoint_test():
     print(temp_data_prod.squeeze())
     print(np.dot(m1.T, np.conj(adjmodel)).squeeze()*np.prod(m.deltas))
     print(np.dot(m1.T, np.conj(adjmodel)).squeeze()*np.prod(m.deltas) - temp_data_prod.squeeze())
-
 
 
 #   temp_data_prod = 0.0
@@ -1368,8 +1835,143 @@ def adjoint_test():
 #   plt.title(r'im(${m_1}$)')
 #   plt.show()
 
+def extended_modeling_test():
+    # if __name__ == '__main__':
+    #   from pysit import *
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    from pysit import PML, Dirichlet, RectangularDomain, CartesianMesh, PointSource, ReceiverSet, Shot, ConstantDensityAcousticWave, ConstantDensityHelmholtz, generate_seismic_data, PointReceiver, RickerWavelet
+    from pysit.gallery import horizontal_reflector
+
+    #   Define Domain
+    bc = PML(0.3, 100, ftype='quadratic')
+#   bc = Dirichlet()
+
+    x_config = (0.1, 1.0, bc, bc)
+    z_config = (0.1, 0.8, bc, bc)
+
+    d = RectangularDomain(x_config, z_config)
+
+    m = CartesianMesh(d, 90, 70)
+
+    #   Generate true wave speed
+    #   (M = C^-2 - C0^-2)
+    C0, C, m, d = horizontal_reflector(m)
+
+    max_sub_offset = 0.1
+    h = 0.01
+    m1_extend = ExtendedModelingParameter2D(m, max_sub_offset, h)
+
+    # Set up shots
+    Nshots = 2
+    shots = []
+
+    xmin = d.x.lbound
+    xmax = d.x.rbound
+    nx = m.x.n
+    zmin = d.z.lbound
+    zmax = d.z.rbound
+
+    point_approx = 'delta'
+
+    for i in range(Nshots):
+
+        # Define source location and type
+        source = PointSource(m, (.188888, 0.18888), RickerWavelet(10.0), approximation=point_approx)
+
+        # Define set of receivers
+        zpos = zmin + (1./9.)*zmax
+        xpos = np.linspace(xmin, xmax, nx)
+        receivers = ReceiverSet(m, [PointReceiver(m, (x, zpos)) for x in xpos])
+
+        # Create and store the shot
+        shot = Shot(source, receivers)
+        shots.append(shot)
+
+    # Define and configure the wave solver
+    trange = (0., 3.0)
+    solver = ConstantDensityAcousticWave(m,
+                                         formulation='scalar',
+                                         model_parameters={'C': C},
+                                         spatial_accuracy_order=4,
+                                         trange=trange,
+                                         time_accuracy_order=6)
+
+    # Generate synthetic Seismic data
+    print('Generating data...')
+    base_model = solver.ModelParameters(m, {'C': C})
+    generate_seismic_data(shots, solver, base_model)
+
+    solver_frequency = ConstantDensityHelmholtz(m,
+                                                model_parameters={'C': C0},
+                                                spatial_shifted_differences=True,
+                                                spatial_accuracy_order=4)
+    tools = FrequencyModeling(solver_frequency)
+    m0 = solver_frequency.ModelParameters(m, {'C': C0})
+    m1_extend.setter(np.random.rand(m1_extend.sh_data[0], m1_extend.sh_data[1]))
+
+#     np.random.seed(0)
+#
+#     m1 = m0.perturbation()
+# #   m1 += M
+#     m1 += np.random.rand(*m1.data.shape)
+
+    freqs = [10.0, 12.0]
+#   freqs = np.linspace(3,20,20)
+    linfwdret = tools.linear_forward_model_extend(
+        shots, m0, m1_extend, freqs, max_sub_offset, h, ['simdata'])
+    lindatas = linfwdret['simdata']
+    # lindatas = []
+    # lindatas.append(lindata)
+
+    Ic = tools.migrate_shot_extend(shots, m0, lindatas,
+                                   freqs, max_sub_offset, h,
+                                   return_parameters=['imaging_condition']
+                                   )
+
+
+#     fwdret = tools.forward_model(shot, m0, freqs, ['wavefield', 'dWaveOp', 'simdata'])
+#     data = fwdret['simdata']
+#     dWaveOp0 = fwdret['dWaveOp']
+#     u0hat = fwdret['wavefield'][freqs[0]]
+#
+# #   data -= shot.receivers.interpolate_data(solver.ts())
+# #   data *= -1
+#
+# #   for nu in freqs:
+# #       data[nu] += np.random.rand(*data[nu].shape)
+#
+#     linfwdret = tools.linear_forward_model(shot, m0, m1, freqs, ['simdata', 'wavefield1'])
+#     lindata = linfwdret['simdata']
+#     u1hat = linfwdret['wavefield1'][freqs[0]]
+#
+#     adjret = tools.adjoint_model(shot, m0, data, freqs, return_parameters=[
+#                                  'imaging_condition', 'adjointfield'], dWaveOp=dWaveOp0)
+#     qhat = adjret['adjointfield'][freqs[0]]
+#     adjmodel = adjret['imaging_condition'].data
+#
+# #   adjret2 = tools.adjoint_model(shot, m0, lindata_time, freqs, return_parameters=['imaging_condition', 'adjointfield'], dWaveOp=dWaveOp0)
+# ##  qhat = adjret['adjointfield'][freqs[0]]
+# #   adjmodel2 = adjret2['imaging_condition'].view(np.ndarray)
+#
+#     m1 = m1.data
+#
+#     temp_data_prod = 0.0
+#     for nu in freqs:
+#         temp_data_prod += np.dot(lindata[nu].reshape(data[nu].shape).T, np.conj(data[nu]))
+#
+#     print(temp_data_prod.squeeze())
+#     print(np.dot(m1.T, np.conj(adjmodel)).squeeze()*np.prod(m.deltas))
+#     print(np.dot(m1.T, np.conj(adjmodel)).squeeze()*np.prod(m.deltas) - temp_data_prod.squeeze())
+
+
 if __name__ == '__main__':
-    print("testing pertubation of rho:")
-    adjoint_test_rho()
-    print("testing pertubation of kappa:")
-    adjoint_test_kappa()
+    print("testing extended modeling")
+    extended_modeling_test()
+    # print("testing constant density")
+    # adjoint_test()
+    # print("testing pertubation of rho:")
+    # adjoint_test_rho()
+    # print("testing pertubation of kappa:")
+    # adjoint_test_kappa()
