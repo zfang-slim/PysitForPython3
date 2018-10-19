@@ -61,7 +61,7 @@ class ExtendLSM(object):
 
         def matvec(x):
             m1_extend.setter(x0)
-            if self.solver.supports['equation_dynamics'] == "time":
+            if self.tools.solver.supports['equation_dynamics'] == "time":
                 linfwdret = self.tools.linear_forward_model_extend(self.shots,
                                                                    m0,
                                                                    m1_extend,
