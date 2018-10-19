@@ -104,7 +104,7 @@ class ExtendLSM(object):
         resid = []
 
 #       d, info = cg(A, rhs, maxiter=self.krylov_maxiter, residuals=resid)
-        x_out, info = gmres(A, rhs, x0=x0, maxiter=self.krylov_maxiter, residuals=resid)
+        x_out, info = gmres(A, rhs, maxiter=self.krylov_maxiter, residuals=resid)
         m1_extend.setter(x_out)
         self.m_out = m1_extend
 
