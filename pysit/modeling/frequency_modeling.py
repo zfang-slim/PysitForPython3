@@ -356,11 +356,11 @@ class FrequencyModeling(object):
 
         return ic
 
-    def migrate_shot_extend(self, shots_list, m0, operand_simdata, frequencies,
-                            max_sub_offset, h, operand_dWaveOpAdj=None, operand_model=None,
-                            frequency_weights=None,
-                            dWaveOp=None,
-                            adjointfield=None, dWaveOpAdj=None, wavefield=None, **kwargs):
+    def migrate_shots_extend(self, shots_list, m0, operand_simdata, frequencies,
+                             max_sub_offset, h, operand_dWaveOpAdj=None, operand_model=None,
+                             frequency_weights=None,
+                             dWaveOp=None,
+                             adjointfield=None, dWaveOpAdj=None, wavefield=None, **kwargs):
         """Performs migration a list of shot shot.
 
         Parameters
@@ -1925,7 +1925,7 @@ def extended_modeling_test():
     # lindatas = []
     # lindatas.append(lindata)
 
-    Ic = tools.migrate_shot_extend(shots, m0, lindatas,
+    Ic = tools.migrate_shots_extend(shots, m0, lindatas,
                                    freqs, max_sub_offset, h,
                                    return_parameters=['imaging_condition']
                                    )

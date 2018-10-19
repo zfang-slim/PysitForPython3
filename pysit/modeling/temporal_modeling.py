@@ -458,6 +458,7 @@ class TemporalModeling(object):
             retval['dWaveOpAdj'] = dWaveOpAdj
 
         if do_ic:
+            ic.data = ic.data / nh
             retval['imaging_condition'] = ic
 
         return retval
@@ -1750,7 +1751,7 @@ def extended_modeling_test():
     dmtmp = np.reshape(dmtmp, sh_true)
     sh_cut = m1_extend.sh_sub
     dmtmp = dmtmp[0:sh_cut[0], :]
-    dmtmp = np.zeros(dmtmp.shape)
+    dmtmp = np.ones(dmtmp.shape)
     dmtmp[:, 40] = 1.0
     dmtmp = dmtmp.reshape(-1)
     m1_extend.data[:, (m1_extend.sh_data[1]-1)//2] = dmtmp
