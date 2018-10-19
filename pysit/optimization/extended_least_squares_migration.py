@@ -35,7 +35,7 @@ class ExtendLSM(object):
 
         krylov_maxiter = self.krylov_maxiter
 
-        m0 = self.base_model
+        m0 = self.m0
 
         if self.tools.solver.supports['equation_dynamics'] == "time":
             rhs = self.tools.migrate_shots_extend(self.shots, m0, self.simdata,
