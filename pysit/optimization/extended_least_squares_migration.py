@@ -53,7 +53,7 @@ class ExtendLSM(object):
 
         rhs = rhs.data.reshape(-1)
 
-        m1_extend = ExtendedModelingParameter2D(m, max_sub_offset, h)
+        m1_extend = ExtendedModelingParameter2D(m0, max_sub_offset, h)
         if input is not None:
             x0 = input
         else:
