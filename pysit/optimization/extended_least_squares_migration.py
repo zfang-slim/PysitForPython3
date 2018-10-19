@@ -49,7 +49,7 @@ class ExtendLSM(object):
                                                   self.max_sub_offset, self.h,
                                                   return_parameters=['imaging_condition'])
 
-        rhs.data = rhs.data * np.prod(m0.deltas)
+        rhs.data = rhs.data * np.prod(m0.mesh.deltas)
 
         rhs = rhs.data.asarray()
 
