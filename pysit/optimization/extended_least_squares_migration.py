@@ -57,7 +57,7 @@ class ExtendLSM(object):
         if input is not None:
             x0 = input
         else:
-            x0 = m1_extend.data.asarray()
+            x0 = m1_extend.data.reshape(-1)
 
         def matvec(x):
             m1_extend.setter(x0)
