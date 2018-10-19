@@ -94,7 +94,7 @@ class ExtendLSM(object):
                                                          return_parameters=['imaging_condition']
                                                          )
 
-            m1_out.data = m1_out.data * np.prod(m0.deltas)
+            m1_out.data = m1_out.data * np.prod(m0.mesh.deltas)
             return m1_out
 
         A_shape = (len(rhs), len(rhs))
