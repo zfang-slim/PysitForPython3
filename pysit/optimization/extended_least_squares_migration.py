@@ -20,6 +20,7 @@ class ExtendLSM(object):
     def __init__(self, objective, shots, m0, simdata, max_sub_offset, h, imaging_period=None, frequencies=None, krylov_maxiter=20, *args, **kwargs):
         self.tools = objective
         self.m0 = m0
+        self.shots = shots
         self.simdata = simdata
         self.max_sub_offset = max_sub_offset
         self.h = h
