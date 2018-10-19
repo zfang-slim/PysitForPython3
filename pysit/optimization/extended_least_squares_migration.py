@@ -51,7 +51,7 @@ class ExtendLSM(object):
 
         rhs.data = rhs.data * np.prod(m0.mesh.deltas)
 
-        rhs = rhs.data.asarray()
+        rhs = rhs.data.reshape(-1)
 
         m1_extend = ExtendedModelingParameter2D(m, max_sub_offset, h)
         if input is not None:
