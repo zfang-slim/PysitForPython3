@@ -4,9 +4,10 @@ import time
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 from matplotlib import animation
 
-__all__ = ['animate', 'plot']
+__all__ = ['animate', 'plot', 'plot_3d_panel']
 
 def animate(data, mesh, display_rate=30,pause=1, scale=None, show=True, **kwargs):
 
@@ -251,6 +252,135 @@ def plot(data, mesh, shade_pml=False, axis=None, ticks=True, update=None, slice3
         ret = update
 
     return ret
+
+
+def plot_3d_panel(data, axis=None, ticks=False, update=None, slice3d=(0, 0, 0), 
+                  width_ratios=None, height_ratios=None, axis_label=None,
+                  axis_ticks=None, cmap='viridis', vmin=None, vmax=None, **kwargs):
+    """ Assumes that data has no ghost padding."""
+
+    # data.shape = -1, 1
+
+    # sh_bc = mesh.shape(include_bc=True)
+    # sh_primary = mesh.shape()
+
+    # if data.shape == sh_bc:
+    #     has_bc = True
+    #     plot_shape = mesh.shape(include_bc=True, as_grid=True)
+    # elif data.shape == sh_primary:
+    #     has_bc = False
+    #     plot_shape = mesh.shape(as_grid=True)
+    # else:
+    #     raise ValueError('Shape mismatch between domain and data.')
+
+    if axis is None:
+        ax = plt.gca()
+    else:
+        ax = axis
+
+    # data = data.reshape(plot_shape)
+
+    dim = 3
+    if width_ratios is None:
+        width_ratios = [data.shape[0], data.shape[2]]
+
+    if height_ratios is None:
+        height_ratios = [data.shape[2], data.shape[1]]
+
+    if dim == 3:
+
+        if update is None:
+
+            # X-Y plot
+            # f, axarr = plt.subplots(2, 1, gridspec_kw={'wspace': 0, 'hspace': 0}, sharex='col', sharey='row')
+            fig = plt.figure(figsize=(6, 6))
+            fig.tight_layout()
+            # grid = plt.GridSpec(2, 2, hspace=0.0, wspace=0.0)
+            grid = plt.GridSpec(2, 2, hspace=0.0, wspace=0.0, width_ratios=width_ratios, height_ratios=height_ratios)
+            ax1 = fig.add_subplot(grid[1, 0])
+            ax2 = fig.add_subplot(grid[0, 0])  
+            ax3 = fig.add_subplot(grid[1, 1])  
+            ax2.xaxis.set_visible(False)
+            ax3.yaxis.set_visible(False)
+            if axis_label is not None:
+                ax1.set_xlabel(axis_label[0])
+                ax1.set_ylabel(axis_label[1])
+                ax2.set_ylabel(axis_label[2])
+                ax3.set_xlabel(axis_label[2])
+            # for i, ax in enumerate(f.axes): 
+            #     ax.grid('on', linestyle='--')
+            #     ax.set_xticklabels([])
+            #     ax.set_yticklabels([])
+
+            plt.show()
+            # ax = f.axes[1]
+            # ax1 = fig.add_axes([0.1, 0.1, 0.4, 0.7], xticklabels=[])
+            imslice = int(slice3d[2])  # z slice
+            pltdata = data[:, :, imslice:(imslice+1)].squeeze().T
+            imxy = ax1.imshow(pltdata, interpolation='nearest',
+                             aspect="auto", cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
+
+
+            # if ticks:
+            #     mesh_tickers(mesh, ('y', 'x'))
+            # else:
+            #     ax.xaxis.set_ticks([])
+            #     ax.yaxis.set_ticks([])
+
+            # X-Z plot
+            # ax = plt.subplot(2, 2, 2)
+            # ax = f.axes[0]
+            # ax2 = fig.add_axes([0.1, 0.4, 0.4, 0.25], xticklabels=[])
+            imslice = int(slice3d[1])  # y slice
+            pltdata = data[:, imslice:(imslice+1), :].squeeze().T
+            imxz = ax2.imshow(np.flipud(pltdata), interpolation='nearest',
+                              aspect="auto", cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
+
+            # if ticks:
+            #     mesh_tickers(mesh, ('x', 'z'))
+            # else:
+            #     ax.xaxis.set_ticks([])
+            #     ax.yaxis.set_ticks([])
+
+
+            # Y-Z plot
+            # ax = plt.subplot(2, 2, 3)
+            # ax = f.axes[3]
+            imslice = int(slice3d[0])  # x slice
+            pltdata = data[imslice:(imslice+1), :, :].squeeze()
+            imyz = ax3.imshow(pltdata, interpolation='nearest',
+                              aspect="auto", cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
+
+            # if ticks:
+            #     mesh_tickers(mesh, ('y', 'z'))
+            # else:
+            #     ax.xaxis.set_ticks([])
+            #     ax.yaxis.set_ticks([])
+
+            # update = [imxy, imxz, imyz]
+            update = [imxy, imxz, imyz]
+            # plt.sci(imyz)
+
+            plt.subplots_adjust(wspace=0, hspace=0)
+            plt.show()
+            a =1
+        else:
+            imslice = int(slice3d[2])  # z slice
+            pltdata = data[:, :, imslice:(imslice+1)].squeeze()
+            update[0].set_data(pltdata)
+
+            imslice = int(slice3d[1])  # y slice
+            pltdata = data[:, imslice:(imslice+1), :].squeeze().T
+            update[1].set_data(pltdata)
+
+            imslice = int(slice3d[0])  # x slice
+            pltdata = data[imslice:(imslice+1), :, :].squeeze().T
+            update[2].set_data(pltdata)
+
+        ret = update
+
+    return ret
+
 
 def mesh_tickers(mesh, dims=('x','z')):
     ax = plt.gca()

@@ -60,7 +60,7 @@ class ExtendLSM(object):
             x0 = m1_extend.data.reshape(-1)
 
         def matvec(x):
-            m1_extend.setter(x0)
+            m1_extend.setter(x)
             if self.tools.solver.supports['equation_dynamics'] == "time":
                 linfwdret = self.tools.linear_forward_model_extend(self.shots,
                                                                    m0,
@@ -71,22 +71,24 @@ class ExtendLSM(object):
                                                                    )
                 lindatas = linfwdret['simdata']
 
+                for i in range(len(self.shots)):
+                    lindatas[i] = lindatas[i] * self.tools.solver.dt
+
                 m1_out = self.tools.migrate_shots_extend(self.shots, m0, lindatas,
                                                          self.max_sub_offset, self.h,
                                                          self.imaging_period
                                                          )
             else:
-                linfwdret = tools.linear_forward_model_extend(self.shots,
-                                                              m0,
-                                                              m1_extend,
-                                                              self.frequencies,
-                                                              self.max_sub_offset,
-                                                              self.h,
-                                                              ['simdata']
-                                                              )
+                linfwdret = self.tools.linear_forward_model_extend(self.shots,
+                                                                   m0,
+                                                                   m1_extend,
+                                                                   self.frequencies,
+                                                                   self.max_sub_offset,
+                                                                   self.h,
+                                                                   ['simdata']
+                                                                   )
                 lindatas = linfwdret['simdata']
-                for i in range(len(shots)):
-                    lindatas[i] = lindatas[i] * self.tool.solver.dt
+                
 
                 m1_out = self.tools.migrate_shots_extend(self.shots, m0, lindatas,
                                                          self.frequencies,
@@ -95,16 +97,19 @@ class ExtendLSM(object):
                                                          )
 
             m1_out.data = m1_out.data * np.prod(m0.mesh.deltas)
-            return m1_out
+            return np.reshape(m1_out.data, (np.prod(m1_out.sh_data), 1)) 
 
         A_shape = (len(rhs), len(rhs))
 
         A = LinearOperator(shape=A_shape, matvec=matvec, dtype=rhs.dtype)
 
         resid = []
+        rhs = np.reshape(rhs,(len(rhs),1))
+        x0 = np.reshape(x0,(len(x0),1))
+
 
 #       d, info = cg(A, rhs, maxiter=self.krylov_maxiter, residuals=resid)
-        x_out, info = gmres(A, rhs, maxiter=self.krylov_maxiter, residuals=resid)
+        x_out, info = cg(A, rhs, x0=x0, maxiter=self.krylov_maxiter, residuals=resid)
         m1_extend.setter(x_out)
         self.m_out = m1_extend
 

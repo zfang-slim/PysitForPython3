@@ -53,13 +53,13 @@ if __name__ == '__main__':
                                    )
 
     # Define and configure the wave solver
-    trange = (0.0, 3.0)
+    trange = (0.0, 2.5)
 
     solver = ConstantDensityHelmholtz(m,
                                       spatial_accuracy_order=4)
 
     solver_time = ConstantDensityAcousticWave(m,
-                                              spatial_accuracy_order=6,
+                                              spatial_accuracy_order=4,
                                               kernel_implementation='omp',
                                               trange=trange)
 
@@ -88,15 +88,15 @@ if __name__ == '__main__':
     dmtmp = np.reshape(dmtmp, sh_true)
     sh_cut = m1_extend.sh_sub
     dmtmp = dmtmp[0:sh_cut[0], :]
-    dmtmp = np.ones(dmtmp.shape)
+    dmtmp = np.zeros(dmtmp.shape)
     dmtmp[:, 40] = 1.0
     dmtmp = dmtmp.reshape(-1)
     m1_extend.data[:, (m1_extend.sh_data[1]-1)//2] = dmtmp
 
     m1 = m0.perturbation()
 #   m1 += M
-    dmtmp = d_m.data
-    dmtmp[np.where(dmtmp <= 2)] = 0
+    # dmtmp = d_m.data
+    # dmtmp[np.where(dmtmp <= 2)] = 0
 
     linfwdret = tools.linear_forward_model_extend(shots, m0, m1_extend,
                                                   max_sub_offset, h, ['simdata'])
@@ -108,5 +108,20 @@ if __name__ == '__main__':
 
     # GenerateDataObj.linear_forward_model(shots[0], m0, m1, frequencies, ['simdata'])
     print('Linearized data is generated')
+
+    A = np.reshape(x_out.data,(49,71,41))
+    plt.figure()
+    plt.imshow(A[25, :, :], interpolation='nearest', aspect='auto')
+
+    # import pickle
+    # file_pi = open('ELSM_Result.obj', 'wb')
+    # pickle.dump(x_out, file_pi)
+    # file_pi.close()
+
+    # import pickle
+    # filehandler = open(filename, 'rb')
+    # object = pickle.load(filehandler)
+
+
 
     a = 1

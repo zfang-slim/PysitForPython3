@@ -70,7 +70,8 @@ if __name__ == '__main__':
         objective = FrequencyLeastSquares(solver)
 
     # Define the inversion algorithm
-    invalg = LBFGS(objective)
+    # invalg = LBFGS(objective)
+    invalg = GaussNewton(objective)
     initial_value = solver.ModelParameters(m,{'C': C0})
 
     # Execute inversion algorithm
