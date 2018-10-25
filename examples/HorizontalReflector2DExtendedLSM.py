@@ -3,6 +3,8 @@ import time
 import os
 
 import numpy as np
+import matplotlib as mpl
+mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 import copy
 
@@ -113,10 +115,14 @@ if __name__ == '__main__':
     plt.figure()
     plt.imshow(A[25, :, :], interpolation='nearest', aspect='auto')
 
-    # import pickle
-    # file_pi = open('ELSM_Result.obj', 'wb')
-    # pickle.dump(x_out, file_pi)
-    # file_pi.close()
+    import pickle
+    file_pi = open('ELSM_Result.obj', 'wb')
+    pickle.dump(x_out, file_pi)
+    file_pi.close()
+
+    file_pi = open('ELSM_TrueModel.obj', 'wb')
+    pickle.dump(m1_extend, file_pi)
+    file_pi.close()
 
     # import pickle
     # filehandler = open(filename, 'rb')
