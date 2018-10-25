@@ -17,16 +17,27 @@ if __name__ == '__main__':
     os.environ["OMP_NUM_THREADS"] = "16"
     
     
-    file_pi = open('ELSM_True.obj', 'rb')
-    x_out = pickle.load(file_pi)
-    file_pi.close()
+    # file_pi = open('ELSM_True.obj', 'rb')
+    # x_out = pickle.load(file_pi)
+    # file_pi.close()
+
+    axis_ticks = [[0, 10, 20, 30], [0,15,30,45,60], [0, 20, 40]]
+    axis_tickslabels = [[0, 100, 200, 300],
+                        [0, 150, 300, 450, 600],
+                        [-100, 0, 100]]
 
     plt.figure()
-    B = x_out.data
-    B = np.reshape(B, (x_out.sh_sub[0], x_out.sh_sub[1], B.shape[1]))
+    # B = x_out.data
+    # B = np.reshape(B, (x_out.sh_sub[0], x_out.sh_sub[1], B.shape[1]))
+    B = np.ones((45,71,41))*0.5
+    B[:,0:30,:] = 0.0
+    line_location = [22, 30, 10]
     vis.plot_3d_panel(B, slice3d=(20, 40, 20), width_ratios=[71, 21], height_ratios=[21, 71], cmap='gray', vmin=-1.0, vmax=1.0,
-                      axis_label=['x [m]', 'z [m]', 'h [m]'])
-    plt.show()
+                      axis_label=['x [m]', 'z [m]', 'h [m]'],
+                      axis_ticks=axis_ticks,
+                      axis_tickslabels=axis_tickslabels,
+                      line_location=line_location)
+    # plt.show()
     plt.savefig("D.png")
 
     a =1

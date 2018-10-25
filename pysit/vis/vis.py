@@ -256,7 +256,8 @@ def plot(data, mesh, shade_pml=False, axis=None, ticks=True, update=None, slice3
 
 def plot_3d_panel(data, axis=None, ticks=False, update=None, slice3d=(0, 0, 0), 
                   width_ratios=None, height_ratios=None, axis_label=None,
-                  axis_ticks=None, cmap='viridis', vmin=None, vmax=None, **kwargs):
+                  axis_ticks=None, axis_tickslabels=None, cmap='viridis', 
+                  vmin=None, vmax=None, line_location=None, **kwargs):
     """ Assumes that data has no ghost padding."""
 
     # data.shape = -1, 1
@@ -300,25 +301,48 @@ def plot_3d_panel(data, axis=None, ticks=False, update=None, slice3d=(0, 0, 0),
             ax1 = fig.add_subplot(grid[1, 0])
             ax2 = fig.add_subplot(grid[0, 0])  
             ax3 = fig.add_subplot(grid[1, 1])  
-            ax2.xaxis.set_visible(False)
-            ax3.yaxis.set_visible(False)
+            # ax2.xaxis.set_visible(False)
+            # ax3.yaxis.set_visible(False)
+            ax2.xaxis.tick_top()
+            ax3.yaxis.tick_right()
             if axis_label is not None:
                 ax1.set_xlabel(axis_label[0])
                 ax1.set_ylabel(axis_label[1])
                 ax2.set_ylabel(axis_label[2])
                 ax3.set_xlabel(axis_label[2])
+            if axis_ticks is not None:
+                ax1.set_xticks(axis_ticks[0])
+                ax1.set_yticks(axis_ticks[1])
+                ax2.set_xticks(axis_ticks[0])
+                ax2.set_yticks(axis_ticks[2])
+                ax3.set_xticks(axis_ticks[2])
+                ax3.set_yticks(axis_ticks[1])
+
+                ax1.set_xticklabels(axis_tickslabels[0])
+                ax1.set_yticklabels(axis_tickslabels[1])
+                ax2.set_xticklabels(axis_tickslabels[0])
+                ax2.set_yticklabels(axis_tickslabels[2])
+                ax3.set_xticklabels(axis_tickslabels[2])
+                ax3.set_yticklabels(axis_tickslabels[1])
             # for i, ax in enumerate(f.axes): 
             #     ax.grid('on', linestyle='--')
             #     ax.set_xticklabels([])
             #     ax.set_yticklabels([])
 
-            plt.show()
+            # plt.show()
             # ax = f.axes[1]
             # ax1 = fig.add_axes([0.1, 0.1, 0.4, 0.7], xticklabels=[])
             imslice = int(slice3d[2])  # z slice
             pltdata = data[:, :, imslice:(imslice+1)].squeeze().T
             imxy = ax1.imshow(pltdata, interpolation='nearest',
                              aspect="auto", cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
+            if line_location is not None:
+                y = range(0, pltdata.shape[0])
+                x = np.ones(pltdata.shape[0]) * line_location[0]
+                ax1.plot(x,y,'r')
+                x = range(0, pltdata.shape[1])
+                y = np.ones(pltdata.shape[1]) * line_location[1]
+                ax1.plot(x,y,'r')
 
 
             # if ticks:
@@ -333,8 +357,16 @@ def plot_3d_panel(data, axis=None, ticks=False, update=None, slice3d=(0, 0, 0),
             # ax2 = fig.add_axes([0.1, 0.4, 0.4, 0.25], xticklabels=[])
             imslice = int(slice3d[1])  # y slice
             pltdata = data[:, imslice:(imslice+1), :].squeeze().T
-            imxz = ax2.imshow(np.flipud(pltdata), interpolation='nearest',
-                              aspect="auto", cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
+            imxz = ax2.imshow(pltdata, interpolation='nearest',
+                              aspect="auto", origin='lower', cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
+
+            if line_location is not None:
+                y = range(0, pltdata.shape[0])
+                x = np.ones(pltdata.shape[0]) * line_location[0]
+                ax2.plot(x,y,'r')
+                x = range(0, pltdata.shape[1])
+                y = np.ones(pltdata.shape[1]) * line_location[2]
+                ax2.plot(x,y,'r')
 
             # if ticks:
             #     mesh_tickers(mesh, ('x', 'z'))
@@ -351,6 +383,13 @@ def plot_3d_panel(data, axis=None, ticks=False, update=None, slice3d=(0, 0, 0),
             imyz = ax3.imshow(pltdata, interpolation='nearest',
                               aspect="auto", cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
 
+            if line_location is not None:
+                y = range(0, pltdata.shape[0])
+                x = np.ones(pltdata.shape[0]) * line_location[2]
+                ax3.plot(x,y,'r')
+                x = range(0, pltdata.shape[1])
+                y = np.ones(pltdata.shape[1]) * line_location[1]
+                ax3.plot(x,y,'r')
             # if ticks:
             #     mesh_tickers(mesh, ('y', 'z'))
             # else:
@@ -362,7 +401,7 @@ def plot_3d_panel(data, axis=None, ticks=False, update=None, slice3d=(0, 0, 0),
             # plt.sci(imyz)
 
             plt.subplots_adjust(wspace=0, hspace=0)
-            plt.show()
+            # plt.show()
             a =1
         else:
             imslice = int(slice3d[2])  # z slice
