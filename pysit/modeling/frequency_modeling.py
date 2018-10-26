@@ -815,7 +815,7 @@ class FrequencyModeling(object):
         if 'imaging_condition' in return_parameters:
             kwargs = {'dtype': 'complex'}
             Ic = ExtendedModelingParameter2D(mesh, max_sub_offset, h, **kwargs)
-            Ic_data_tmp = np.zeros(Ic.sh_data)
+            Ic_data_tmp = np.zeros(Ic.sh_data, dtype='complex')
 
             if frequency_weights is None:
                 frequency_weights = itertools.repeat(1.0)
@@ -931,7 +931,7 @@ class FrequencyModeling(object):
 
         # for i in range(len(Ic)):
         #     Ic[i] = Ic[i].without_padding()
-        Ic.data = np.real(Ic.data)
+        # Ic.data = np.real(Ic.data)
 
         # If the imaging component needs to be computed, do it
         if 'imaging_condition' in return_parameters:
@@ -982,6 +982,7 @@ class FrequencyModeling(object):
 
         # added the padding_mode by Zhilong, still needs to discuss which padding mode to use
         m1_padded = m1.with_padding(padding_mode='edge')
+        # m1_padded = m1.with_padding(padding_mode=None)
 
         # Storage for the field
         u1hats = dict()
@@ -1115,7 +1116,7 @@ class FrequencyModeling(object):
         if 'wavefield1' in return_parameters:
             U1hats = dict()
 
-        if DWaveOp0 is None:
+        if DWaveOp0In is None:
             solver_data_u0 = solver.SolverData()
 
         solver_data = solver.SolverData()
@@ -1667,8 +1668,7 @@ def adjoint_test_rho():
 
     print("data space: ", temp_data_prod.squeeze())
     print("model space: ", np.dot(v.T, np.conj(adjmodel)).squeeze()*np.prod(m.deltas))
-    print("their diff: ", np.dot(v.T, np.conj(adjmodel)).squeeze()
-          * np.prod(m.deltas) - temp_data_prod.squeeze())
+    print("their diff: ", np.dot(v.T, np.conj(adjmodel)).squeeze() * np.prod(m.deltas) - temp_data_prod.squeeze())
 
 
 def adjoint_test():
@@ -1693,7 +1693,9 @@ def adjoint_test():
 
     #   Generate true wave speed
     #   (M = C^-2 - C0^-2)
-    C0, C = horizontal_reflector(m)
+    # C0, C       = horizontal_reflector(m)
+    C0, C, m, d = horizontal_reflector(m)
+
 
     # Set up shots
     Nshots = 1
@@ -1747,8 +1749,12 @@ def adjoint_test():
     m1 = m0.perturbation()
 #   m1 += M
     m1 += np.random.rand(*m1.data.shape)
+    # m1 += np.ones(m1.data.shape)
+    
+    
 
-    freqs = [10.0, 10.5, 10.123334145252]
+    # freqs = [10.0, 10.5, 10.123334145252]
+    freqs = [10.0]
 #   freqs = np.linspace(3,20,20)
 
     fwdret = tools.forward_model(shot, m0, freqs, ['wavefield', 'dWaveOp', 'simdata'])
@@ -1839,6 +1845,8 @@ def extended_modeling_test():
     # if __name__ == '__main__':
     #   from pysit import *
     import numpy as np
+    import matplotlib as mpl
+    mpl.use('TkAgg')
     import matplotlib.pyplot as plt
 
     from pysit import PML, Dirichlet, RectangularDomain, CartesianMesh, PointSource, ReceiverSet, Shot, ConstantDensityAcousticWave, ConstantDensityHelmholtz, generate_seismic_data, PointReceiver, RickerWavelet
@@ -1853,7 +1861,7 @@ def extended_modeling_test():
 
     d = RectangularDomain(x_config, z_config)
 
-    m = CartesianMesh(d, 90, 70)
+    m = CartesianMesh(d, 91, 71)
 
     #   Generate true wave speed
     #   (M = C^-2 - C0^-2)
@@ -1909,7 +1917,27 @@ def extended_modeling_test():
                                                 spatial_accuracy_order=4)
     tools = FrequencyModeling(solver_frequency)
     m0 = solver_frequency.ModelParameters(m, {'C': C0})
-    m1_extend.setter(np.random.rand(m1_extend.sh_data[0], m1_extend.sh_data[1]))
+    # m1_extend.setter(np.random.rand(m1_extend.sh_data[0], m1_extend.sh_data[1]))
+    m1_extend.setter(np.zeros(m1_extend.sh_data))
+    d_m = solver.ModelParameters(m, {'C': C})
+    m1 = m0.perturbation()
+    dmtmp = d_m.data
+    dmtmp[np.where(dmtmp <= 2)] = 0
+    sh_true = m1.mesh._shapes[(False, True)]
+    dmtmp = np.reshape(dmtmp, sh_true)
+    sh_cut = m1_extend.sh_sub
+    dmtmp = dmtmp[0:sh_cut[0], :]
+    dmtmp = np.ones(dmtmp.shape)
+    dmtmp[:, 40] = 1.0
+    dmtmp = dmtmp.reshape(-1)
+    m1_extend.data[:, (m1_extend.sh_data[1]-1)//2] = dmtmp
+
+    freqs = [10.0]
+
+    fwdret = tools.forward_model_list(shots, m0, freqs, ['simdata'])
+    datas = fwdret['simdata']
+    # datas=[]
+    # datas.append(data)
 
 #     np.random.seed(0)
 #
@@ -1917,18 +1945,70 @@ def extended_modeling_test():
 # #   m1 += M
 #     m1 += np.random.rand(*m1.data.shape)
 
-    freqs = [10.0, 12.0]
+    
 #   freqs = np.linspace(3,20,20)
-    linfwdret = tools.linear_forward_model_extend(
-        shots, m0, m1_extend, freqs, max_sub_offset, h, ['simdata'])
+    linfwdret = tools.linear_forward_model_extend(shots, m0, m1_extend, freqs, max_sub_offset, h, ['simdata'])
     lindatas = linfwdret['simdata']
     # lindatas = []
     # lindatas.append(lindata)
 
-    Ic = tools.migrate_shots_extend(shots, m0, lindatas,
+    m1 = m0.perturbation()
+#   m1 += M
+    # m1 += np.random.rand(*m1.data.shape)
+
+    Ic = tools.migrate_shots_extend(shots, m0, datas,
                                    freqs, max_sub_offset, h,
                                    return_parameters=['imaging_condition']
                                    )
+
+    
+
+    # linfwdret2 = tools.linear_forward_model_extend(shots, m0, Ic, freqs, max_sub_offset, h, ['simdata'])
+
+    # lindatas2 = linfwdret2['simdata']
+
+    # Ic2 = tools.migrate_shots_extend(shots, m0, lindatas2,
+    #                                  freqs, max_sub_offset, h,
+    #                                  return_parameters=['imaging_condition']
+    #                                  )
+
+    a = 0.0
+    for i in range(len(shots)):
+        for key in lindatas[i]:
+            a += np.dot(np.conj(lindatas[i][key]).reshape(-1), datas[i][key].reshape(-1))
+
+    print(['Data inner product =', a])
+
+    Ic_data1 = m1_extend.data.reshape(-1)
+    Ic_data2 = Ic.data.reshape(-1)
+
+    b = np.dot(np.conj(Ic_data1), Ic_data2).squeeze()*np.prod(m.deltas)
+
+    print(['Model inner produc =', b])
+
+    # m1 += np.ones(m1.data.shape)
+    # linfwdret = tools.linear_forward_model(shot, m0, m1, freqs, ['simdata', 'wavefield1'])
+    # lindatas_no1 = linfwdret['simdata']
+    # c = np.dot(np.conj(lindatas_no1[key]).reshape(-1),lindatas_no1[key].reshape(-1))
+
+
+    # adjret = tools.migrate_shot(shots[0], m0, lindatas_no1, freqs)
+
+    # linfwdret = tools.linear_forward_model(shot, m0, adjret, freqs, ['simdata', 'wavefield1'])
+    # lindatas_no2 = linfwdret['simdata']
+
+    # adjret2 = tools.migrate_shot(shots[0], m0, lindatas_no2, freqs)
+
+    
+
+
+
+
+
+    a = 1
+
+
+
 
 
 #     fwdret = tools.forward_model(shot, m0, freqs, ['wavefield', 'dWaveOp', 'simdata'])
@@ -1969,9 +2049,9 @@ def extended_modeling_test():
 if __name__ == '__main__':
     print("testing extended modeling")
     extended_modeling_test()
-    # print("testing constant density")
-    # adjoint_test()
-    # print("testing pertubation of rho:")
-    # adjoint_test_rho()
-    # print("testing pertubation of kappa:")
-    # adjoint_test_kappa()
+    print("testing constant density")
+    adjoint_test()
+    print("testing pertubation of rho:")
+    adjoint_test_rho()
+    print("testing pertubation of kappa:")
+    adjoint_test_kappa()

@@ -1667,7 +1667,7 @@ def adjoint_test():
         qhat += qs[k]*(np.exp(-1j*2.0*np.pi*10.0*t)*dt)
 
 
-def extended_modeling_test():
+def extended_modeling_adjoint_test():
     # if __name__ == '__main__':
     #   from pysit import *
     import numpy as np
@@ -1805,11 +1805,9 @@ def extended_modeling_test():
     # print(np.dot(m1.T, adjmodel).squeeze()*np.prod(m.deltas)-np.sum(data*lindata)*solver.dt)
 
 
-    a = 1
-
 if __name__ == '__main__':
     print("Extended modeling test:")
-    extended_modeling_test()
+    extended_modeling_adjoint_test()
     print("Constant density solver adjoint test:")
     adjoint_test()
     print("testing pertubation of rho:")

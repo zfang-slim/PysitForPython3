@@ -1,5 +1,6 @@
 import itertools
 import scipy.sparse as spsp
+import copy as copy
 
 import numpy as np
 
@@ -897,21 +898,28 @@ class ExtendedModelingParameter2D(object):
 
         # Set extended subsurface offset and the corresponding grids number
         tmp = int(max_sub_offset / hx)
-        n_bc_extra = tmp + 1
+        n_bc_extra = tmp 
         n_h_extend = 2*tmp + 1
         h_extend = range(-tmp, tmp+1, 1)
         dof_sub = nz * (nx - 2*n_bc_extra)
         # sh_sub = (nz, nx-2*n_bc_extra)
-        sh_sub = (nx-2*n_bc_extra, nz)
+        sh_sub = [nx-2*n_bc_extra, nz]
 
         self.dtype = np.double
         if 'dtype' in kwargs:
             self.dtype = kwargs['dtype']
 
         self.data = np.zeros((dof_sub, n_h_extend), dtype=self.dtype)
-        self.sh_data = (dof_sub, n_h_extend)
+        self.sh_data = [dof_sub, n_h_extend]
         self.sh_sub = sh_sub
         self.dof_sub = dof_sub
+        full_sh_data = copy.deepcopy(sh_sub)
+        full_sh_data.append(n_h_extend)
+        self.full_sh_data = full_sh_data
+        self.hx = hx
+        self.max_sub_offset = max_sub_offset
+        self.deltas = [mesh.x.delta, mesh.z.delta, hx]
+        self.origins = [n_bc_extra*mesh.x.delta, 0.0, -max_sub_offset]
 
         if vec_input is not None:
             self.data = np.reshape(vec_input, (dof_sub, n_h_extend))
