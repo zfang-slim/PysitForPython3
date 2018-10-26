@@ -1159,6 +1159,7 @@ class FrequencyModeling(object):
                 if 'dWaveOp0' in return_parameters:
                     DWaveOp0ret[i][nu] = dWaveOp0_nu
 
+                rhslin.data = 0.0
                 for ih in range(0, nh):
                     m1_ih = m1_extend.data[:, ih]
                     m1_ih = m1_ih.reshape((m1_ih.size, 1))
@@ -1949,6 +1950,15 @@ def extended_modeling_test():
 #   freqs = np.linspace(3,20,20)
     linfwdret = tools.linear_forward_model_extend(shots, m0, m1_extend, freqs, max_sub_offset, h, ['simdata'])
     lindatas = linfwdret['simdata']
+
+    lindatas2 = []
+    for i in range(len(shots)):
+        print(i)
+        shot_i= [shots[i]]
+        linfwdret = tools.linear_forward_model_extend(shot_i, m0, m1_extend, freqs, max_sub_offset, h, ['simdata'])
+        lindatas2.append(linfwdret['simdata'][0])
+
+
     # lindatas = []
     # lindatas.append(lindata)
 
