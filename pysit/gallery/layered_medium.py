@@ -260,21 +260,57 @@ def layered_medium( layers=water_layered_rock, **kwargs):
 
     return LayeredMediumModel(layers, **model_config).get_setup()
 
-#if __name__ == '__main__':
-#
-##  ASD = LayeredMediumModel(water_layered_rock)
-##  ASD = LayeredMediumModel(water_layered_rock, initial_model_style='smooth', initial_config={'sigma':100, 'filtersize':150})
-##  ASD = LayeredMediumModel(water_layered_rock, initial_model_style='gradient')
-##  ASD = LayeredMediumModel(water_layered_rock, initial_model_style='constant', initial_config={'velocity':3000})
-##  ASD = LayeredMediumModel(water_layered_rock, x_length=2000.0, y_length=1000.0)
-#
+def three_layered_medium(vels=(1.5, 2.5, 3.5), dx=0.01, dz=0.01, 
+                         nx=361, nz=121, nbx=10, nbz=10, 
+                         initial_model_style = 'smooth',
+                         initial_config={'sigma': 1.0, 'filtersize': 8},
+                         saveModel=False, ModelFileName=None):
+
+    n_layer1 = nz // 3
+    n_layer2 = nz // 3
+    n_layer3 = nz - n_layer1 - n_layer2
+
+    n_layer1 = n_layer1 + nbz
+    n_layer3 = n_layer3 + nbz
+
+    nxt = nx + 2*nbx
+    nzt = nz + 2*nbz
+
+    Layer1   = Layer(vels[0], n_layer1*dz, 'Layer1', fixed=False)
+    Layer2   = Layer(vels[1], n_layer2*dz, 'Layer2', fixed=False)
+    Layer3   = Layer(vels[2], (n_layer3-1)*dz, 'Layer3', fixed=False)
+
+    Layerall = [Layer1] + [Layer2] + [Layer3]
+
+    model_config = dict(z_delta=dz,
+                        x_length=dx*(nxt-1), x_delta=dx,
+                        initial_model_style=initial_model_style,
+                        initial_config=initial_config)
+    
+
+    C, C0, m, d = LayeredMediumModel(Layerall, **model_config).get_setup()
+
+    return C, C0, m, d
+
+
+if __name__ == '__main__':
+
+#  ASD = LayeredMediumModel(water_layered_rock)
+#  ASD = LayeredMediumModel(water_layered_rock, initial_model_style='smooth', initial_config={'sigma':100, 'filtersize':150})
+#  ASD = LayeredMediumModel(water_layered_rock, initial_model_style='gradient')
+#  ASD = LayeredMediumModel(water_layered_rock, initial_model_style='constant', initial_config={'velocity':3000})
+#  ASD = LayeredMediumModel(water_layered_rock, x_length=2000.0, y_length=1000.0)
+
 #   C, C0, m, d = layered_medium(x_length=2000)
-#
-#   import matplotlib.pyplot as plt
-#
-#   fig = plt.figure()
-#   fig.add_subplot(2,1,1)
-#   vis.plot(C, m)
-#   fig.add_subplot(2,1,2)
-#   vis.plot(C0, m)
-#   plt.show()
+
+  C, C0, m, d = three_layered_medium()
+  print(np.max(C-C0))
+
+  import matplotlib.pyplot as plt
+
+  fig = plt.figure()
+  fig.add_subplot(2,1,1)
+  vis.plot(C, m)
+  fig.add_subplot(2,1,2)
+  vis.plot(C0, m)
+  plt.show()
