@@ -270,11 +270,11 @@ def three_layered_medium(vels=(1.5, 2.5, 3.5), dx=0.01, dz=0.01,
     n_layer2 = nz // 3
     n_layer3 = nz - n_layer1 - n_layer2
 
-    n_layer1 = n_layer1 + nbz
-    n_layer3 = n_layer3 + nbz
+    n_layer1 = n_layer1 # + nbz
+    n_layer3 = n_layer3 # + nbz
 
-    nxt = nx + 2*nbx
-    nzt = nz + 2*nbz
+    nxt = nx # + 2*nbx
+    nzt = nz # + 2*nbz
 
     Layer1   = Layer(vels[0], n_layer1*dz, 'Layer1', fixed=False)
     Layer2   = Layer(vels[1], n_layer2*dz, 'Layer2', fixed=False)
