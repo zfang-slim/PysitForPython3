@@ -72,7 +72,7 @@ class ReceiverBase(object):
         raise NotImplementedError('\'compute_data_dft\' method must be implemented by subclass.')
 
 
-    def interpolate_data(self, ts):
+    def interpolate_data(self, ts, changedata=False):
         """Interpolates the stored measured data to a new time series.
 
         Parameters
@@ -98,7 +98,11 @@ class ReceiverBase(object):
 #           if self._directwave_muting[0] != 'None':
 #               d *= self.directwave_mute(ts)
 
-            return d
+            if changedata is False:
+                return d
+            else:
+                self.data = d 
+                self.ts = ts
 
 
         else:

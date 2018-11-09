@@ -18,7 +18,7 @@ __all__ = ['generate_seismic_data', 'generate_seismic_data_from_file',
 __docformat__ = "restructuredtext en"
 
 
-def generate_seismic_data(shots, solver, model, verbose=False, frequencies=None, save_method=None, **kwargs):
+def generate_seismic_data(shots, solver, model, ts=None, verbose=False, frequencies=None, save_method=None, **kwargs):
     """Given a list of shots and a solver, generates seismic data.
 
     Parameters
@@ -43,6 +43,10 @@ def generate_seismic_data(shots, solver, model, verbose=False, frequencies=None,
     if solver.supports['equation_dynamics'] == "time":
         for shot in shots:
             generate_shot_data_time(shot, solver, model, verbose=verbose, **kwargs)
+            if ts is not None:
+                # shot.receivers.reset_time_series(ts)
+                shot.receivers.interpolate_data(ts, changedata=True)
+
     elif solver.supports['equation_dynamics'] == "frequency":
         if frequencies is None:
             raise TypeError('A frequency solver is passed, but no frequencies are given')
@@ -54,6 +58,7 @@ def generate_seismic_data(shots, solver, model, verbose=False, frequencies=None,
             for shot in shots:
                 generate_shot_data_frequency(
                     shot, solver, model, frequencies, verbose=verbose, **kwargs)
+
     else:
         raise TypeError("A time or frequency solver must be specified.")
 
