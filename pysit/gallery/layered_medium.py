@@ -14,6 +14,8 @@ from pysit.util.image_processing import blur_image
 from pysit.gallery.gallery_base import GeneratedGalleryModel
 
 from pysit import * #PML, Domain
+from pysit.core.domain import PML
+from pysit.util.io import write_data
 
 
 __all__ = ['LayeredMediumModel', 'layered_medium', 'Layer']
@@ -53,7 +55,7 @@ class LayeredMediumModel(GeneratedGalleryModel):
 
     @property
     def z_length(self):
-        return float(sum([L.thickness for L in self.layers]))
+        return round(float(sum([L.thickness for L in self.layers])),5)
 
     def __init__(self, layers,
                        z_delta=None,
@@ -138,7 +140,7 @@ class LayeredMediumModel(GeneratedGalleryModel):
         else:
             z_delta = self.min_z_delta
 
-        z_points = math.ceil(z_length/z_delta)
+        z_points = math.ceil((z_length+0.0000001)/z_delta)
 
         # Set defualt z boundary conditions
         z_lbc = kwargs['z_lbc'] if ('z_lbc' in list(kwargs.keys())) else PML(0.1*z_length, 100.0)
@@ -151,7 +153,7 @@ class LayeredMediumModel(GeneratedGalleryModel):
         if x_length is not None:
             if x_delta is None:
                 x_delta = z_delta
-            x_points = math.ceil(float(x_length)/x_delta)
+            x_points = math.ceil(float(x_length+0.00000001)/x_delta)
 
             # Set defualt x boundary conditions
             x_lbc = kwargs['x_lbc'] if ('x_lbc' in list(kwargs.keys())) else PML(0.1*x_length, 100.0)
@@ -264,7 +266,8 @@ def three_layered_medium(vels=(1.5, 2.5, 3.5), dx=0.01, dz=0.01,
                          nx=361, nz=121, nbx=10, nbz=10, 
                          initial_model_style = 'smooth',
                          initial_config={'sigma': 1.0, 'filtersize': 8},
-                         saveModel=False, ModelFileName=None):
+                         TrueModelFileName=None, InitialModelFileName=None, 
+                         **kwargs):
 
     n_layer1 = nz // 3
     n_layer2 = nz // 3
@@ -282,13 +285,35 @@ def three_layered_medium(vels=(1.5, 2.5, 3.5), dx=0.01, dz=0.01,
 
     Layerall = [Layer1] + [Layer2] + [Layer3]
 
+    kwargs['x_lbc'] = PML(0.1, 100)
+    kwargs['x_rbc'] = PML(0.1, 100)
+    kwargs['z_lbc'] = PML(0.1, 100)
+    kwargs['z_rbc'] = PML(0.1, 100)
+
     model_config = dict(z_delta=dz,
                         x_length=dx*(nxt-1), x_delta=dx,
                         initial_model_style=initial_model_style,
-                        initial_config=initial_config)
+                        initial_config=initial_config, **kwargs)
     
 
     C, C0, m, d = LayeredMediumModel(Layerall, **model_config).get_setup()
+
+    if TrueModelFileName is not None:
+        ot = (0,0)
+        dt = (dz, dx)
+        nt = m._shapes[(False, True)]
+        B  = C.reshape(nt).transpose()
+        nt = (nt[1], nt[0])
+        write_data(TrueModelFileName, B, ot, dt, nt)
+
+    if InitialModelFileName is not None:
+        ot = (0,0)
+        dt = (dz, dx)
+        nt = m._shapes[(False, True)]
+        B  = C0.reshape(nt).transpose()
+        nt = (nt[1], nt[0])
+        write_data(InitialModelFileName, B, ot, dt, nt)
+
 
     return C, C0, m, d
 
@@ -303,8 +328,8 @@ if __name__ == '__main__':
 
 #   C, C0, m, d = layered_medium(x_length=2000)
 
-  C, C0, m, d = three_layered_medium()
-  print(np.max(C-C0))
+  C, C0, m, d = three_layered_medium(TrueModelFileName='testtrue.mat',InitialModelFileName='testInitial.mat')
+#   print(np.max(C-C0))
 
   import matplotlib.pyplot as plt
 
