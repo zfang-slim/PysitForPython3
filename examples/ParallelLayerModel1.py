@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import os
-from shutil import copyfile
+from shutil import copy2
 
 import sys
 
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     # Setup
 
     RootDir = '/Users/fangzl/Data/Result'
-    # RootDir = '/wavedata/Zhilong/ExxonProject/LayerModel/Result'
+    # RootDir = '/wavedata/Zhilong/ExxonProject/LayerModel/Data'
     SubDir = '/Layer_FWI1'
 
     ExpDir = RootDir + SubDir
@@ -32,7 +32,7 @@ if __name__ == '__main__':
         print("Dirctory ", ExpDir, " Created")
 
     currentfile = os.path.basename(__file__)
-    copyfile(currentfile, ExpDir + "/" + currentfile)
+    copy2(currentfile, ExpDir)
 
     comm = MPI.COMM_WORLD
 #   comm = MPI.COMM_SELF

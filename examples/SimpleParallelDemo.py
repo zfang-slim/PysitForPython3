@@ -22,7 +22,7 @@ if __name__ == '__main__':
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    pwrap = ParallelWrapShot(comm=MPI.COMM_WORLD)
+    pwrap = ParallelWrapShot()
 
     if rank == 0:
         ttt = time.time()

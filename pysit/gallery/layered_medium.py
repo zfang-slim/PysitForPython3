@@ -16,6 +16,7 @@ from pysit.gallery.gallery_base import GeneratedGalleryModel
 from pysit import * #PML, Domain
 from pysit.core.domain import PML
 from pysit.util.io import write_data
+from pysit.util.io import *
 
 
 __all__ = ['LayeredMediumModel', 'layered_medium',
@@ -286,10 +287,10 @@ def three_layered_medium(vels=(1.5, 2.5, 3.5), dx=0.01, dz=0.01,
 
     Layerall = [Layer1] + [Layer2] + [Layer3]
 
-    kwargs['x_lbc'] = PML(0.1, 100)
-    kwargs['x_rbc'] = PML(0.1, 100)
-    kwargs['z_lbc'] = PML(0.1, 100)
-    kwargs['z_rbc'] = PML(0.1, 100)
+    x_lbc = kwargs['x_lbc'] if ('x_lbc' in kwargs) else PML(0.1, 100)
+    x_rbc = kwargs['x_rbc'] if ('x_rbc' in kwargs) else PML(0.1, 100)
+    z_lbc = kwargs['z_lbc'] if ('z_lbc' in kwargs) else PML(0.1, 100)
+    z_rbc = kwargs['z_rbc'] if ('z_rbc' in kwargs) else PML(0.1, 100)
 
     model_config = dict(z_delta=dz,
                         x_length=dx*(nxt-1), x_delta=dx,
@@ -317,6 +318,46 @@ def three_layered_medium(vels=(1.5, 2.5, 3.5), dx=0.01, dz=0.01,
 
 
     return C, C0, m, d
+
+
+def set_model_from_file(Modelfile, 
+                        initial_config={'sigma': 1.0, 'filtersize': 8},
+                        initial_model_style='smooth',
+                        **kwargs):
+
+    """
+        function to set up the model from the Modelfile
+
+        Input:
+        Modelfile: The name of the model file. The file should following struction
+                   A.data - the data of the model 
+                   A.o    - the origions of each dimension
+                   A.d    - the delta of each dimension
+                   A.n    - the size of each dimension
+        
+        Optional Input:
+        If you want to create a smooth model from the given velocity model, you can 
+        use the following inputs:
+        initial_config: 'sigma' and 'filtersize' define the level of the smoothness
+        initial_model_style: default is 'smooth', you can also select 'gradient' then 
+                             you will get a linear velocity model
+
+        Key word arguments:
+        You can define the PML as follows:
+        kwargs['x_lbc'] = PML(0.1, 100)
+        kwargs['x_rbc'] = PML(0.1, 100)
+        kwargs['z_lbc'] = PML(0.1, 100)
+        kwargs['z_rbc'] = PML(0.1, 100)
+    """
+
+    [vels ot dt nt] = read_data(Modelfile)
+
+    C, C0, m, d = three_layered_medium(dx=dt[1], dz=dt[0],
+                                       nx=nt[1], nz=nt[0], 
+                                       initial_model_style=initial_model_style,
+                                       initial_config=initial_config,
+                                       TrueModelFileName=None, InitialModelFileName=None,
+                                       **kwargs)
 
 
 if __name__ == '__main__':
