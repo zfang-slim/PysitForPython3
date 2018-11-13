@@ -18,7 +18,8 @@ from pysit.core.domain import PML
 from pysit.util.io import write_data
 
 
-__all__ = ['LayeredMediumModel', 'layered_medium', 'Layer']
+__all__ = ['LayeredMediumModel', 'layered_medium',
+           'Layer', 'three_layered_medium']
 
 
 class Layer(object):
@@ -299,7 +300,7 @@ def three_layered_medium(vels=(1.5, 2.5, 3.5), dx=0.01, dz=0.01,
     C, C0, m, d = LayeredMediumModel(Layerall, **model_config).get_setup()
 
     if TrueModelFileName is not None:
-        ot = (0,0)
+        ot = (0.0,0.0)
         dt = (dz, dx)
         nt = m._shapes[(False, True)]
         B  = C.reshape(nt).transpose()
@@ -307,7 +308,7 @@ def three_layered_medium(vels=(1.5, 2.5, 3.5), dx=0.01, dz=0.01,
         write_data(TrueModelFileName, B, ot, dt, nt)
 
     if InitialModelFileName is not None:
-        ot = (0,0)
+        ot = (0.0,0.0)
         dt = (dz, dx)
         nt = m._shapes[(False, True)]
         B  = C0.reshape(nt).transpose()
