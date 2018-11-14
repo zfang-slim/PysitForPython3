@@ -350,7 +350,7 @@ def set_model_from_file(Modelfile,
         kwargs['z_rbc'] = PML(0.1, 100)
     """
 
-    [vels ot dt nt] = read_data(Modelfile)
+    [vels, ot, dt, nt] = read_data(Modelfile)
 
     C, C0, m, d = three_layered_medium(dx=dt[1], dz=dt[0],
                                        nx=nt[1], nz=nt[0], 
@@ -359,6 +359,12 @@ def set_model_from_file(Modelfile,
                                        TrueModelFileName=None, InitialModelFileName=None,
                                        **kwargs)
 
+    C = vels.transpose().reshape(C.shape)
+
+    return C, m, d
+
+    
+    
 
 if __name__ == '__main__':
 
@@ -371,6 +377,7 @@ if __name__ == '__main__':
 #   C, C0, m, d = layered_medium(x_length=2000)
 
   C, C0, m, d = three_layered_medium(TrueModelFileName='testtrue.mat',InitialModelFileName='testInitial.mat')
+  C, m, d = set_model_from_file('testtrue.mat')
 #   print(np.max(C-C0))
 
   import matplotlib.pyplot as plt

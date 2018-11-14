@@ -31,9 +31,9 @@ def read_data(fname):
     
 
     b_dict = sio.loadmat(fname)
-    o = b_dict['o']
-    d = b_dict['d']
-    n = b_dict['n']
+    o = b_dict['o'][0]
+    d = b_dict['d'][0]
+    n = b_dict['n'][0]
     data = b_dict['data']
 
     return data, o, d, n
