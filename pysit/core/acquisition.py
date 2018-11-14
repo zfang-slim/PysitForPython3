@@ -10,7 +10,7 @@ from .receivers import *
 from .sources import *
 
 from pysit.util.parallel import ParallelWrapShotNull
-from pysit.util.compute_tools import *
+# from pysit.util.compute_tools import *
 
 __all__ = ['equispaced_acquisition']
 
@@ -104,6 +104,8 @@ def equispaced_acquisition(mesh, wavelet,
             # Create and store the shot
             shot = Shot(source, receivers)
             shots.append(shot)
+
+    return shots
 
 def equispaced_acquisition_given_data(data, mesh, wavelet,
                                       odata, ddata, ndata,
