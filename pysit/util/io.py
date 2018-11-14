@@ -39,7 +39,7 @@ def read_data(fname):
     return data, o, d, n
 
 
-def write_data(fname, data, o, d, n):
+def write_data(fname, data, o, d, n, label=None):
     
     
         # Wirte a data file in mat format
@@ -50,9 +50,10 @@ def write_data(fname, data, o, d, n):
         # o - the origin of each dimension
         # d - the delta of each dimension
         # n - the number of points in each dimension
+        # label - label of each dimension
 
     
-    a_dict = {'o': o, 'd': d, 'n': n, 'data': data}
+    a_dict = {'o': o, 'd': d, 'n': n, 'data': data, 'label':label}
     sio.savemat(fname, a_dict)
 
 def write_gathered_parallel_data_time(fname, shots_gathered):
@@ -93,7 +94,9 @@ def write_gathered_parallel_data_time(fname, shots_gathered):
         for j in range(len(shots_gathered[i])):
             data[:, :, :, :, k] = shots_gathered[i][j].receivers.data.reshape(n_sub)
 
-    write_data(fname, data, o, d, n)
+    label = ['time', 'z_receiver', 'x_receiver', 'z_source', 'x_source']
+
+    write_data(fname, data, o, d, n, label=label)
 
     
 
