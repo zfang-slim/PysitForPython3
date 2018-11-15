@@ -6,6 +6,7 @@ import time
 import copy
 
 import numpy as np
+import scipy.io as sio
 
 __all__=['OptimizationBase']
 
@@ -83,6 +84,8 @@ class OptimizationBase(object):
         self.max_linesearch_iterations = 10
 
         self.logfile = sys.stdout
+
+        self.write = False
 
 
     def reset(self,
@@ -247,6 +250,7 @@ class OptimizationBase(object):
                  verbose=False,
                  append=False,
                  status_configuration={},
+                 write=False,
                  **kwargs):
         """The main function for executing a number of steps of the descent
         algorith.
@@ -271,6 +275,8 @@ class OptimizationBase(object):
         self.reset(append, **status_configuration)
 
         self.verbose=verbose
+
+        self.write = write
 
         self.line_search = line_search
         if type(line_search) is str:
@@ -371,6 +377,12 @@ class OptimizationBase(object):
 
             # Apply new step
             self.base_model += step
+
+            if self.write is True:
+                a_dict = {'data': self.base_model}
+                fname = ['x_' + str(i) + '.mat']
+                sio.savemat(fname, a_dict)
+
 
             ttt = time.time()-tt
             self.store_history('run_time', i, ttt)

@@ -34,6 +34,8 @@ if __name__ == '__main__':
     currentfile = os.path.basename(__file__)
     copy2(currentfile, ExpDir)
 
+    os.chdir(ExpDir)
+
     comm = MPI.COMM_WORLD
 #   comm = MPI.COMM_SELF
     size = comm.Get_size()
@@ -134,7 +136,7 @@ if __name__ == '__main__':
 
     result = invalg(shots, initial_value, nsteps,
                     line_search=line_search,
-                    status_configuration=status_configuration, verbose=True)
+                    status_configuration=status_configuration, verbose=True, write=True)
 
     print('Run time:  {0}s'.format(time.time()-tt))
 
