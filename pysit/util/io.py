@@ -39,7 +39,7 @@ def read_data(fname):
     return data, o, d, n
 
 
-def write_data(fname, data, o, d, n, label=None):
+def write_data(fname, data, o, d, n, label='None'):
     
     
         # Wirte a data file in mat format
