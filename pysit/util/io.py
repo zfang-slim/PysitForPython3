@@ -74,27 +74,26 @@ def write_gathered_parallel_data_time(fname, shots_gathered):
          )
 
     d0 = shots_gathered[0][0].receivers.ts[1] - shots_gathered[0][0].receivers.ts[0]
-    d1 = 1
-    d2 = shots_gathered[0][0].receivers.receiver_list[1].position[0] - shots_gathered[0][0].receivers.receiver_list[0].position[0]
-    d3 = 1
+    d1 = shots_gathered[0][0].receivers.receiver_list[1].position[0] - shots_gathered[0][0].receivers.receiver_list[0].position[0]
+    d2 = 1   
     if len(shots_gathered[0]) > 1:
-        d4 = shots_gathered[0][1].sources.position[0] - shots_gathered[0][0].sources.position[0]
-    
+        d3 = shots_gathered[0][1].sources.position[0] - shots_gathered[0][0].sources.position[0]
     else:
-        d4 = shots_gathered[1][0].sources.position[0] - shots_gathered[0][0].sources.position[0]
+        d3 = shots_gathered[1][0].sources.position[0] - shots_gathered[0][0].sources.position[0]
+    d4 = 1
 
 
     d = (d0, d1, d2, d3, d4)
 
     data = np.zeros(n)
     k = 0
-    n_sub = n[0:4]
+    n_sub = (n[0], n[1], n[2], n[4])
 
     for i in range(len(shots_gathered)):
         for j in range(len(shots_gathered[i])):
             data[:, :, :, :, k] = shots_gathered[i][j].receivers.data.reshape(n_sub)
 
-    label = ['time', 'z_receiver', 'x_receiver', 'z_source', 'x_source']
+    label = ['time', 'x_receiver', 'z_receiver', 'x_source', 'z_source']
 
     write_data(fname, data, o, d, n, label=label)
 
