@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
 
     # Define and configure the wave solver
-    trange = (0.0,4.0)
+    trange = (0.0,3.0)
 
     solver = ConstantDensityAcousticWave(m,
                                          spatial_accuracy_order=4,
