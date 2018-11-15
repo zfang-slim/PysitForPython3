@@ -10,7 +10,7 @@ from .receivers import *
 from .sources import *
 
 from pysit.util.parallel import ParallelWrapShotNull
-from pysit.util.compute_tools import *
+# from pysit.util.compute_tools import *
 
 __all__ = ['equispaced_acquisition']
 
