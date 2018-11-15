@@ -379,8 +379,8 @@ class OptimizationBase(object):
             self.base_model += step
 
             if self.write is True:
-                a_dict = {'data': self.base_model}
-                fname = ['x_' + str(i) + '.mat']
+                a_dict = {'data': self.base_model.data}
+                fname = 'x_' + str(i) + '.mat'
                 sio.savemat(fname, a_dict)
 
 

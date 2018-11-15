@@ -31,10 +31,12 @@ class ConstantDensityAcousticTimeBase(ConstantDensityAcousticBase):
                  mesh,
                  trange=(0.0, 1.0),
                  cfl_safety=1/6,
+                 max_C=None,
                  **kwargs):
 
         self.trange = trange
         self.cfl_safety = cfl_safety
+        self.max_C=max_C
 
         self.t0, self.tf = trange
         self.dt = 0.0
@@ -59,7 +61,10 @@ class ConstantDensityAcousticTimeBase(ConstantDensityAcousticBase):
         min_deltas = np.min(self.mesh.deltas)
 
         C = self._mp.C
-        max_C = max(abs(C.min()), C.max())  # faster than C.abs().max()
+        if self.max_C is not None:
+            max_C = self.max_C
+        else:
+            max_C = max(abs(C.min()), C.max())  # faster than C.abs().max()
 
         dt = CFL*min_deltas / max_C
         nsteps = int(math.ceil((tf - t0)/dt))

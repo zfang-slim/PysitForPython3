@@ -176,12 +176,6 @@ class ConstantDensityAcousticTimeScalar_1D_cpp(ConstantDensityAcousticTimeScalar
                                                      nz,
                                                      solver_data.kp1.Phiz,
                                                      solver_data.kp1.u)
-        print('uk-1 =',    np.linalg.norm(solver_data.km1.u))
-        print('phizk-1 =', np.linalg.norm(solver_data.k.Phiz))
-        print('uk =',      np.linalg.norm(solver_data.k.u))
-        print('Phizk+1 =', np.linalg.norm(solver_data.kp1.Phiz))
-        print('uk+1 =',    np.linalg.norm(solver_data.kp1.u))
-        a=3
 
 
 @inherit_dict('supports', '_local_support_spec')

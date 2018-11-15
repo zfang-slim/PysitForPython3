@@ -107,102 +107,102 @@ def equispaced_acquisition(mesh, wavelet,
 
     return shots
 
-def equispaced_acquisition_given_data(data, mesh, wavelet,
-                                      odata, ddata, ndata,
-                                      source_kwargs={},
-                                      receiver_kwargs={},
-                                      parallel_shot_wrap=ParallelWrapShotNull()
-                                      ):
+# def equispaced_acquisition_given_data(data, mesh, wavelet,
+#                                       odata, ddata, ndata,
+#                                       source_kwargs={},
+#                                       receiver_kwargs={},
+#                                       parallel_shot_wrap=ParallelWrapShotNull()
+#                                       ):
 
 
-    source_depth=None,
-    receiver_depth=None,
+#     source_depth=None,
+#     receiver_depth=None,
 
-    m = mesh
-    d = mesh.domain
+#     m = mesh
+#     d = mesh.domain
 
-    xmin = d.x.lbound
-    xmax = d.x.rbound
+#     xmin = d.x.lbound
+#     xmax = d.x.rbound
 
-    zmin = d.z.lbound
-    zmax = d.z.rbound
+#     zmin = d.z.lbound
+#     zmax = d.z.rbound
 
-    if m.dim == 2:
-        data_time, data_zrec, data_xrec, data_zsrc, data_xsrc = odn2grid_data_2D_time(odata, ddata, ndata)
+#     if m.dim == 2:
+#         data_time, data_zrec, data_xrec, data_zsrc, data_xsrc = odn2grid_data_2D_time(odata, ddata, ndata)
 
-    if m.dim == 3:
-        data_time, data_zrec, data_yrec, data_xrec, data_zsrc, data_ysrc, data_xsrc = odn2grid_data_3D_time(odata, ddata, ndata)
+#     if m.dim == 3:
+#         data_time, data_zrec, data_yrec, data_xrec, data_zsrc, data_ysrc, data_xsrc = odn2grid_data_3D_time(odata, ddata, ndata)
 
-    if m.dim == 3:
-        ymin = d.y.lbound
-        ymax = d.y.rbound
+#     if m.dim == 3:
+#         ymin = d.y.lbound
+#         ymax = d.y.rbound
 
-    source_depth = data_zsrc
-    receiver_depth = data_zrec 
+#     source_depth = data_zsrc
+#     receiver_depth = data_zrec 
 
-    shots = list()
+#     shots = list()
 
-    max_sources = m.x.n
+#     max_sources = m.x.n
 
-    if m.dim == 2:
-        receivers = ndata[2]
-        sources = ndata[4]
+#     if m.dim == 2:
+#         receivers = ndata[2]
+#         sources = ndata[4]
 
-        xpos_rec = data_xrec
-        receiversbase = ReceiverSet(
-            m, [PointReceiver(m, (x, receiver_depth), **receiver_kwargs) for x in xpos_rec])
+#         xpos_rec = data_xrec
+#         receiversbase = ReceiverSet(
+#             m, [PointReceiver(m, (x, receiver_depth), **receiver_kwargs) for x in xpos_rec])
 
-        local_sources = sources / parallel_shot_wrap.size, 1
+#         local_sources = sources / parallel_shot_wrap.size, 1
 
-    if m.dim == 3:
+#     if m.dim == 3:
 
-        receivers = (ndata[3], ndata[2])
-        sources = (ndata[6], ndata[5])
+#         receivers = (ndata[3], ndata[2])
+#         sources = (ndata[6], ndata[5])
         
-        xpos_rec = data_xrec
-        ypos_rec = data_yrec
-        receiversbase = ReceiverSet(m, [PointReceiver(m, (x, y, receiver_depth), **receiver_kwargs) for x in xpos_rec for y in ypos_rec])
+#         xpos_rec = data_xrec
+#         ypos_rec = data_yrec
+#         receiversbase = ReceiverSet(m, [PointReceiver(m, (x, y, receiver_depth), **receiver_kwargs) for x in xpos_rec for y in ypos_rec])
 
-        local_sources = sources[0] / parallel_shot_wrap.size, sources[1] / parallel_shot_wrap.size
+#         local_sources = sources[0] / parallel_shot_wrap.size, sources[1] / parallel_shot_wrap.size
 
-    print(type(local_sources[0]))
+#     print(type(local_sources[0]))
 
-    if m.dim == 2:
-        if parallel_shot_wrap.rank == 0:
-            data_local = data[:,:,:,:,0:local_sources[0]].squeeze()
+#     if m.dim == 2:
+#         if parallel_shot_wrap.rank == 0:
+#             data_local = data[:,:,:,:,0:local_sources[0]].squeeze()
 
-            for i in range(1, parallel_shot_wrap.size):
-                data_send = data[:,:,:,:,i*local_sources[0]:(i+1)*local_sources[0]]
-                parallel_shot_wrap.comm.Send(data_send, dest=i, tag=0)
+#             for i in range(1, parallel_shot_wrap.size):
+#                 data_send = data[:,:,:,:,i*local_sources[0]:(i+1)*local_sources[0]]
+#                 parallel_shot_wrap.comm.Send(data_send, dest=i, tag=0)
 
-        else:
-            parallel_shot_wrap.comm.Recv(data_receive, 0, rnk)
-            print('Receive data from process ', rnk)
+#         else:
+#             parallel_shot_wrap.comm.Recv(data_receive, 0, rnk)
+#             print('Receive data from process ', rnk)
 
-    data_local = data_receive.squeeze()
-
-
-
-    for i in range(int(local_sources[0])):
-        for j in range(int(local_sources[1])):
-
-            idx = i + local_sources[0]*parallel_shot_wrap.rank
-            jdx = j + local_sources[1]*parallel_shot_wrap.rank
-
-            if m.dim == 2:
-                srcpos = (data_xsrc[idx], source_depth)
-            elif m.dim == 3:
-                srcpos = (data_xsrc[idx], data_ysrc[jdx], source_depth)
-
-            # Define source location and type
-            source = PointSource(m, srcpos, wavelet, **source_kwargs)
-
-            # Define set of receivers
-            receivers = copy.deepcopy(receiversbase)
-
-            # Create and store the shot
-            shot = Shot(source, receivers)
-            shots.append(shot)
+#     data_local = data_receive.squeeze()
 
 
-    return shots
+
+#     for i in range(int(local_sources[0])):
+#         for j in range(int(local_sources[1])):
+
+#             idx = i + local_sources[0]*parallel_shot_wrap.rank
+#             jdx = j + local_sources[1]*parallel_shot_wrap.rank
+
+#             if m.dim == 2:
+#                 srcpos = (data_xsrc[idx], source_depth)
+#             elif m.dim == 3:
+#                 srcpos = (data_xsrc[idx], data_ysrc[jdx], source_depth)
+
+#             # Define source location and type
+#             source = PointSource(m, srcpos, wavelet, **source_kwargs)
+
+#             # Define set of receivers
+#             receivers = copy.deepcopy(receiversbase)
+
+#             # Create and store the shot
+#             shot = Shot(source, receivers)
+#             shots.append(shot)
+
+
+#     return shots
