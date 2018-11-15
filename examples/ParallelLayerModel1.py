@@ -50,7 +50,8 @@ if __name__ == '__main__':
     # pmlx = PML(0.1, 100)
     # pmlz = PML(0.1, 100)
 
-    C, C0, m, d = three_layered_medium(TrueModelFileName='testtrue.mat', InitialModelFileName='testInitial.mat')
+    # C, C0, m, d = three_layered_medium(TrueModelFileName='testtrue.mat', InitialModelFileName='testInitial.mat')
+    C, C0, m, d = three_layered_medium()
 
     # x_config = (0.1, 1.0, pmlx, pmlx)
     # z_config = (0.1, 0.8, pmlz, pmlz)
@@ -65,9 +66,10 @@ if __name__ == '__main__':
     # Set up shots
     zmin = d.z.lbound
     zmax = d.z.rbound
-    zpos = zmin + (1./9.)*zmax
+    # zpos = zmin + (1./9.)*zmax
+    zpos = 0.01 * 2.0
 
-    Nshots = 36
+    Nshots = 2
     sys.stdout.write("{0}: {1}\n".format(rank, Nshots / size))
 
     shots = equispaced_acquisition(m,
@@ -88,7 +90,8 @@ if __name__ == '__main__':
     solver = ConstantDensityAcousticWave(m,
                                          spatial_accuracy_order=4,
                                          trange=trange,
-                                         kernel_implementation='cpp')
+                                         kernel_implementation='cpp',
+                                         max_C=4.0) # The dt is automatically fixed for given max_C (velocity)
 
     # Generate synthetic Seismic data
     sys.stdout.write('Generating data...')
