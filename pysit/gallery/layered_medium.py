@@ -376,8 +376,10 @@ if __name__ == '__main__':
 
 #   C, C0, m, d = layered_medium(x_length=2000)
 
-  C, C0, m, d = three_layered_medium(TrueModelFileName='testtrue.mat',InitialModelFileName='testInitial.mat')
-  C, m, d = set_model_from_file('testtrue.mat')
+#   C, C0, m, d = three_layered_medium(TrueModelFileName='testtrue.mat',InitialModelFileName='testInitial.mat')
+  C, C0, m, d = three_layered_medium(initial_model_style='gradient',
+                                     initial_config={'sigma': 2.0, 'filtersize': 16})
+#   C, m, d = set_model_from_file('testtrue.mat')
 #   print(np.max(C-C0))
 
   import matplotlib.pyplot as plt

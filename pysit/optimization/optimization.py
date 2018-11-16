@@ -379,10 +379,9 @@ class OptimizationBase(object):
             self.base_model += step
 
             if self.write is True:
-                a_dict = {'data': self.base_model.data}
+                tmp_data_write = {'data': self.base_model.data}
                 fname = 'x_' + str(i) + '.mat'
-                sio.savemat(fname, a_dict)
-
+                sio.savemat(fname, tmp_data_write)
 
             ttt = time.time()-tt
             self.store_history('run_time', i, ttt)
