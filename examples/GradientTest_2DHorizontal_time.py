@@ -49,7 +49,8 @@ if __name__ == '__main__':
     solver = ConstantDensityAcousticWave(m,
                                          spatial_accuracy_order=2,
                                          trange=trange,
-                                         kernel_implementation='cpp')
+                                         kernel_implementation='cpp',
+                                         mac_C=3.0)
 
     # Generate synthetic Seismic data
     tt = time.time()
@@ -64,17 +65,17 @@ if __name__ == '__main__':
     # Define the inversion algorithm
     grad_test = GradientTest(objective)
     grad_test.base_model = solver.ModelParameters(m, {'C': C0})
-    grad_test.length_ratio = np.power(5.0, range(-6, -0))
+    grad_test.length_ratio = np.power(5.0, range(-8, -0))
 
     # Set up the perturbation direction
     dC_vec = copy.deepcopy(grad_test.base_model)
     m_size = m._shapes[(False, True)]
     tmp = np.random.normal(0, 1, m_size)
-    tmp = np.ones(m_size)
-    tmp[0:2, :] = 0.0
-    tmp[m_size[0]-2:m_size[0], :] = 0.0
-    tmp[:, 0:2] = 0.0
-    tmp[:, m_size[1]-2:m_size[1]] = 0.0
+    # tmp = np.ones(m_size)
+    tmp[0:3, :] = 0.0
+    tmp[m_size[0]-3:m_size[0], :] = 0.0
+    tmp[:, 0:3] = 0.0
+    tmp[:, m_size[1]-3:m_size[1]] = 0.0
     tmp = np.reshape(tmp, grad_test.base_model.data.shape)
     dC_vec.data = tmp
     norm_dC_vec = np.linalg.norm(dC_vec.data)

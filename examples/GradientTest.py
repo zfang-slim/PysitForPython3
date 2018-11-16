@@ -85,7 +85,7 @@ class GradientTest(object):
         self.first_order_difference = []
         self.base_model = []
 
-    def __call__(self, shots):
+    def __call__(self, shots, objective_arguments=None):
         aux_info = {'objective_value': (True, None),
                     'residual_norm': (True, None)}
         model_perturbation = self.model_perturbation
@@ -93,12 +93,29 @@ class GradientTest(object):
         n_ratio = len(length_ratio)
 
         # Compute the gradient g(x0)
-        gradient = self.objective_function.compute_gradient(
-            shots, self.base_model, aux_info=aux_info)
+        if objective_arguments is None:
+            gradient = self.objective_function.compute_gradient(
+                shots, self.base_model, aux_info=aux_info)
+        else:
+            gradient = self.objective_function.compute_gradient(
+                shots, self.base_model, aux_info=aux_info, **objective_arguments)
+
+        c_tmp = np.multiply(gradient.data, -2.0 * self.base_model.data ** (-3.0) ) #np.prod(self.solver.mesh.deltas) * 
+        # c_tmp = np.multiply(gradient.data, -1.0 *
+        #                     self.base_model.data ** (-2.0) * 10.0**(-3.0))
+        gradient.data = c_tmp
 
         # Compute the objective value f(x0)
-        objective_value_original = self.objective_function.evaluate(shots,
-                                                                    self.base_model)
+        if objective_arguments is None:                 
+            objective_value_original = self.objective_function.evaluate(shots,
+                                                                        self.base_model)
+        else:
+            objective_value_original = self.objective_function.evaluate(shots,
+                                                                        self.base_model,
+                                                                        **objective_arguments)
+
+        model_perturbation_cmp = copy.deepcopy(gradient)
+        model_perturbation_cmp.data = model_perturbation.data
 
         for i in range(0, n_ratio):
             ratio_i = length_ratio[i]
@@ -106,14 +123,24 @@ class GradientTest(object):
             model = copy.deepcopy(self.base_model)
             model_perturbation_i.data = model_perturbation_i.data * ratio_i
             model.data = self.base_model.data + model_perturbation_i.data
+            # model.data =  ((self.base_model.data) ** (-1.0) + model_perturbation_i.data) ** (-1.0)
 
             # Compute the objective value f(x0 + alpha * p)
-            fi0 = self.objective_function.evaluate(shots,
-                                                   model)
+            if objective_arguments is None:
+                fi0 = self.objective_function.evaluate(shots,
+                                                       model)
+            else: 
+                fi0 = self.objective_function.evaluate(shots,
+                                                       model,
+                                                       **objective_arguments)
 
             # Compute f(x0) + alpha * g^{T}p
+            
             fi1 = objective_value_original + \
-                np.dot(ratio_i * model_perturbation.data.ravel(), gradient.data.ravel())
+                ratio_i * gradient.inner_product(model_perturbation_cmp)
+                # np.dot(ratio_i * model_perturbation.data.ravel(),gradient.data.ravel())
+                
+                
 
             # Compute the zero order difference df0
             diff_f0 = abs(fi0 - objective_value_original)

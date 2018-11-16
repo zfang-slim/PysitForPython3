@@ -36,7 +36,7 @@ class ConstantDensityAcousticTimeBase(ConstantDensityAcousticBase):
 
         self.trange = trange
         self.cfl_safety = cfl_safety
-        self.max_C=max_C
+        self.max_C = max_C
 
         self.t0, self.tf = trange
         self.dt = 0.0
