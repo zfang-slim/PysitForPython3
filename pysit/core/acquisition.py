@@ -10,9 +10,10 @@ from .receivers import *
 from .sources import *
 
 from pysit.util.parallel import ParallelWrapShotNull
-# from pysit.util.compute_tools import *
+from pysit.util.compute_tools import *
 
-__all__ = ['equispaced_acquisition']
+__all__ = ['equispaced_acquisition',
+           'equispaced_acquisition_given_data']
 
 def equispaced_acquisition(mesh, wavelet,
                            sources=1,
@@ -141,8 +142,8 @@ def equispaced_acquisition_given_data(data, mesh, wavelet,
         ymin = d.y.lbound
         ymax = d.y.rbound
 
-    source_depth = data_zsrc
-    receiver_depth = data_zrec 
+    source_depth = data_zsrc[0]
+    receiver_depth = data_zrec[0] 
 
     shots = list()
 
@@ -153,10 +154,12 @@ def equispaced_acquisition_given_data(data, mesh, wavelet,
         sources = ndata[3]
 
         xpos_rec = data_xrec
+        
         receiversbase = ReceiverSet(m, [PointReceiver(m, (x, receiver_depth), **receiver_kwargs) for x in xpos_rec])
 
-        if np.mod(sources, parallel_shot_wrap.size) is not 0:
-            raise('Currently, we only support the case that mod(number of sources, number of processes) = 0')
+        
+        if np.mod(sources, parallel_shot_wrap.size) != 0:
+            raise ValueError('Currently, we only support the case that mod(number of sources, number of processes) = 0')
         local_sources = sources / parallel_shot_wrap.size
 
     if m.dim == 3:
@@ -168,7 +171,7 @@ def equispaced_acquisition_given_data(data, mesh, wavelet,
         ypos_rec = data_yrec
         receiversbase = ReceiverSet(m, [PointReceiver(m, (x, y, receiver_depth), **receiver_kwargs) for x in xpos_rec for y in ypos_rec])
 
-        if np.mod(np.prod(sources), parallel_shot_wrap.size) is not 0:
+        if np.mod(np.prod(sources), parallel_shot_wrap.size) != 0:
             raise('Currently, we only support the case that mod(number of sources, number of processes) = 0')
         local_sources = np.prod(sources) / parallel_shot_wrap.size
 
@@ -181,23 +184,23 @@ def equispaced_acquisition_given_data(data, mesh, wavelet,
 
             for i in range(1, parallel_shot_wrap.size):
                 data_send = data[:,:,:,i*local_sources:(i+1)*local_sources,:]
-                parallel_shot_wrap.comm.Send(data_send, dest=i, tag=0)
+                parallel_shot_wrap.comm.send(data_send, dest=i, tag=i)
 
         else:
-            parallel_shot_wrap.comm.Recv(data_receive, source=0)
+            data_receive=parallel_shot_wrap.comm.recv(source=0, tag=parallel_shot_wrap.rank)
             print('Receive data from process ', 0)
 
             data_local = data_receive.squeeze()
 
     if m.dim == 3:
-        if paralle_shot_wrap.rank == 0:
+        if parallel_shot_wrap.rank == 0:
             data_local = get_local_data(data, n, local_sources, 0)
             for k in range(1, parallel_shot_wrap.size):
                 data_send = get_local_data(data, n, local_source, k)
-                parallel_shot_wrap.comm.Send(data_send, dest=k, tag=0)
+                parallel_shot_wrap.comm.send(data_send, dest=k, tag=k)
 
         else:
-            parallel_shot_wrap.comm.Recv(data_local, source=0)
+            data_local=parallel_shot_wrap.comm.recv(source=0, tag=parallel_shot_wrap.rank)
             print('Receive data from process ', 0)
             # data_local = np.zeros((data_time, data_xrec*data_yrec, local_sources))
             # for k in range(local_sources):

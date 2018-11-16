@@ -57,6 +57,7 @@ def write_data(fname, data, o, d, n, label='None'):
     sio.savemat(fname, a_dict)
 
 def write_gathered_parallel_data_time(fname, shots_gathered):
+    ## The order of final output is [time, xrec, zrec, xsrc, zsrc]
 
     n_15 = shots_gathered[0][0].receivers.data.shape
 
@@ -65,12 +66,12 @@ def write_gathered_parallel_data_time(fname, shots_gathered):
         for j in range(len(shots_gathered[i])):
             k += 1
 
-    n = (n_15[0], 1, n_15[1], 1, k)
+    n = (n_15[0], n_15[1], 1, k, 1)
     o = (0,
-         shots_gathered[0][0].receivers.receiver_list[0].position[1],
          shots_gathered[0][0].receivers.receiver_list[0].position[0],
-         shots_gathered[0][0].sources.position[1], 
-         shots_gathered[0][0].sources.position[0]
+         shots_gathered[0][0].receivers.receiver_list[0].position[1],
+         shots_gathered[0][0].sources.position[0], 
+         shots_gathered[0][0].sources.position[1]
          )
 
     d0 = shots_gathered[0][0].receivers.ts[1] - shots_gathered[0][0].receivers.ts[0]
@@ -91,7 +92,8 @@ def write_gathered_parallel_data_time(fname, shots_gathered):
 
     for i in range(len(shots_gathered)):
         for j in range(len(shots_gathered[i])):
-            data[:, :, :, :, k] = shots_gathered[i][j].receivers.data.reshape(n_sub)
+            data[:, :, :, k, :] = shots_gathered[i][j].receivers.data.reshape(n_sub)
+            k += 1
 
     label = ['time', 'x_receiver', 'z_receiver', 'x_source', 'z_source']
 
