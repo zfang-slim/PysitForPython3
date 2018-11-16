@@ -36,21 +36,22 @@ if __name__ == '__main__':
 
     pwrap = ParallelWrapShot()
 
-    if rank == 0:
-        [data, odata, ddata, ndata] = read_data(Datafile)
-        broad_info = {'o':odata, 'd':ddata, 'n':ndata}
-        data1 = np.squeeze(data)
-        for i in range(ndata[3]):
-            print(i, 'th shot is ', np.linalg.norm(data1[:,:,i]))
-    else:
-        data = None
-        broad_info = None 
+    data, odata, ddata, ndata = read_data_2D_parallel_env(Datafile, pwrap)
+    # if rank == 0:
+    #     [data, odata, ddata, ndata] = read_data(Datafile)
+    #     broad_info = {'o':odata, 'd':ddata, 'n':ndata}
+    #     data1 = np.squeeze(data)
+    #     for i in range(ndata[3]):
+    #         print(i, 'th shot is ', np.linalg.norm(data1[:,:,i]))
+    # else:
+    #     data = None
+    #     broad_info = None 
 
-    broad_info = comm.bcast(broad_info, root=0)
-    if rank is not 0:
-        odata = broad_info['o']
-        ddata = broad_info['d']
-        ndata = broad_info['n']
+    # broad_info = comm.bcast(broad_info, root=0)
+    # if rank is not 0:
+    #     odata = broad_info['o']
+    #     ddata = broad_info['d']
+    #     ndata = broad_info['n']
 
     #   Define Domain
     pmlx = PML(0.1, 100)

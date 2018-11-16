@@ -5,7 +5,8 @@ import scipy.io as sio
 import obspy.io.segy.core as segy
 
 __all__ = ['read_model', 'read_data', 'write_data',
-           'write_gathered_parallel_data_time']
+           'write_gathered_parallel_data_time',
+           'read_data_2D_parallel_env']
 
 def read_model(fname):
     """ Reads a model in segy format and returns it as an array."""
@@ -37,6 +38,40 @@ def read_data(fname):
     data = b_dict['data']
 
     return data, o, d, n
+
+
+def read_data_2D_parallel_env(fname, pwrap):
+    """"
+        Reads a data in mat format and returns it as a matrix
+    
+        The input of the file should be a dictionary with {'o'=
+                                                           'd'=
+                                                           'n'=
+                                                           'data'=}
+        'o' - the origin of each dimension
+        'd' - the delta of each dimension
+        'n' - the number of points in each dimension
+        'data' - the data itself 
+    """
+
+    if pwrap.comm.rank == 0:
+        [data, odata, ddata, ndata] = read_data(fname)
+        broad_info = {'o': odata, 'd': ddata, 'n': ndata}
+        data1 = np.squeeze(data)
+        for i in range(ndata[3]):
+            print(i, 'th shot is ', np.linalg.norm(data1[:, :, i]))
+    else:
+        data = None
+        broad_info = None
+
+    broad_info = pwrap.comm.bcast(broad_info, root=0)
+    if pwrap.comm.rank is not 0:
+        odata = broad_info['o']
+        ddata = broad_info['d']
+        ndata = broad_info['n']
+
+   
+    return data, odata, ddata, ndata
 
 
 def write_data(fname, data, o, d, n, label='None'):
