@@ -14,8 +14,8 @@ if __name__ == '__main__':
     # Setup
 
     #   Define Domain
-    pmlx = PML(0.1, 100)
-    pmlz = PML(0.1, 100)
+    pmlx = PML(0.1, 1)
+    pmlz = PML(0.1, 1)
 
 
     x_config = (0.1, 1.0, pmlx, pmlx)

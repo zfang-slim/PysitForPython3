@@ -70,8 +70,8 @@ if __name__ == '__main__':
         objective = FrequencyLeastSquares(solver)
 
     # Define the inversion algorithm
-    # invalg = LBFGS(objective)
-    invalg = GaussNewton(objective)
+    invalg = LBFGS(objective)
+    # invalg = GaussNewton(objective)
     initial_value = solver.ModelParameters(m,{'C': C0})
 
     # Execute inversion algorithm
@@ -94,6 +94,9 @@ if __name__ == '__main__':
     loop_configuration=[(60,{'frequencies' : [2.0, 3.5, 5.0]}), (15,{'frequencies' : [6.5, 8.0, 9.5]})] #3 steps at one set of frequencies and 3 at another set
 
     loop_configuration=[(2,{'frequencies' : [2.0, 3.5, 5.0]})]
+
+    initial_value.data = initial_value.with_padding(padding_mode='edge').data
+    initial_value.padded = True
 
     result = invalg(shots, initial_value, loop_configuration, verbose=True, status_configuration=status_configuration)
 

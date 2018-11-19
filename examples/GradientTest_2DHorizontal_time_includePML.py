@@ -1,7 +1,6 @@
 # Std import block
 import time
 import copy
-import os
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,18 +8,15 @@ import matplotlib.pyplot as plt
 from pysit import *
 from pysit.gallery import horizontal_reflector
 
-
 from GradientTest import GradientTest
 
 if __name__ == '__main__':
     # Setup
-    hybrid = False
-    # enable Open MP multithread solver
-    os.environ["OMP_NUM_THREADS"] = "4"
 
     #   Define Domain
-    pmlx = PML(0.1, 1)
-    pmlz = PML(0.1, 1)
+    pmlx = PML(0.1, 10)
+    pmlz = PML(0.1, 10)
+
 
     x_config = (0.1, 1.0, pmlx, pmlx)
     z_config = (0.1, 0.8, pmlz, pmlz)
@@ -38,7 +34,7 @@ if __name__ == '__main__':
     zpos = zmin + (1./9.)*zmax
 
     shots = equispaced_acquisition(m,
-                                   RickerWavelet(10.0),
+                                   RickerWavelet(5.0),
                                    sources=1,
                                    source_depth=zpos,
                                    source_kwargs={},
@@ -50,47 +46,37 @@ if __name__ == '__main__':
     # Define and configure the wave solver
     trange = (0.0, 3.0)
 
-    solver_time = ConstantDensityAcousticWave(m,
-                                              spatial_accuracy_order=6,
-                                              kernel_implementation='omp',
-                                              trange=trange)
+    solver = ConstantDensityAcousticWave(m,
+                                         spatial_accuracy_order=2,
+                                         trange=trange,
+                                         kernel_implementation='cpp',
+                                         mac_C=3.0)
+
+    solver.max_C = 3.0
+
     # Generate synthetic Seismic data
-    print('Generating data...')
-    base_model = solver_time.ModelParameters(m, {'C': C})
     tt = time.time()
-    generate_seismic_data(shots, solver_time, base_model)
-
-    MM = ModelParameterBase(m)
-
+    wavefields = []
+    base_model = solver.ModelParameters(m, {'C': C})
+    generate_seismic_data(shots, solver, base_model, wavefields=wavefields)
 
     print('Data generation: {0}s'.format(time.time()-tt))
 
-    # Define and configure the objective function
-    if hybrid:
-        solver = ConstantDensityAcousticWave(m,
-                                             spatial_accuracy_order=4,
-                                             trange=trange)
-        objective = HybridLeastSquares(solver)
-    else:
-
-        solver = ConstantDensityHelmholtz(m,
-                                          spatial_accuracy_order=4,
-                                          inv_padding_mode='add')
-        objective = FrequencyLeastSquares(solver)
+    objective = TemporalLeastSquares(solver)
 
     # Define the inversion algorithm
     grad_test = GradientTest(objective)
     grad_test.base_model = solver.ModelParameters(m, {'C': C0})
     grad_test.base_model.data = grad_test.base_model.with_padding(padding_mode='edge').data
     grad_test.base_model.padded = True
-    grad_test.length_ratio = np.power(5.0, range(-6, -0))
+    grad_test.length_ratio = np.power(5.0, range(-8, -0))
 
     # Set up the perturbation direction
     dC_vec = copy.deepcopy(grad_test.base_model)
     m_size = m._shapes[(True, True)]
     tmp = np.random.normal(0, 1, m_size)
     # tmp = np.ones(m_size)
-    n_zero_pml = 0
+    n_zero_pml = 10
     tmp[0:n_zero_pml, :] = 0.0
     tmp[m_size[0]-n_zero_pml:m_size[0], :] = 0.0
     tmp[:, 0:n_zero_pml] = 0.0
@@ -101,14 +87,11 @@ if __name__ == '__main__':
     norm_base_model = np.linalg.norm(grad_test.base_model.data)
     dC_vec.data = dC_vec.data * 0.1 * (norm_base_model / norm_dC_vec)
     grad_test.model_perturbation = dC_vec
-
     # Execute inversion algorithm
     print('Gradient test ...')
     tt = time.time()
 
-    objective_arguments = {'frequencies': [2.0]}
-
-    result = grad_test(shots, objective_arguments)
+    result = grad_test(shots)
 
     print('...run time:  {0}s'.format(time.time()-tt))
 
@@ -129,4 +112,3 @@ if __name__ == '__main__':
 
     plt.show()
 
-    a = 1

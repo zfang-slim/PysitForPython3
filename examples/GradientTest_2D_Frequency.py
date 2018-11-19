@@ -19,8 +19,8 @@ if __name__ == '__main__':
     os.environ["OMP_NUM_THREADS"] = "4"
 
     #   Define Domain
-    pmlx = PML(0.1, 100)
-    pmlz = PML(0.1, 100)
+    pmlx = PML(0.1, 10)
+    pmlz = PML(0.1, 10)
 
     x_config = (0.1, 1.0, pmlx, pmlx)
     z_config = (0.1, 0.8, pmlz, pmlz)
@@ -59,6 +59,10 @@ if __name__ == '__main__':
     base_model = solver_time.ModelParameters(m, {'C': C})
     tt = time.time()
     generate_seismic_data(shots, solver_time, base_model)
+
+    MM = ModelParameterBase(m)
+
+
     print('Data generation: {0}s'.format(time.time()-tt))
 
     # Define and configure the objective function
@@ -70,7 +74,8 @@ if __name__ == '__main__':
     else:
 
         solver = ConstantDensityHelmholtz(m,
-                                          spatial_accuracy_order=4)
+                                          spatial_accuracy_order=4,
+                                          inv_padding_mode='add')
         objective = FrequencyLeastSquares(solver)
 
     # Define the inversion algorithm
@@ -83,10 +88,10 @@ if __name__ == '__main__':
     m_size = m._shapes[(False, True)]
     tmp = np.random.normal(0, 1, m_size)
     tmp = np.ones(m_size)
-    tmp[0:2, :] = 0.0
-    tmp[m_size[0]-2:m_size[0], :] = 0.0
-    tmp[:, 0:2] = 0.0
-    tmp[:, m_size[1]-2:m_size[1]] = 0.0
+    # tmp[0:2, :] = 0.0
+    # tmp[m_size[0]-2:m_size[0], :] = 0.0
+    # tmp[:, 0:2] = 0.0
+    # tmp[:, m_size[1]-2:m_size[1]] = 0.0
     tmp = np.reshape(tmp, grad_test.base_model.data.shape)
     dC_vec.data = tmp
     norm_dC_vec = np.linalg.norm(dC_vec.data)
