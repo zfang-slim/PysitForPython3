@@ -82,7 +82,7 @@ if __name__ == '__main__':
     dC_vec = copy.deepcopy(grad_test.base_model)
     m_size = m._shapes[(False, True)]
     tmp = np.random.normal(0, 1, m_size)
-    # tmp = np.ones(m_size)
+    tmp = np.ones(m_size)
     tmp[0:2, :] = 0.0
     tmp[m_size[0]-2:m_size[0], :] = 0.0
     tmp[:, 0:2] = 0.0

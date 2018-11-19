@@ -44,6 +44,7 @@ class SolverBase(object):
     def __init__(self,
                  mesh,
                  precision='double',
+                 inv_padding_mode='cut',
                  **kwargs):
         """Constructor for the WaveSolverBase class.
 
@@ -57,6 +58,7 @@ class SolverBase(object):
 
         self.mesh = mesh
         self.domain = mesh.domain
+        self.inv_padding_mode = inv_padding_mode
 
         # This _should_ always be true, if the solver is constructed through
         # the appropriate factory, as 'precision' is a support value.

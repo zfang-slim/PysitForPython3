@@ -618,8 +618,11 @@ class TemporalModeling(object):
         if do_ic:
             ic *= (-1*dt)
             ic *= imaging_period  # Compensate for doing fewer summations at higher imaging_period
-            # ic = ic.without_padding() # gradient is never padded comment by Zhilong
-            ic = ic.add_padding()
+            # ic = ic.without_padding() # gradient is never padded comment out by Zhilong
+            if solver.inv_padding_mode is 'add':
+                ic = ic.add_padding()
+            else:
+                ic = ic.without_padding()
 
         retval = dict()
 
