@@ -212,7 +212,8 @@ class TemporalModeling(object):
         ic = rv['imaging_condition']
 
         # imaging condition is padded, but migration yields an unpadded return
-        return ic.without_padding()
+        # return ic.without_padding()
+        return ic
 
     def migrate_shots_extend(self, shots, m0, operand_simdata, 
                              max_sub_offset, h, imaging_period, operand_dWaveOpAdj=None, operand_model=None,
@@ -619,10 +620,11 @@ class TemporalModeling(object):
             ic *= (-1*dt)
             ic *= imaging_period  # Compensate for doing fewer summations at higher imaging_period
             # ic = ic.without_padding() # gradient is never padded comment out by Zhilong
-            if solver.inv_padding_mode is 'add':
-                ic = ic.add_padding()
-            else:
-                ic = ic.without_padding()
+            if m0.padded is not True:
+                if solver.inv_padding_mode is 'add':
+                    ic = ic.add_padding()
+                else:
+                    ic = ic.without_padding()
 
         retval = dict()
 

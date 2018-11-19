@@ -41,8 +41,9 @@ class ConstantDensityAcousticBase(SolverBase):
 
     def _compute_dWaveOp_frequency(self, uk_hat, nu):
         omega = (2*np.pi*nu)
-        Bmat = -(omega)**2 * self.dM + omega * 1j * self.dC + self.dK
-        return Bmat * uk_hat
+        # Bmat = -(omega)**2 * self.dM + omega * 1j * self.dC + self.dK
+        return -(omega)**2 * (self.dM*uk_hat) + omega * 1j * (self.dC*uk_hat) + self.dK*uk_hat
+        # return Bmat * uk_hat
         # Comment out by Zhilong
         # omega2 = (2*np.pi*nu)**2.0
         # return -1*omega2*uk_hat

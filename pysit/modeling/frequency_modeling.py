@@ -573,10 +573,13 @@ class FrequencyModeling(object):
         if 'imaging_condition' in return_parameters:
             # retval['imaging_condition'] = ic.without_padding() # Comment out by Zhilong, simply cutting the pml can not produce a correct gradient
             # In order to make the gradient correct, you should add all the weights in the pml to the last layer of the computational grid
-            if solver.inv_padding_mode is 'add':
-                retval['imaging_condition'] = ic.add_padding()
+            if m0.padded is True:
+                retval['imaging_condition'] = ic
             else:
-                retval['imaging_condition'] = ic.without_padding()
+                if solver.inv_padding_mode is 'add':
+                    retval['imaging_condition'] = ic.add_padding()
+                else:
+                    retval['imaging_condition'] = ic.without_padding()
 
         return retval
 

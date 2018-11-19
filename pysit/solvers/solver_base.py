@@ -109,12 +109,15 @@ class SolverBase(object):
     @model_parameters.setter
     def model_parameters(self, mp):
         if type(mp) is self.ModelParameters:
-            if self._mp is None or np.linalg.norm(self._mp.without_padding().data - mp.data) != 0.0:
-                self._mp = mp.with_padding(padding_mode='edge')
+            if mp.padded is True:
+                self._mp = mp
+            else:
+                if self._mp is None or np.linalg.norm(self._mp.without_padding().data - mp.data) != 0.0:
+                    self._mp = mp.with_padding(padding_mode='edge')
 
-                self._process_mp_reset()
+            self._process_mp_reset()
 
-                self._model_change_count += 1
+            self._model_change_count += 1
         else:
             raise TypeError('{0} is not of type {1}'.format(type(mp), self.ModelParameters))
 
