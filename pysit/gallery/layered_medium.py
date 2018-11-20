@@ -20,7 +20,8 @@ from pysit.util.io import *
 
 
 __all__ = ['LayeredMediumModel', 'layered_medium',
-           'Layer', 'three_layered_medium']
+           'Layer', 'three_layered_medium',
+           'set_model_from_file',]
 
 
 class Layer(object):
@@ -211,6 +212,10 @@ class LayeredMediumModel(GeneratedGalleryModel):
         if self.initial_model_style == 'constant': # initial_config = {'velocity': 3000.0}
             vp0 = np.ones(_shape_tuple)*self.initial_config['velocity']
 
+        elif self.initial_model_style == 'true': # initial_config = {}, set the initial model as the true model
+            vp0 = vp.reshape(-1, )
+            vp0.shape = vp.shape
+
         elif self.initial_model_style == 'smooth': #initial_config = {'sigma':50.0, 'filtersize':8}
             vp0 = blur_image(vp.reshape(-1,),
                              self.initial_config['filtersize'],
@@ -360,6 +365,7 @@ def set_model_from_file(Modelfile,
                                        **kwargs)
 
     C = vels.transpose().reshape(C.shape)
+    # C0 = copy.deepcopy(C)
 
     return C, m, d
 
