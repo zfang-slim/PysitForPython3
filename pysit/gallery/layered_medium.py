@@ -374,25 +374,37 @@ def set_model_from_file(Modelfile,
 
 if __name__ == '__main__':
 
-#  ASD = LayeredMediumModel(water_layered_rock)
-#  ASD = LayeredMediumModel(water_layered_rock, initial_model_style='smooth', initial_config={'sigma':100, 'filtersize':150})
-#  ASD = LayeredMediumModel(water_layered_rock, initial_model_style='gradient')
-#  ASD = LayeredMediumModel(water_layered_rock, initial_model_style='constant', initial_config={'velocity':3000})
-#  ASD = LayeredMediumModel(water_layered_rock, x_length=2000.0, y_length=1000.0)
+    import matplotlib.pyplot as plt
 
-#   C, C0, m, d = layered_medium(x_length=2000)
+    # ASD = LayeredMediumModel(water_layered_rock)
+    # ASD = LayeredMediumModel(water_layered_rock, initial_model_style='smooth', initial_config={'sigma':100, 'filtersize':150})
+    # ASD = LayeredMediumModel(water_layered_rock, initial_model_style='gradient')
+    # ASD = LayeredMediumModel(water_layered_rock, initial_model_style='constant', initial_config={'velocity':3000})
+    # SD = LayeredMediumModel(water_layered_rock, x_length=2000.0, y_length=1000.0)
 
-#   C, C0, m, d = three_layered_medium(TrueModelFileName='testtrue.mat',InitialModelFileName='testInitial.mat')
-  C, C0, m, d = three_layered_medium(initial_model_style='gradient',
-                                     initial_config={'sigma': 2.0, 'filtersize': 16})
-#   C, m, d = set_model_from_file('testtrue.mat')
+    C, C0, m, d = layered_medium(x_length=2000)
+
+    fig = plt.figure()
+    fig.add_subplot(2,1,1)
+    vis.plot(C, m)
+    fig.add_subplot(2,1,2)
+    vis.plot(C0, m)
+    plt.show()
+
+    C, C0, m, d = three_layered_medium(TrueModelFileName='testtrue.mat',InitialModelFileName='testInitial.mat',
+                                       initial_model_style='smooth',
+                                       initial_config={'sigma': 2.0, 'filtersize': 16})
+    C, m, d = set_model_from_file('testtrue.mat')
+    C0, m, d = set_model_from_file('testInitial.mat')
+    fig = plt.figure()
+    fig.add_subplot(2, 1, 1)
+    vis.plot(C, m)
+    fig.add_subplot(2, 1, 2)
+    vis.plot(C0, m)
+    plt.show()
+
 #   print(np.max(C-C0))
 
-  import matplotlib.pyplot as plt
+  
 
-  fig = plt.figure()
-  fig.add_subplot(2,1,1)
-  vis.plot(C, m)
-  fig.add_subplot(2,1,2)
-  vis.plot(C0, m)
-  plt.show()
+  
