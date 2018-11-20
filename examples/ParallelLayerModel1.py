@@ -115,6 +115,8 @@ if __name__ == '__main__':
 #   invalg = GradientDescent(objective)
     invalg = LBFGS(objective, memory_length=10)
     initial_value = solver.ModelParameters(m, {'C': C0})
+    initial_value.data = initial_value.with_padding(padding_mode='edge').data
+    initial_value.padded = True
 
     # Execute inversion algorithm
     print('Running LBFGS...')
@@ -143,11 +145,16 @@ if __name__ == '__main__':
 
     print('Run time:  {0}s'.format(time.time()-tt))
 
+    initial_value.data = result.C
+    C_cut = initial_value.without_padding().data
 
     if rank == 0:
 
-        model = result.C.reshape(m.shape(as_grid=True)).transpose()
+        # model = result.C.reshape(m.shape(as_grid=True)).transpose()
+        model = C_cut.reshape(m.shape(as_grid=True)).transpose()
+
         nt = m.shape(as_grid=True)
+        nt = (nt[1], nt[0])
         dt = (m.parameters[1].delta, m.parameters[0].delta)
         ot = (d.z.lbound, d.x.lbound)
 
