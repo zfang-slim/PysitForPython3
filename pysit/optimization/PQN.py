@@ -141,22 +141,69 @@ class PQN(OptimizationBase):
 class LBFGS_Hessian(object):
     def __init__(self, mem=None, gamma=1.0):
         self.mem = mem
-        shape_mem = np.shape(mem)
-        self.shape_mem = shape_mem
+        # shape_mem = np.shape(mem)
+        # self.shape_mem = shape_mem
+        self.n_mem = len(mem)
 
-        if len(mem) > 0:
+        if n_mem > 0:
             self.gamma = mem[-1][1].inner_product(mem[-1][2]) / mem[-1][2].inner_product(mem[-1][2])
         else:
             self.gamma = gamma
+
+        if n_mem > 0:
+            M1 = np.zeros((n_mem, n_mem))
+            M2 = np.zeros((n_mem, n_mem))
+            M4 = np.zeros((n_mem, n_mem))
+            for i in range(n_mem):
+                M4[i,i] = mem[i][1].inner_product(mem[i][2])
+                for j in range(n_mem):
+                    M1[i,j] = mem[i][1].inner_product(mem[j][1])
+                    if i > j:
+                        M2[i,j] = mem[i][1].inner_product(mem[j][2])
+                
+            
+            M1 = 1.0 / gamma * M1 
+            M  = np.bmat([[M1, M2],[M2.transpose(), M4]])
+            self.BFGS_IM = np.linalg.inv(M)
+
+        else:
+            self.BFGS_IM = None
+
 
         
 
     def __mul__(self, x):
         ## Define the matrix-vector product of the l-BFGS Hessian
-        A = np.ones((2,2))
-        A[0,1] = 2.0
+        sigma = 1.0 / self.gamma
+        n_mem = len(mem)
 
-        return A*x
+        if n_mem is 0:
+            output = sigma*x
+        else:
+            a_tmp = np.zeros((n_mem,1))
+            b_tmp = np.zeros((n_mem,1))
+
+            for i in range(n_mem):
+                rho = mem[i][0]
+                s = mem[i][1]
+                y = mem[i][2]
+                a_tmp[i] = s.inner_product(x) * sigma
+                b_tmp[i] = y.inner_product(x) 
+        
+            c_tmp = np.concatenate((a_tmp, b_tmp))
+            c_tmp = self.BFGS_IM * c_tmp
+
+            for i in range(n_mem):
+                s = mem[i][1]
+                y = mem[i][2]
+                if i is 0:
+                    z = sigma*s*c_tmp[0] + y*c_tmp[n_mem]
+                else:
+                    z += sigma*s*c_tmp[i] + y*c_tmp[i+n_mem]
+            
+            output = sigma*x - z
+
+        return output
 
     def inv(self, x):
         ## Define the inverse matrix-vector product of the l-BFGS Hessian
@@ -186,14 +233,71 @@ class LBFGS_Hessian(object):
 
 
 if __name__ == '__main__':
-    test_H = LBFGS_Hessian()
-    b = np.mat([0,1])
-    b = b.transpose()
-    c = test_H.inv(b)
-    d = test_H * b
-    e = b*test_H
-    print('c=', c)
-    print('d=', d)
+
+    import time
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import math
+    import os
+    from shutil import copy2
+
+    import sys
+
+    from pysit import *
+    from pysit.gallery import horizontal_reflector
+    from pysit.gallery.layered_medium import three_layered_medium
+    from pysit.util.io import *
+
+    
+
+    C, C0, m, d=three_layered_medium(TrueModelFileName='testtrue.mat', InitialModelFileName='testInitial.mat',
+                                     initial_model_style='gradient',
+                                     initial_config={'sigma': 4.0, 'filtersize': 4},)
+
+    Nshots = 1
+    # Set up shots
+    zmin = d.z.lbound
+    zmax = d.z.rbound
+    # zpos = zmin + (1./9.)*zmax
+    zpos = 0.01 * 2.0
+
+    shots=equispaced_acquisition(m,
+                                 RickerWavelet(1.0),
+                                 sources=Nshots,
+                                 source_depth=zpos,
+                                 source_kwargs={},
+                                 receivers='max',
+                                 receiver_depth=zpos,
+                                 receiver_kwargs={},
+                                 )
+
+    # Define and configure the wave solver
+    trange=(0.0, 3.0)
+
+    solver=ConstantDensityAcousticWave(m,
+                                       spatial_accuracy_order=4,
+                                       trange=trange,
+                                       kernel_implementation='cpp',
+                                       max_C=4.0)  # The dt is automatically fixed for given max_C (velocity)
+
+    print(solver.max_C)
+
+    # Generate synthetic Seismic data
+    sys.stdout.write('Generating data...')
+    base_model=solver.ModelParameters(m, {'C': C})
+    g = base_model.Perturbation(m)
+
+    a = 1
+
+    # test_H = LBFGS_Hessian()
+    # b = np.mat([0,1])
+    # b = b.transpose()
+    # c = test_H.inv(b)
+    # d = test_H * b
+    # e = b*test_H
+    # print('c=', c)
+    # print('d=', d)
 
 
 
