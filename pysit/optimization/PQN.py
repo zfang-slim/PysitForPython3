@@ -14,14 +14,20 @@ __docformat__ = "restructuredtext en"
 
 class PQN(OptimizationBase):
 
-    def __init__(self, objective, memory_length=None, reset_on_new_inner_loop_call=True, proj_op=None, *args, **kwargs):
+    def __init__(self, objective, memory_length=None, 
+                 reset_on_new_inner_loop_call=True, 
+                 proj_op=None, maxiter_PGD=1000, 
+                 maxiter_linesearch_PGD=100, 
+                 *args, **kwargs):
         OptimizationBase.__init__(self, objective, *args, **kwargs)
         self.prev_alpha = None
         self.prev_model = None
         # collections.deque uses None to indicate no length
         self.memory_length=memory_length
         self.reset_on_new_inner_loop_call = reset_on_new_inner_loop_call
-        self.proj_op= proj_op
+        self.proj_op=proj_op
+        self.maxiter_PGD=maxiter_PGD
+        self.maxiter_linesearch_PGD=maxiter_linesearch_PGD
 
         self._reset_memory()
 
@@ -77,25 +83,36 @@ class PQN(OptimizationBase):
         else:
             gamma = 1.0
 
-        alphas = []
+        # alphas = []
 
-        for rho, s, y in reversed(mem):
-            alpha = rho * s.inner_product(q)
-            t = alpha * y
-            q -= t
-            alphas.append(alpha)
+        # for rho, s, y in reversed(mem):
+        #     alpha = rho * s.inner_product(q)
+        #     t = alpha * y
+        #     q -= t
+        #     alphas.append(alpha)
 
-        alphas.reverse()
+        # alphas.reverse()
 
-        r = gamma * q
+        # r = gamma * q
 
-        for alpha, m in zip(alphas, mem):
-            rho, s, y = m
-            beta = rho*y.inner_product(r)
-            r += (alpha-beta)*s
+        # for alpha, m in zip(alphas, mem):
+        #     rho, s, y = m
+        #     beta = rho*y.inner_product(r)
+        #     r += (alpha-beta)*s
 
-        # Search the opposite direction
-        direction = -1.0*r
+        # # Search the opposite direction
+        # direction = -1.0*r
+
+        ## Use Projected Gradient descent method to solve the constrained quadratic optimization problem
+        H_BFGS = LBFGS_Hessian(memory)
+        proj_op = self.proj_op
+        quadratic_obj = Quadratic_obj(gradient, H_BFGS, x_k)
+        PGDsolver = ProjectedGradientDescent(quadratic_obj, proj_op)
+        initial_value_PGD = proj_op(H_BFGS.inv(-1.0*gradient))
+        x_kp1, f_history, g_history, x_history = PGDsolver(
+            self.maxiter_PGD, self.maxiter_linesearch_PGD, initial_value_PGD)[0]
+
+        direction = x_kp1 - x_k
 
         alpha0_kwargs = {'reset' : False}
         if self._reset_line_search:
@@ -124,29 +141,171 @@ class PQN(OptimizationBase):
         else:
             return 1.0
 
-    def _select_alpha_constraint(shots, gradient, direction, objective_arguments, current_objective_value, memory, alph0_kwargs):
-        a = 1
 
-        ## get the f(x0) and g(x0)
+class Quadratic_obj(object):
+    def __init__(self, first_order_term, second_order_term, x_org):
+        self.first_order_term = first_order_term
+        self.second_order_term = second_order_term
+        self.x_org = x_org
+
+    def __call__(self,x):
+        dx = x - self.x_org
+        obj = self.first_order_term.inner_product(dx) + 0.5 * dx.inner_product(self.second_order_term * dx)
+        gradient = self.first_order_term + self.second_order_term * dx
+        Hessian = self.second_order_term
+
+        return obj, gradient, Hessian
 
 
 
-        ## solve the constrained quadratical problems
+class ProjectedGradientDescent(object):
+    def __init__(self, objective, proj_op):
+        self.objective_function = objective
+        self.proj_op = proj_op
+        
+    def __call__(self, maxiter, maxiter_linesearch, initial_value, verbose=False):
+       
+        x0 = initial_value
+        objective = self.objective_function
+        proj_op = self.proj_op
+        xk = x0
+        fk, gk, Hk = objective(xk)
+        f_history = []
+        g_history = []
+        x_history = []
+        f_history.append(fk)
+        g_history.append(np.linalg.norm(gk.data))
+        x_history.append(np.linalg.norm(xk.data))
+
+        if verbose is True:
+            print('{0:4s}   {1:9s}   {2:9s}   {3:9s}'.format('Iter', 'f', '|g|', '|x|'))
+            print('{0:4d}   {1: 3.6f}   {2: 3.6f}   {3: 3.6f}'.format(0, fk, g_history[0], x_history[0]))
 
 
-        ## compare the objective
+        stop = False
+
+        itercnt = 0
+
+        while not stop:
+            if itercnt == 0:
+                alpha = None
+
+            xkp1, fkp1, gkp1, alpha = self._backtrack_line_search_PGD(objective, gk, xk, alpha)
+            df = fkp1 - fk
+            if fkp1 > fk or np.abs(fkp1-fk)<10.0**(-10):
+                stop = True
+            else:
+                itercnt += 1
+                if itercnt > maxiter:
+                    stop = True
+                else:
+                    xk   = xkp1
+                    fk   = fkp1
+                    gk   = gkp1
+
+                    f_history.append(fk)
+                    g_history.append(np.linalg.norm(gk.data))
+                    x_history.append(np.linalg.norm(xk.data))
+
+                    if verbose is True:
+                        print('{0:4d}   {1: 3.6f}   {2: 3.6f}   {3: 3.6f}  {4: 3.6f}    {5: 3.6f}'.format(
+                            itercnt, fk, g_history[-1], x_history[-1], alpha, df))
+
+        
+        return xk, f_history, g_history, x_history
+
+    def _backtrack_line_search_PGD(self, objective, gradient, initial_value, alpha0=None):
+
+        if alpha0 is None:
+            if initial_value is None:
+                alpha = 1.0
+            else:
+                alpha = 0.1 * np.sqrt(initial_value.inner_product(initial_value) / gradient.inner_product(gradient))
+        else:
+            alpha = alpha0
 
 
+        xk = initial_value
+        geom_fac = 0.8
+        geom_fac_up = 0.7
+        goldstein_c = 1e-3  # 1e-4
+        max_linesearch_iterations_PGD = 100
+
+        fp_comp = 1e-6
+
+        fk, _, _, = self.objective_function(xk)
+
+        stop = False 
+        itercnt = 1
+        
+        while not stop:
+            xkptmp = xk - alpha * gradient
+            xkptmp = self.proj_op(xkptmp)
+            fkp1, gkp1, _, = self.objective_function(xkptmp)
+
+            cmpval = fk + alpha * goldstein_c * gradient.inner_product((-alpha)*gradient)
+            if (fkp1 <= cmpval) or ((abs(fkp1-cmpval)/abs(fkp1)) <= fp_comp):
+                stop = True
+            elif itercnt > max_linesearch_iterations_PGD:
+                stop = True
+            else:
+                itercnt += 1
+                alpha = alpha * geom_fac
+
+        return xkptmp, fkp1, gkp1, alpha
+
+
+
+
+## The following two classes are for testing, we should remove them later or move them to somewhere else
+
+class BoundProjection(object):
+    def __init__(self, lowerbound, upperbound):
+        self.lbound = lowerbound
+        self.ubound = upperbound
+
+    def __call__(self, x):
+
+        y = copy.deepcopy(x)
+        for i in range(len(x.data)):
+            if y.data[i] < self.lbound:
+                y.data[i] = self.lbound
+
+            if y.data[i] > self.ubound:
+                y.data[i]=self.ubound
+
+        return y
+
+
+class LineProjection(object):
+    def __init__(self, fakeinput=None):
+        fakeinput = None
+
+    def __call__(self, x):
+
+        y = copy.deepcopy(x)
+
+        if y.data[0]+y.data[1]+ 1.0 < 0:
+            x_tmp = (y.data[0]-1.0-y.data[1]) / 2.0
+            y_tmp = -x_tmp - 1.0
+            y.data[0] = x_tmp
+            y.data[1] = y_tmp
+
+        return y
+            
 
 class LBFGS_Hessian(object):
-    def __init__(self, mem=None, gamma=1.0):
-        self.mem = mem
+    def __init__(self, memory=None, gamma=1.0):
+        self.memory = memory
         # shape_mem = np.shape(mem)
         # self.shape_mem = shape_mem
-        self.n_mem = len(mem)
+        n_mem = len(memory)
+        self.n_mem = n_mem
+        mem = memory
 
         if n_mem > 0:
-            self.gamma = mem[-1][1].inner_product(mem[-1][2]) / mem[-1][2].inner_product(mem[-1][2])
+            gamma = mem[-1][1].inner_product(mem[-1][2]) / mem[-1][2].inner_product(mem[-1][2])
+            self.gamma = gamma
         else:
             self.gamma = gamma
 
@@ -163,7 +322,7 @@ class LBFGS_Hessian(object):
                 
             
             M1 = 1.0 / gamma * M1 
-            M  = np.bmat([[M1, M2],[M2.transpose(), M4]])
+            M  = np.bmat([[M1, M2],[M2.transpose(), -M4]])
             self.BFGS_IM = np.linalg.inv(M)
 
         else:
@@ -174,9 +333,10 @@ class LBFGS_Hessian(object):
 
     def __mul__(self, x):
         ## Define the matrix-vector product of the l-BFGS Hessian
+        mem = self.memory
         sigma = 1.0 / self.gamma
         n_mem = len(mem)
-
+        
         if n_mem is 0:
             output = sigma*x
         else:
@@ -197,9 +357,11 @@ class LBFGS_Hessian(object):
                 s = mem[i][1]
                 y = mem[i][2]
                 if i is 0:
-                    z = sigma*s*c_tmp[0] + y*c_tmp[n_mem]
+                    z = sigma*np.asscalar(c_tmp[0]) * s \
+                        + np.asscalar(c_tmp[n_mem]) * y
                 else:
-                    z += sigma*s*c_tmp[i] + y*c_tmp[i+n_mem]
+                    z += sigma*np.asscalar(c_tmp[i]) * s \
+                        + np.asscalar(c_tmp[i+n_mem]) * y
             
             output = sigma*x - z
 
@@ -209,12 +371,13 @@ class LBFGS_Hessian(object):
         ## Define the inverse matrix-vector product of the l-BFGS Hessian
         
         gamma = self.gamma
-        mem = self.mem
+        mem = self.memory
 
         alphas = []
+        q = copy.deepcopy(x)
 
         for rho, s, y in reversed(mem):
-            alpha = rho * s.inner_product(x)
+            alpha = rho * s.inner_product(q)
             t = alpha * y
             q -= t
             alphas.append(alpha)
@@ -249,44 +412,133 @@ if __name__ == '__main__':
     from pysit.gallery.layered_medium import three_layered_medium
     from pysit.util.io import *
 
-    
+    n_mem = 1
 
-    C, C0, m, d=three_layered_medium(TrueModelFileName='testtrue.mat', InitialModelFileName='testInitial.mat',
-                                     initial_model_style='gradient',
-                                     initial_config={'sigma': 4.0, 'filtersize': 4},)
+    pmlz = PML(0, 100, ftype='quadratic')
 
-    Nshots = 1
+#   pmlz = Dirichlet()
+
+    z_config = (0.1, 0.11, pmlz, Dirichlet())
+    z_config = (0.1, 0.11, pmlz, pmlz)
+    nd = 5
+#   z_config = (0.1, 0.8, Dirichlet(), Dirichlet())
+
+    d = RectangularDomain(z_config)
+
+    m = CartesianMesh(d, nd)
+
+    #   Generate true wave speed
+    C, C0, m, d = horizontal_reflector(m)
+
     # Set up shots
-    zmin = d.z.lbound
-    zmax = d.z.rbound
-    # zpos = zmin + (1./9.)*zmax
-    zpos = 0.01 * 2.0
+    Nshots = 1
+    shots = []
 
-    shots=equispaced_acquisition(m,
-                                 RickerWavelet(1.0),
-                                 sources=Nshots,
-                                 source_depth=zpos,
-                                 source_kwargs={},
-                                 receivers='max',
-                                 receiver_depth=zpos,
-                                 receiver_kwargs={},
-                                 )
+    # Define source location and type
+    zpos = 0.2
+    source = PointSource(m, (zpos), RickerWavelet(25.0))
+
+    # Define set of receivers
+    receiver = PointReceiver(m, (zpos))
+    # receivers = ReceiverSet([receiver])
+
+    # Create and store the shot
+    shot = Shot(source, receiver)
+    # shot = Shot(source, receivers)
+    shots.append(shot)
 
     # Define and configure the wave solver
-    trange=(0.0, 3.0)
+    trange = (0.0, 3.0)
 
-    solver=ConstantDensityAcousticWave(m,
-                                       spatial_accuracy_order=4,
-                                       trange=trange,
-                                       kernel_implementation='cpp',
-                                       max_C=4.0)  # The dt is automatically fixed for given max_C (velocity)
+    solver1 = ConstantDensityAcousticWave(m,
+                                          formulation='scalar',
+                                          spatial_accuracy_order=2,
+                                          trange=trange)
 
-    print(solver.max_C)
+    solver2 = ConstantDensityAcousticWave(m,
+                                          kernel_implementation='cpp',
+                                          formulation='scalar',
+                                          spatial_accuracy_order=2,
+                                          trange=trange)
+
+    # Generate synthetic Seismic data
+    print('Generating data...')
+    m_base = solver1.ModelParameters(m, {'C': C})
 
     # Generate synthetic Seismic data
     sys.stdout.write('Generating data...')
-    base_model=solver.ModelParameters(m, {'C': C})
-    g = base_model.Perturbation(m)
+    # m_base=solver.ModelParameters(m, {'C': C})
+    g_base = m_base.Perturbation(m)
+
+    m_base.data = np.random.normal(0.0, 1.0, m_base.data.shape)
+    m_list = []
+    g_list = []
+
+    for i in range(n_mem+1):
+        m_tmp = copy.deepcopy(m_base)
+        m_tmp.data = np.random.normal(0.0, 1.0, m_base.data.shape)
+        m_list.append(m_tmp)
+        g_tmp = copy.deepcopy(g_base)
+        g_tmp.data = np.random.normal(0.0, 1.0, m_base.data.shape)
+        g_list.append(g_tmp)
+
+    memory = deque([], n_mem)
+
+    for i in range(n_mem):
+        s_k = m_list[i+1]-m_list[i]
+        y_k = g_list[i+1]-g_list[i]
+        s_k.data = np.ones(s_k.data.shape)*(i+2)        
+        y_k.data = np.ones(y_k.data.shape)
+        # y_k.data[1] = 2.0
+        rho_k = 1./y_k.inner_product(s_k)
+        memory.append([rho_k, s_k, y_k])
+
+    H1 = LBFGS_Hessian(memory)
+    x  = copy.deepcopy(g_tmp)
+    x.data = np.ones(m_base.data.shape)
+    c = H1.inv(x)
+    b = H1 * c
+    print(b)
+
+    H2 = np.zeros((nd,nd))
+    H3 = np.zeros((nd,nd))
+    for i in range(nd):
+        x_tmp = copy.deepcopy(g_tmp)
+        x_tmp.data = np.zeros(m_base.data.shape)
+        x_tmp.data[i] = 1.0
+        b_tmp = H1 * x_tmp
+        c_tmp = H1.inv(x_tmp)
+        H2[:, i] = b_tmp.data.flatten()
+        H3[:, i] = c_tmp.data.flatten()
+
+
+    lowerbound = -5.0
+    upperbound = -3.0
+
+    x_0 = copy.deepcopy(g_tmp)
+    x_0.data = np.ones(m_base.data.shape) *(-4.0)
+
+    proj_op=BoundProjection(lowerbound, upperbound)
+    # proj_op = LineProjection()
+    grad = copy.deepcopy(g_tmp)
+    grad.data = np.ones(m_base.data.shape)
+
+    x_ref = copy.deepcopy(g_tmp)
+    x_ref.data = np.zeros(m_base.data.shape)
+    objective_fun = Quadratic_obj(grad, H1, x_ref)
+    opt_solver = ProjectedGradientDescent(objective_fun, proj_op)
+
+    x_out = opt_solver(200, 100, x_0, verbose=True)
+
+
+
+
+
+
+
+
+
+
 
     a = 1
 
