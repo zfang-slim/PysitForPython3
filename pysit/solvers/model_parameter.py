@@ -401,6 +401,7 @@ class ModelParameterBase(object):
                 sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
                 result.data[sl] += p.unlinearize(p.linearize(self.data[sl]) - rhs[idx])
+                
         # difference with a ModelParamter is OK, but will return a perturbation
         elif type(rhs) in [type(self)] and (rhs.data.shape == self.data.shape):
             dof = self.mesh.dof(include_bc=self.padded)
@@ -420,9 +421,8 @@ class ModelParameterBase(object):
                 sl = slice(idx*dof, (idx+1)*dof)
                 result.data[sl] = 0
                 result.data[sl] += p.unlinearize(p.linearize(self.data[sl])-rhs.data[sl])
-            return result  # RETURN HERE ALREADY, BECAUSE OTHERWISE THE RESULT WILL BE POSTPROCESSED EVEN THOUGH IT IS NOT A NONLINEAR MODEL_PARAMETER, BUT A PERTURBATION WITH LINEAR DATA
 
-        # difference with a ModelParamter is OK, but will return an array
+        # difference with an array is OK, but will return an array
         elif type(rhs) is np.ndarray and (rhs.shape == self.data.shape):
             dof = self.mesh.dof(include_bc=self.padded)
             result = type(self)(self.mesh, padded=self.padded)
