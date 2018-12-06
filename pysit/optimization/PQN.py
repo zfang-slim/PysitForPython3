@@ -104,7 +104,12 @@ class PQN(OptimizationBase):
         # direction = -1.0*r
 
         ## Use Projected Gradient descent method to solve the constrained quadratic optimization problem
-        H_BFGS = LBFGS_Hessian(mem)
+        if len(mem) > 0:
+            H_BFGS = LBFGS_Hessian(mem)
+        else:
+            gamma0 = 0.0001 * np.sqrt(x_k.inner_product(x_k) / gradient.inner_product(gradient))
+            H_BFGS = LBFGS_Hessian(mem, gamma=gamma0)
+            
         proj_op = self.proj_op
         quadratic_obj = Quadratic_obj(gradient, H_BFGS, x_k)
         PGDsolver = ProjectedGradientDescent(quadratic_obj, proj_op)
