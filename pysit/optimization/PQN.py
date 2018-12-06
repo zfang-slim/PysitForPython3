@@ -104,13 +104,16 @@ class PQN(OptimizationBase):
         # direction = -1.0*r
 
         ## Use Projected Gradient descent method to solve the constrained quadratic optimization problem
-        H_BFGS = LBFGS_Hessian(memory)
+        H_BFGS = LBFGS_Hessian(mem)
         proj_op = self.proj_op
         quadratic_obj = Quadratic_obj(gradient, H_BFGS, x_k)
         PGDsolver = ProjectedGradientDescent(quadratic_obj, proj_op)
-        initial_value_PGD = proj_op(H_BFGS.inv(-1.0*gradient))
-        x_kp1, f_history, g_history, x_history = PGDsolver(
-            self.maxiter_PGD, self.maxiter_linesearch_PGD, initial_value_PGD)[0]
+        if proj_op is not None:
+            initial_value_PGD = proj_op(x_k + H_BFGS.inv(-1.0*gradient))
+            x_kp1, f_history, g_history, x_history = PGDsolver(
+                self.maxiter_PGD, self.maxiter_linesearch_PGD, initial_value_PGD, verbose=True)
+        else:
+            x_kp1 = xk + H_BFGS.inv(-1.0*gradient)
 
         direction = x_kp1 - x_k
 
@@ -192,7 +195,7 @@ class ProjectedGradientDescent(object):
 
             xkp1, fkp1, gkp1, alpha = self._backtrack_line_search_PGD(objective, gk, xk, alpha)
             df = fkp1 - fk
-            if fkp1 > fk or np.abs(fkp1-fk)<10.0**(-10):
+            if fkp1 < fk or np.abs(fkp1-fk) / np.abs(fk)<10.0**(-6):
                 stop = True
             else:
                 itercnt += 1
@@ -228,10 +231,10 @@ class ProjectedGradientDescent(object):
         xk = initial_value
         geom_fac = 0.8
         geom_fac_up = 0.7
-        goldstein_c = 1e-3  # 1e-4
+        goldstein_c = 1e-6  # 1e-4
         max_linesearch_iterations_PGD = 100
 
-        fp_comp = 1e-6
+        fp_comp = 1e-8
 
         fk, _, _, = self.objective_function(xk)
 
