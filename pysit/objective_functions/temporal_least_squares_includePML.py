@@ -138,11 +138,6 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
 
         return pseudo_hessian_diag_contrib
 
-    def compute_PML_regularization(self, m0):
-        """ Compute the gradient and its objective function for the regularization of PML
-            Here m reprensents m_{PML}
-            f(m) = 0.5*alpha*(|Dx(m)|^2_{2} + |Dz(m)|^2_{2} + |Dy(m)|^2_{2}) + 0.5*beta*|(D^2_{xx}+D^2_{yy}+D^2_{zz})(m)|^2_{2}
-        """
 
     def compute_gradient(self, shots, m0, aux_info={}, **kwargs):
         """Compute the gradient for a set of shots.
