@@ -109,7 +109,7 @@ class PQN(OptimizationBase):
         else:
             gamma0 = 0.0001 * np.sqrt(x_k.inner_product(x_k) / gradient.inner_product(gradient))
             H_BFGS = LBFGS_Hessian(mem, gamma=gamma0)
-            
+
         proj_op = self.proj_op
         quadratic_obj = Quadratic_obj(gradient, H_BFGS, x_k)
         PGDsolver = ProjectedGradientDescent(quadratic_obj, proj_op)
@@ -118,7 +118,7 @@ class PQN(OptimizationBase):
             x_kp1, f_history, g_history, x_history = PGDsolver(
                 self.maxiter_PGD, self.maxiter_linesearch_PGD, initial_value_PGD, verbose=True)
         else:
-            x_kp1 = xk + H_BFGS.inv(-1.0*gradient)
+            x_kp1 = x_k + H_BFGS.inv(-1.0*gradient)
 
         direction = x_kp1 - x_k
 
