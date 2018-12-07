@@ -200,7 +200,7 @@ class ProjectedGradientDescent(object):
 
             xkp1, fkp1, gkp1, alpha = self._backtrack_line_search_PGD(objective, gk, xk, alpha)
             df = fkp1 - fk
-            if fkp1 < fk or np.abs(fkp1-fk) / np.abs(fk)<10.0**(-6):
+            if fkp1 > fk or np.abs(fkp1-fk) / np.abs(fk)<10.0**(-6):
                 stop = True
             else:
                 itercnt += 1
