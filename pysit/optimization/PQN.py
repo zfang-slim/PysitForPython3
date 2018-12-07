@@ -107,7 +107,7 @@ class PQN(OptimizationBase):
         if len(mem) > 0:
             H_BFGS = LBFGS_Hessian(mem)
         else:
-            gamma0 = 0.0001 * np.sqrt(x_k.inner_product(x_k) / gradient.inner_product(gradient))
+            gamma0 = 0.000001 * np.sqrt(x_k.inner_product(x_k) / gradient.inner_product(gradient))
             H_BFGS = LBFGS_Hessian(mem, gamma=gamma0)
 
         proj_op = self.proj_op
@@ -126,6 +126,8 @@ class PQN(OptimizationBase):
         if self._reset_line_search:
             alpha0_kwargs = {'reset' : True}
             self._reset_line_search = False
+
+        alpha0_kwargs = {'reset': False}
 
         alpha = self.select_alpha(shots, gradient, direction, objective_arguments,
                                   current_objective_value=current_objective_value,
