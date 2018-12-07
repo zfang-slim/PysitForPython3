@@ -14,7 +14,7 @@ __docformat__ = "restructuredtext en"
 class TemporalEnvelope(ObjectiveFunctionBase):
     """ How to compute the parts of the objective you need to do optimization """
 
-    def __init__(self, solver, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period = 1):
+    def __init__(self, solver, envelope_power=2.0, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period = 1):
         """imaging_period: Imaging happens every 'imaging_period' timesteps. Use higher numbers to reduce memory consumption at the cost of lower gradient accuracy.
             By assigning this value to the class, it will automatically be used when the gradient function of the temporal objective function is called in an inversion context.
         """
@@ -24,8 +24,9 @@ class TemporalEnvelope(ObjectiveFunctionBase):
         self.parallel_wrap_shot = parallel_wrap_shot
 
         self.imaging_period = int(imaging_period) #Needs to be an integer
+        self.envelope_power = envelope_power
 
-    def _residual(self, shot, m0, dWaveOp=None, wavefield=None):
+    def _residual(self, shot, m0, comp_grad=False, dWaveOp=None, wavefield=None):
         """Computes residual in the usual sense.
 
         Parameters
@@ -42,7 +43,7 @@ class TemporalEnvelope(ObjectiveFunctionBase):
         # the case in inversion), tell the solver to store that information, in
         # addition to the solution as it would be observed by the receivers in
         # this shot (aka, the simdata).
-        p = 2.0
+        p = self.envelope_power
         rp = ['simdata']
         if dWaveOp is not None:
             rp.append('dWaveOp')
@@ -59,13 +60,14 @@ class TemporalEnvelope(ObjectiveFunctionBase):
         dpred = retval['simdata']
         dobs = shot.receivers.interpolate_data(self.solver.ts())
 
-        dpred_Hilbert = hilbert(dpred)
-        dobs_Hilbert = hilbert(dobs)
+        dpred_Hilbert = hilbert(dpred, axis=0).imag
+        dobs_Hilbert = hilbert(dobs, axis=0).imag
 
-        dpred_envelop = np.sqrt(dpred*dpred + dpred_Hilbert.conj()*dpred_Hilbert)
-        dobs_envelop = np.sqrt(dobs*dobs + dobs_Hilbert.conj()*dobs_Hilbert)
+        dpred_envelop = dpred**2.0 + dpred_Hilbert**2.0
+        dobs_envelop = dobs**2.0 + dobs_Hilbert**2.0
 
-        resid = dpred_envelop**p - dobs_envelop**p
+        resid = dpred_envelop**(p/2.0) - dobs_envelop**(p/2.0)
+
         # resid = shot.receivers.interpolate_data(self.solver.ts()) - retval['simdata']
 
         # If the second derivative info is needed, copy it out
@@ -74,7 +76,18 @@ class TemporalEnvelope(ObjectiveFunctionBase):
         if wavefield is not None:
             wavefield[:] = retval['wavefield'][:]
 
-        return resid
+        if comp_grad is False:
+            return resid
+        else:
+            denvelop_ddata = p * dpred_envelop**(p/2.0 -1.0) * dpred
+            adjoint_src = denvelop_ddata * resid
+
+            denvelop_ddataH = p * dpred_envelop**(p/2.0 - 1.0) * dpred_Hilbert 
+            adjoint_src += (-hilbert(denvelop_ddataH * resid, axis=0)).imag
+            
+            return resid, adjoint_src
+
+
 
     def evaluate(self, shots, m0, **kwargs):
         """ Evaluate the least squares objective function over a list of shots."""
@@ -117,10 +130,10 @@ class TemporalEnvelope(ObjectiveFunctionBase):
         else:
             wavefield=None
             
-        r = self._residual(shot, m0, dWaveOp=dWaveOp, wavefield=wavefield, **kwargs)
+        r, adjoint_src = self._residual(shot, m0, comp_grad=True, dWaveOp=dWaveOp, wavefield=wavefield, **kwargs)
         
         # Perform the migration or F* operation to get the gradient component
-        g = self.modeling_tools.migrate_shot(shot, m0, r, self.imaging_period, dWaveOp=dWaveOp, wavefield=wavefield)
+        g = self.modeling_tools.migrate_shot(shot, m0, adjoint_src, self.imaging_period, dWaveOp=dWaveOp, wavefield=wavefield)
 
         if not ignore_minus:
             g = -1*g
