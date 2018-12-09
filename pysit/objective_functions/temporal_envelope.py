@@ -77,7 +77,7 @@ class TemporalEnvelope(ObjectiveFunctionBase):
             wavefield[:] = retval['wavefield'][:]
 
         if comp_grad is False:
-            return resid
+            return -resid
         else:
             denvelop_ddata = p * dpred_envelop**(p/2.0 -1.0) * dpred
             adjoint_src = denvelop_ddata * resid
@@ -85,7 +85,7 @@ class TemporalEnvelope(ObjectiveFunctionBase):
             denvelop_ddataH = p * dpred_envelop**(p/2.0 - 1.0) * dpred_Hilbert 
             adjoint_src += (-hilbert(denvelop_ddataH * resid, axis=0)).imag
             
-            return resid, adjoint_src
+            return -resid, -adjoint_src
 
 
 
