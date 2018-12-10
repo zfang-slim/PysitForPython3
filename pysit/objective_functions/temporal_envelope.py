@@ -86,7 +86,7 @@ class TemporalEnvelope(ObjectiveFunctionBase):
         if comp_grad is False:
             return -resid
         else:
-            denvelop_ddata = p * dpred_envelop**(p/2.0 -1.0) * dpred
+            denvelop_ddata = p * dpred_envelop**(p/2.0 - 1.0) * dpred
             adjoint_src = denvelop_ddata * resid
 
             denvelop_ddataH = p * dpred_envelop**(p/2.0 - 1.0) * dpred_Hilbert 

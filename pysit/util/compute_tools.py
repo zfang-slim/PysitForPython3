@@ -72,7 +72,7 @@ class low_pass_filter(object):
         
     '''
 
-    def __init__(self, nsmp, T, cut_freq, transit_freq_length=0.5, axis=0):
+    def __init__(self, nsmp, T, cut_freq, transit_freq_length=1.0, axis=0):
         '''
         Input:
             data - data can be a 1D array or 2D matrix or 3D cubic

@@ -107,14 +107,15 @@ class PQN(OptimizationBase):
         if len(mem) > 0:
             H_BFGS = LBFGS_Hessian(mem)
         else:
-            gamma0 = 0.000001 * np.sqrt(x_k.inner_product(x_k) / gradient.inner_product(gradient))
+            gamma0 = 0.0001 * np.sqrt(x_k.inner_product(x_k) / gradient.inner_product(gradient))
             H_BFGS = LBFGS_Hessian(mem, gamma=gamma0)
 
         proj_op = self.proj_op
         quadratic_obj = Quadratic_obj(gradient, H_BFGS, x_k)
         PGDsolver = ProjectedGradientDescent(quadratic_obj, proj_op)
         if proj_op is not None:
-            initial_value_PGD = proj_op(x_k + H_BFGS.inv(-1.0*gradient))
+            # initial_value_PGD = proj_op(x_k + H_BFGS.inv(-1.0*gradient))
+            initial_value_PGD = self._compute_initial_PGD(x_k, H_BFGS.inv(-1.0*gradient), proj_op)
             x_kp1, f_history, g_history, x_history = PGDsolver(
                 self.maxiter_PGD, self.maxiter_linesearch_PGD, initial_value_PGD, verbose=True)
         else:
@@ -143,6 +144,18 @@ class PQN(OptimizationBase):
         self.memory.append([None,None,copy.deepcopy(-1*gradient)])
 
         return step
+
+    def _compute_initial_PGD(self, x, dx, proj_op):
+        alpha = 0.5
+        stop = False
+        while stop is not True:
+            y = proj_op(x + dx)
+            if np.isfinite(np.linalg.norm(y.data)) == 1:
+                stop = True 
+            else:
+                dx = alpha * dx
+
+        return y
 
 
     def _compute_alpha0(self, phi0, grad0, reset=False, *args, **kwargs):
@@ -230,13 +243,13 @@ class ProjectedGradientDescent(object):
             if initial_value is None:
                 alpha = 1.0
             else:
-                alpha = 0.1 * np.sqrt(initial_value.inner_product(initial_value) / gradient.inner_product(gradient))
+                alpha = 0.01 * np.sqrt(initial_value.inner_product(initial_value) / gradient.inner_product(gradient))
         else:
             alpha = alpha0
 
 
         xk = initial_value
-        geom_fac = 0.8
+        geom_fac = 0.5
         geom_fac_up = 0.7
         goldstein_c = 1e-6  # 1e-4
         max_linesearch_iterations_PGD = 100

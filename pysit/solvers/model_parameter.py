@@ -98,7 +98,10 @@ class WaveSpeed(ModelParameterDescription):
     def linearize(cls, data): return data**-2
 
     @classmethod
-    def unlinearize(cls, data): return np.sqrt(1./data)
+    def unlinearize(cls, data): 
+        # ind_neg = np.where(data<0.0)
+        # data[ind_neg] = 1./6.0**2
+        return np.sqrt(1./data)
 
     @classmethod
     def add_upper_bound(cls, val):
