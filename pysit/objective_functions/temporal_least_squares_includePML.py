@@ -13,7 +13,7 @@ __docformat__ = "restructuredtext en"
 class TemporalLeastSquares(ObjectiveFunctionBase):
     """ How to compute the parts of the objective you need to do optimization """
 
-    def __init__(self, solver, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period = 1, reg_config_PML = {'1st_order_penalty':1.0, '2rd_order_penalty':1.0}):
+    def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1, reg_config_PML={'1st_order_penalty': 1.0, '2rd_order_penalty': 1.0}):
         """imaging_period: Imaging happens every 'imaging_period' timesteps. Use higher numbers to reduce memory consumption at the cost of lower gradient accuracy.
             By assigning this value to the class, it will automatically be used when the gradient function of the temporal objective function is called in an inversion context.
         """
@@ -23,6 +23,7 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         self.parallel_wrap_shot = parallel_wrap_shot
 
         self.imaging_period = int(imaging_period) #Needs to be an integer
+        self.filter_op = filter_op
 
     def _residual(self, shot, m0, dWaveOp=None, wavefield=None):
         """Computes residual in the usual sense.
@@ -56,20 +57,27 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         # resid = map(lambda x,y: x.interpolate_data(self.solver.ts())-y, shot.gather(), retval['simdata'])
         resid = shot.receivers.interpolate_data(self.solver.ts()) - retval['simdata']
 
+        if self.filter_op is not None:
+            resid = self.filter_op * resid
+            adjoint_src = self.filter_op * resid
+        else:
+            adjoint_src = resid
+
+
         # If the second derivative info is needed, copy it out
         if dWaveOp is not None:
             dWaveOp[:]  = retval['dWaveOp'][:]
         if wavefield is not None:
             wavefield[:] = retval['wavefield'][:]
 
-        return resid
+        return resid, adjoint_src
 
     def evaluate(self, shots, m0, **kwargs):
         """ Evaluate the least squares objective function over a list of shots."""
 
         r_norm2 = 0
         for shot in shots:
-            r = self._residual(shot, m0)
+            r, adjoint_src = self._residual(shot, m0)
             r_norm2 += np.linalg.norm(r)**2
 
         # sum-reduce and communicate result
@@ -105,10 +113,10 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         else:
             wavefield=None
             
-        r = self._residual(shot, m0, dWaveOp=dWaveOp, wavefield=wavefield, **kwargs)
+        r, adjoint_src = self._residual(shot, m0, dWaveOp=dWaveOp, wavefield=wavefield, **kwargs)
         
         # Perform the migration or F* operation to get the gradient component
-        g = self.modeling_tools.migrate_shot(shot, m0, r, self.imaging_period, dWaveOp=dWaveOp, wavefield=wavefield)
+        g = self.modeling_tools.migrate_shot(shot, m0, adjoint_src, self.imaging_period, dWaveOp=dWaveOp, wavefield=wavefield)
 
         if not ignore_minus:
             g = -1*g
@@ -221,7 +229,7 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
             for shot in shots:
                 # Run the forward modeling step
                 dWaveOp0 = list() # wave operator derivative wrt model for u_0
-                r0 = self._residual(shot, m0, dWaveOp=dWaveOp0, **kwargs)
+                r0, adjoint_src = self._residual(shot, m0, dWaveOp=dWaveOp0, **kwargs)
 
                 linear_retval = self.modeling_tools.linear_forward_model(shot, m0, m1, return_parameters=['simdata', 'dWaveOp1'], dWaveOp0=dWaveOp0)
                 d1 = linear_retval['simdata']
