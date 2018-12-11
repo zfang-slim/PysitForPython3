@@ -1,7 +1,7 @@
 import numpy as np 
 import copy 
 
-__all__ = ['PMLExtensionPrj']
+__all__ = ['PMLExtensionPrj', 'BoxConstraintPrj', 'JointPrj']
 
 __docformat__ = "restructuredtext en"
 
@@ -17,6 +17,70 @@ class PMLExtensionPrj(object):
         y = y_tmp.with_padding(padding_mode='edge')
 
         return y
+
+
+class BoxConstraintPrj(object):
+    ## The projection operator that conducts the box constraint
+
+    def __init__(self, bound):
+        self.name = 'BoxConstraint'
+        self.bound = bound
+
+    def __call__(self, x):
+        y = copy.deepcopy(x)
+        idx = np.where(y.data < self.bound[0])
+        y.data[idx] = self.bound[0]
+        idx = np.where(y.data > self.bound[1])
+        y.data[idx] = self.bound[1]
+        idx = np.where(np.isnan(y.data))
+        y.data[idx] = self.bound[1]
+
+        return y
+
+class JointPrj(object):
+    ## The project that conducts the projection onto the intersection of two constraints
+
+    def __init__(self, proj1, proj2, niter=300, epsilon=10.0**(-6.0)):
+        self.name = proj1.name + '+' + proj2.name
+        self.proj1 = proj1
+        self.proj2 = proj2
+        self.niter = niter
+        self.epsilon = epsilon
+
+    def __call__(self, x):
+        iter = 1
+        pk = x - x
+        qk = x - x
+
+        stop = False
+        xk = copy.deepcopy(x)
+
+        while stop is False :
+            yk = self.proj1(xk + pk)
+            pkp1 = (xk + pk) - yk
+            xkp1 = self.proj2(yk + qk) 
+            qkp1 = (yk + qk) - xkp1
+
+            if (xkp1-xk).inner_product(xkp1-xk) < self.epsilon:
+                stop = True
+            else:
+                iter += 1
+                if iter > self.niter:
+                    stop = True
+                else:
+                    xk = xkp1 
+                    pk = pkp1
+                    qk = qkp1
+
+        print(iter)
+
+        return xkp1
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
@@ -42,9 +106,9 @@ if __name__ == '__main__':
 
 #   pmlz = Dirichlet()
 
-    z_config = (0.1, 0.15, pmlz, Dirichlet())
-    z_config = (0.1, 0.15, pmlz, pmlz)
-    nd = 5
+    z_config = (0.1, 0.61, pmlz, Dirichlet())
+    z_config = (0.1, 0.61, pmlz, pmlz)
+    nd = 51
 #   z_config = (0.1, 0.8, Dirichlet(), Dirichlet())
 
     d = RectangularDomain(z_config)
@@ -92,6 +156,18 @@ if __name__ == '__main__':
     c = m_base.with_padding()
     proj_op = PMLExtensionPrj()
     d = proj_op(c)
+
+    proj_op1 = proj_op
+    proj_op2 = BoxConstraintPrj([1.6, 3.0])
+    proj_op_joint = JointPrj(proj_op1, proj_op2)
+
+    d.data = np.linspace(1.5,3.5,len(d.data))
+    e = proj_op_joint(d)
+
+    plt.plot(d.data)
+    plt.plot(e.data)
+    plt.show()
+
 
     a = 1
 

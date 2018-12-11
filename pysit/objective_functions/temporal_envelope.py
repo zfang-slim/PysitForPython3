@@ -15,7 +15,7 @@ __docformat__ = "restructuredtext en"
 class TemporalEnvelope(ObjectiveFunctionBase):
     """ How to compute the parts of the objective you need to do optimization """
 
-    def __init__(self, solver, cut_freq=None, envelope_power=2.0, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period = 1):
+    def __init__(self, solver, filter_op=None, envelope_power=2.0, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period = 1):
         """imaging_period: Imaging happens every 'imaging_period' timesteps. Use higher numbers to reduce memory consumption at the cost of lower gradient accuracy.
             By assigning this value to the class, it will automatically be used when the gradient function of the temporal objective function is called in an inversion context.
         """
@@ -26,7 +26,7 @@ class TemporalEnvelope(ObjectiveFunctionBase):
 
         self.imaging_period = int(imaging_period) #Needs to be an integer
         self.envelope_power = envelope_power
-        self.cut_freq = cut_freq
+        self.filter_op = filter_op
 
     def _residual(self, shot, m0, comp_grad=False, dWaveOp=None, wavefield=None):
         """Computes residual in the usual sense.
@@ -62,10 +62,9 @@ class TemporalEnvelope(ObjectiveFunctionBase):
         dpred = retval['simdata']
         dobs = shot.receivers.interpolate_data(self.solver.ts())
 
-        if self.cut_freq is not None:
-            LPF = low_pass_filter(np.shape(dobs)[0], self.solver.tf, self.cut_freq)
-            dpred = LPF * dpred
-            dobs  = LPF * dobs
+        if self.filter_op is not None:
+            dpred = self.filter_op * dpred
+            dobs = self.filter_op * dobs
 
         dpred_Hilbert = hilbert(dpred, axis=0).imag
         dobs_Hilbert = hilbert(dobs, axis=0).imag
@@ -92,8 +91,8 @@ class TemporalEnvelope(ObjectiveFunctionBase):
             denvelop_ddataH = p * dpred_envelop**(p/2.0 - 1.0) * dpred_Hilbert 
             adjoint_src += (-hilbert(denvelop_ddataH * resid, axis=0)).imag
 
-            if self.cut_freq is not None:
-                adjoint_src = LPF * adjoint_src
+            if self.filter_op is not None:
+                adjoint_src = self.filter_op * adjoint_src
             
             return -resid, -adjoint_src
 

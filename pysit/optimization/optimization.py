@@ -374,13 +374,19 @@ class OptimizationBase(object):
             step_len = step.norm()
             self.store_history('step_length', i, step_len)
             self.store_history('step', i, step)
+                
+            if self.write is True:
+                if i == 0:
+                    tmp_data_write = {'data': self.base_model.data}
+                    fname = 'x_' + str(i) + '.mat'
+                    sio.savemat(fname, tmp_data_write)
 
             # Apply new step
             self.base_model += step
 
             if self.write is True:
                 tmp_data_write = {'data': self.base_model.data}
-                fname = 'x_' + str(i) + '.mat'
+                fname = 'x_' + str(i+1) + '.mat'
                 sio.savemat(fname, tmp_data_write)
 
             ttt = time.time()-tt
