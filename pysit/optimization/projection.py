@@ -71,8 +71,7 @@ class JointPrj(object):
                     xk = xkp1 
                     pk = pkp1
                     qk = qkp1
-
-        print(iter)
+ 
 
         return xkp1
 
