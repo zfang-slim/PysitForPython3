@@ -69,10 +69,10 @@ class TemporalEnvelope(ObjectiveFunctionBase):
         dpred_Hilbert = hilbert(dpred, axis=0).imag
         dobs_Hilbert = hilbert(dobs, axis=0).imag
 
-        dpred_envelop = dpred**2.0 + dpred_Hilbert**2.0
-        dobs_envelop = dobs**2.0 + dobs_Hilbert**2.0
+        dpred_envelope = dpred**2.0 + dpred_Hilbert**2.0
+        dobs_envelope = dobs**2.0 + dobs_Hilbert**2.0
 
-        resid = dpred_envelop**(p/2.0) - dobs_envelop**(p/2.0)
+        resid = dpred_envelope**(p/2.0) - dobs_envelope**(p/2.0)
 
         # resid = shot.receivers.interpolate_data(self.solver.ts()) - retval['simdata']
 
@@ -85,11 +85,11 @@ class TemporalEnvelope(ObjectiveFunctionBase):
         if comp_grad is False:
             return -resid
         else:
-            denvelop_ddata = p * dpred_envelop**(p/2.0 - 1.0) * dpred
-            adjoint_src = denvelop_ddata * resid
+            denvelope_ddata = p * dpred_envelope**(p/2.0 - 1.0) * dpred
+            adjoint_src = denvelope_ddata * resid
 
-            denvelop_ddataH = p * dpred_envelop**(p/2.0 - 1.0) * dpred_Hilbert 
-            adjoint_src += (-hilbert(denvelop_ddataH * resid, axis=0)).imag
+            denvelope_ddataH = p * dpred_envelope**(p/2.0 - 1.0) * dpred_Hilbert 
+            adjoint_src += (-hilbert(denvelope_ddataH * resid, axis=0)).imag
 
             if self.filter_op is not None:
                 adjoint_src = self.filter_op * adjoint_src
