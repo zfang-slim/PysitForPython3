@@ -103,7 +103,7 @@ class TemporalEnvelope(ObjectiveFunctionBase):
 
         r_norm2 = 0
         for shot in shots:
-            r, adjoint_src = self._residual(shot, m0)
+            r = self._residual(shot, m0)
             r_norm2 += np.linalg.norm(r)**2
 
         # sum-reduce and communicate result
