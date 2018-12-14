@@ -3,6 +3,8 @@
 import numpy as np
 
 from pysit.gallery.gallery_base import GeneratedGalleryModel
+from pysit.util.io import write_data
+from pysit.util.io import *
 
 __all__ = ['CamembertModel', 'camembert']
 
