@@ -1,7 +1,7 @@
 import numpy as np 
 import copy 
 
-__all__ = ['PMLExtensionPrj', 'BoxConstraintPrj', 'JointPrj']
+__all__ = ['PMLExtensionPrj', 'BoxConstraintPrj', 'WaterVelocityPrj', 'JointPrj']
 
 __docformat__ = "restructuredtext en"
 
@@ -36,6 +36,31 @@ class BoxConstraintPrj(object):
         y.data[idx] = self.bound[1]
 
         return y
+
+class WaterVelocityPrj(object):
+
+    def __init__(self, ModelSize, NumOfWaterLayer=1, WaterVel=1.5):
+        self.name = 'WaterVelocity'
+        self.NumOfWaterLayer = NumOfWaterLayer
+        self.WaterVel = WaterVel
+        self.ModelSize = ModelSize
+        self.dim = len(ModelSize)
+
+    def __call__(self, x):
+        y = copy.deepcopy(x)
+        z = np.reshape(y.data, self.ModelSize)
+        if self.dim == 1:
+            z[0:self.NumOfWaterLayer] = self.WaterVel
+        elif self.dim == 2:
+            z[:, 0:self.NumOfWaterLayer] = self.WaterVel
+        else:
+            z[:,:,0:self.NumOfWaterLayer] = self.WaterVel
+
+        y.data = np.reshape(z, y.data.shape)
+
+
+        return y
+        
 
 class JointPrj(object):
     ## The project that conducts the projection onto the intersection of two constraints
@@ -166,6 +191,8 @@ if __name__ == '__main__':
     plt.plot(d.data)
     plt.plot(e.data)
     plt.show()
+
+    # proj_op3 = WaterVelocityPrj()
 
 
     a = 1
