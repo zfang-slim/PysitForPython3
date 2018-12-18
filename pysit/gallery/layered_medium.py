@@ -270,7 +270,8 @@ def layered_medium( layers=water_layered_rock, **kwargs):
     return LayeredMediumModel(layers, **model_config).get_setup()
 
 def three_layered_medium(vels=(1.5, 2.5, 3.5), dx=0.01, dz=0.01, 
-                         nx=361, nz=121, nbx=10, nbz=10, 
+                         nx=361, nz=121, nbx=10, nbz=10, pml_width=[0.5,0.5],
+                         water_layer_depth = 0.05,
                          initial_model_style = 'smooth',
                          initial_config={'sigma': 1.0, 'filtersize': 8},
                          TrueModelFileName=None, InitialModelFileName=None, 
@@ -297,10 +298,10 @@ def three_layered_medium(vels=(1.5, 2.5, 3.5), dx=0.01, dz=0.01,
     z_lbc = kwargs['z_lbc'] if ('z_lbc' in kwargs) else PML(0.1, 100)
     z_rbc = kwargs['z_rbc'] if ('z_rbc' in kwargs) else PML(0.1, 100)
 
-    kwargs['x_lbc'] = PML(0.5, 100)
-    kwargs['x_rbc'] = PML(0.5, 100)
-    kwargs['z_lbc'] = PML(0.5, 100)
-    kwargs['z_rbc'] = PML(0.5, 100)
+    kwargs['x_lbc'] = PML(pml_width[0], 100)
+    kwargs['x_rbc'] = PML(pml_width[0], 100)
+    kwargs['z_lbc'] = PML(pml_width[1], 100)
+    kwargs['z_rbc'] = PML(pml_width[1], 100)
 
     model_config = dict(z_delta=dz,
                         x_length=dx*(nxt-1), x_delta=dx,
@@ -309,6 +310,16 @@ def three_layered_medium(vels=(1.5, 2.5, 3.5), dx=0.01, dz=0.01,
     
 
     C, C0, m, d = LayeredMediumModel(Layerall, **model_config).get_setup()
+
+    if initial_model_style == 'gradient':
+        nz_water = int(water_layer_depth/dz) + 1
+        C1 = np.ones(m._shapes[(False,True)])*vels[0]
+        c_z = np.linspace(vels[0], vels[-1], nz-nz_water)
+        for i in range(nx):
+            C1[i, nz_water:nz] = c_z 
+
+        C0 = C1.flatten() 
+
 
     if TrueModelFileName is not None:
         ot = (0.0,0.0)
