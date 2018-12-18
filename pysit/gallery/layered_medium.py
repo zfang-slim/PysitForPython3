@@ -318,7 +318,7 @@ def three_layered_medium(vels=(1.5, 2.5, 3.5), dx=0.01, dz=0.01,
         for i in range(nx):
             C1[i, nz_water:nz] = c_z 
 
-        C0 = C1.flatten() 
+        C0 = np.reshape(C1, C0.shape) 
 
 
     if TrueModelFileName is not None:
