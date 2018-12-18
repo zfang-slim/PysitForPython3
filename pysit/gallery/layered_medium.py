@@ -297,6 +297,11 @@ def three_layered_medium(vels=(1.5, 2.5, 3.5), dx=0.01, dz=0.01,
     z_lbc = kwargs['z_lbc'] if ('z_lbc' in kwargs) else PML(0.1, 100)
     z_rbc = kwargs['z_rbc'] if ('z_rbc' in kwargs) else PML(0.1, 100)
 
+    kwargs['x_lbc'] = PML(0.5, 100)
+    kwargs['x_rbc'] = PML(0.5, 100)
+    kwargs['z_lbc'] = PML(0.5, 100)
+    kwargs['z_rbc'] = PML(0.5, 100)
+
     model_config = dict(z_delta=dz,
                         x_length=dx*(nxt-1), x_delta=dx,
                         initial_model_style=initial_model_style,
