@@ -465,7 +465,7 @@ class OptimizationBase(object):
                                         current_objective_value=None,
                                         alpha0_kwargs={}, **kwargs):
 
-        geom_fac = 0.8
+        geom_fac = 0.5
         geom_fac_up = 0.7
         goldstein_c = 1e-3 #1e-4
 
