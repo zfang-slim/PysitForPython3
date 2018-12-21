@@ -1811,8 +1811,8 @@ def extended_modeling_adjoint_test():
 
 
 if __name__ == '__main__':
-    print("Extended modeling test:")
-    extended_modeling_adjoint_test()
+    # print("Extended modeling test:")
+    # extended_modeling_adjoint_test()
     print("Constant density solver adjoint test:")
     adjoint_test()
     print("testing pertubation of rho:")

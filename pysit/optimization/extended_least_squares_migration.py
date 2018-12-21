@@ -17,7 +17,9 @@ __docformat__ = "restructuredtext en"
 
 class ExtendLSM(object):
 
-    def __init__(self, objective, shots, m0, simdata, max_sub_offset, h, imaging_period=None, frequencies=None, krylov_maxiter=20, *args, **kwargs):
+    def __init__(self, objective, shots, m0, simdata, max_sub_offset, h, 
+                 imaging_period=None, frequencies=None, krylov_maxiter=20, 
+                 weight_matrix=None, regularization_value=None, *args, **kwargs):
         self.tools = objective
         self.m0 = m0
         self.shots = shots
@@ -97,6 +99,19 @@ class ExtendLSM(object):
                                                          )
 
             m1_out.data = m1_out.data * np.prod(m0.mesh.deltas)
+
+            if weight_matrix is not None:
+                if regularization_value is None:
+                    raise TabError('A weight_matrix is passed, but not regularization_value is given. Please give a value to regularization_value')
+                else:
+                    if weight_matrix='linear_h':
+                        sh_data = m1_out.sh_data
+                        max_sub_offset = m1_out.max_sub_offset
+                        weight_h = linspace(-max_sub_offset, max_sub_offset, sh_data[1])
+                        for i = 1:range(sh_data[1]):
+                            m1_out.data[:,i] += regularization_value * weight_h**2.0 * m1_extend[:,i]
+
+                
             return np.reshape(m1_out.data, (np.prod(m1_out.sh_data), 1)) 
 
         A_shape = (len(rhs), len(rhs))
