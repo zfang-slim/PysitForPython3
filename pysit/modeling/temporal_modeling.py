@@ -215,7 +215,7 @@ class TemporalModeling(object):
         # return ic.without_padding()
         return ic
 
-    def migrate_shots_extend(self, shots, m0, operand_simdata, 
+    def migrate_shots_extend(self, shots, m0, operand_simdata,
                              max_sub_offset, h, imaging_period, operand_dWaveOpAdj=None, operand_model=None,
                              DWaveOpIn=None,
                              adjointfield=None, dWaveOpAdj=None, wavefield=None):
@@ -260,16 +260,179 @@ class TemporalModeling(object):
 
             # Get the imaging condition part from the result, this is the migrated image.
             ic = rv['imaging_condition']
-            
+
             if i == 0:
                 Ic = copy.deepcopy(ic)
-            else: 
+            else:
                 Ic.data += ic.data
 
         # imaging condition is padded, but migration yields an unpadded return
         return Ic
 
-    def adjoint_model_extend(self, shot, m0, operand_simdata, max_sub_offset, h, imaging_period=1, 
+    def gradient_extend_shot(self, shot, m0, dm_extend, operand_simdata, max_sub_offset, h, imaging_period=1,
+                             dWaveOp0=None, dWaveOp1=None, wavefield=None, operand_model=None, operand_dWaveOpAdj=None,
+                             return_parameters=[]):
+
+        # Local references
+        solver = self.solver
+        solver.model_parameters = m0
+        dm_extend_tmp = copy.deepcopy(dm_extend)
+        dm_extend_tmp.data = np.flip(dm_extend_tmp.data, axis=1)
+
+        mesh = solver.mesh
+
+        d = solver.domain
+        dt = solver.dt
+        nsteps = solver.nsteps
+        source = shot.sources
+
+        nh = 2*int(max_sub_offset / h) + 1
+
+        if 'adjointfield' in return_parameters:
+            qs = list()
+            vs = list()
+
+        # Storage for the time derivatives of p
+        if 'dWaveOpAdj' in return_parameters:
+            dWaveOpAdj = list()
+
+        # If we are computing the imaging condition, ensure that all of the parts are there and allocate space.
+        if dWaveOp0 is not None and dWaveOp1 is not None:
+            ic = solver.model_parameters.perturbation()
+            # ic = ExtendedModelingParameter2D(mesh, max_sub_offset, h)
+            do_ic = True
+        elif 'imaging_condition' in return_parameters:
+            raise ValueError(
+                'To compute the gradient of the FWI with extended imaging, forward component and linearized component must be specified.')
+        else:
+            do_ic = False
+
+        sh_sub = dm_extend.sh_sub
+        dof_sub = dm_extend.dof_sub
+
+        # Create a fake mesh structrue to perform intermediate padding and unpadding operators
+        mesh_ih = copy.deepcopy(mesh)
+
+        # Variable-Density will call this, giving us matrices needed for the ic in terms of m2 (or rho)
+        if hasattr(m0, 'kappa') and hasattr(m0, 'rho'):
+            print("WARNING: Ian's operators are still used here even though the solver has changed. Gradient may be incorrect. These routines need to be updated.")
+            deltas = [mesh.x.delta, mesh.z.delta]
+            sh = mesh.shape(include_bc=True, as_grid=True)
+            D1, D2 = build_heterogenous_matrices(sh, deltas)
+
+        # Time-reversed wave solver
+        solver_data = solver.SolverData()
+        solver_data_v2 = solver.SolverData()
+        solver_data_tmp = solver.SolverData()
+
+        solver_data_tmp.k.primary_wavefield = self.create_extended_rhs(dm_extend_tmp, solver_data.k.primary_wavefield, mesh, mesh_ih, dof_sub, sh_sub, nh)
+        solver_data_tmp.kp1.primary_wavefield = self.create_extended_rhs(dm_extend_tmp, solver_data.kp1.primary_wavefield, mesh, mesh_ih, dof_sub, sh_sub, nh)
+        solver_data_tmp.km1.primary_wavefield = self.create_extended_rhs(dm_extend_tmp, solver_data.km1.primary_wavefield, mesh, mesh_ih, dof_sub, sh_sub, nh)
+
+        rhs_k = np.zeros(mesh.shape(include_bc=True))
+        rhs_km1 = np.zeros(mesh.shape(include_bc=True))
+
+        if operand_model is not None:
+            operand_model = operand_model.with_padding()
+
+        # Loop goes over the valid indices backwards
+        for k in range(nsteps-1, -1, -1):  # xrange(int(solver.nsteps)):
+
+            # Local reference
+            vk = solver_data.k.primary_wavefield
+            vk_bulk = mesh.unpad_array(vk)
+            v2k = solver_data_v2.k.primary_wavefield
+            v2k_bulk = mesh.unpad_array(v2k)
+
+            # If we are dealing with variable density, we will need the wavefield to compute the gradient of the objective in terms of m2.
+            if hasattr(m0, 'kappa') and hasattr(m0, 'rho'):
+                uk = mesh.pad_array(wavefield[k])
+
+            # When dpdt is not set, store the current q, otherwise compute the
+            # relevant gradient portion
+            if 'adjointfield' in return_parameters:
+                vs.append(vk_bulk.copy())
+
+            # can maybe speed up by using only the bulk and not unpadding later
+            if do_ic:
+                if k % imaging_period == 0:  # Save every 'imaging_period' number of steps
+                    entry = k//imaging_period
+                    # if we are dealing with variable density, we compute 2 parts to the imagaing condition seperatly. Otherwise, if it is just constant density- we compute only 1.
+                    if hasattr(m0, 'kappa') and hasattr(m0, 'rho'):
+                        # Variantional density is not implemented
+                        ic.kappa += vk*dWaveOp0[entry]
+                        ic.rho += (D1[0]*uk)*(D1[1]*vk)+(D2[0]*uk)*(D2[1]*vk)
+                    else:
+                        ic += vk * dWaveOp1[entry] + v2k * dWaveOp0[entry]
+
+            if k == nsteps-1:
+                rhs_k = self._setup_adjoint_rhs(rhs_k,     shot, k,   operand_simdata, operand_model, operand_dWaveOpAdj)
+                rhs_km1 = self._setup_adjoint_rhs(rhs_km1, shot, k-1, operand_simdata, operand_model, operand_dWaveOpAdj)
+            else:
+                # shift time forward
+                rhs_k, rhs_km1 = rhs_km1, rhs_k
+                rhs_km1 = self._setup_adjoint_rhs(rhs_km1, shot, k-1, operand_simdata, operand_model, operand_dWaveOpAdj)
+
+            # rhs_k_v2 = self.create_extended_rhs(dm_extend, solver_data_tmp.k.primary_wavefield, mesh, mesh_ih, dof_sub, sh_sub, nh)
+            solver.time_step(solver_data, rhs_k, rhs_km1)
+
+            solver_data_tmp.kp1.primary_wavefield = self.create_extended_rhs(dm_extend_tmp, solver_data.kp1.primary_wavefield, 
+                                                                             mesh, mesh_ih, dof_sub, sh_sub, nh)
+
+            rhs_k_v2 = solver.compute_dWaveOp('time', solver_data_tmp)  # This one is wrong
+
+            # rhs_km1_v2 = self.create_extended_rhs(dm_extend, v_km1, mesh, mesh_ih, dof_sub, sh_sub, nh)
+            # rhs_km1_v2 = solver.compute_dWaveOp('time', rhs_km1_v2)
+
+            # Zhilong does not know why rhs_km1 is required in time_step.
+            solver.time_step(solver_data_v2, rhs_k_v2, rhs_k_v2)
+            # From the implemantation, rhs_km1 does not contribute to the time step.
+
+            # Compute time derivative of p at time k
+            if 'dWaveOpAdj' in return_parameters:
+                if k % imaging_period == 0:  # Save every 'imaging_period' number of steps
+                    dWaveOpAdj.append(solver.compute_dWaveOp('time', solver_data))
+
+            # If k is 0, we don't need results for k-1, so save computation and
+            # stop early
+            if(k == 0):
+                break
+
+            # Don't know what data is needed for the solver, so the solver data
+            # handles advancing everything forward by one time step.
+            # k-1 <-- k, k <-- k+1, etc
+            solver_data.advance()
+            solver_data_v2.advance()
+            solver_data_tmp.advance()
+
+        if do_ic:
+            ic *= (-1*dt)
+            ic *= imaging_period  # Compensate for doing fewer summations at higher imaging_period
+            # ic = ic.without_padding() # gradient is never padded comment out by Zhilong
+            if m0.padded is not True:
+                if solver.inv_padding_mode is 'add':
+                    ic = ic.add_padding()
+                else:
+                    ic = ic.without_padding()
+
+        retval = dict()
+
+        if 'adjointfield' in return_parameters:
+            # List of qs is built in time reversed order, put them in time forward order
+            qs = list(vs)
+            qs.reverse()
+            retval['adjointfield'] = qs
+        if 'dWaveOpAdj' in return_parameters:
+            dWaveOpAdj.reverse()
+            retval['dWaveOpAdj'] = dWaveOpAdj
+
+        if do_ic:
+            ic.data = ic.data
+            retval['imaging_condition'] = ic
+
+        return ic
+
+    def adjoint_model_extend(self, shot, m0, operand_simdata, max_sub_offset, h, imaging_period=1,
                              operand_dWaveOpAdj=None, operand_model=None, return_parameters=[], dWaveOp=None, wavefield=None):
         """Solves for the adjoint field.
 
@@ -420,7 +583,7 @@ class TemporalModeling(object):
             else:
                 # shift time forward
                 rhs_k, rhs_km1 = rhs_km1, rhs_k
-            
+
             rhs_km1 = self._setup_adjoint_rhs(rhs_km1, shot, k-1, operand_simdata, operand_model, operand_dWaveOpAdj)
 
             solver.time_step(solver_data, rhs_k, rhs_km1)
@@ -428,8 +591,7 @@ class TemporalModeling(object):
             # Compute time derivative of p at time k
             if 'dWaveOpAdj' in return_parameters:
                 if k % imaging_period == 0:  # Save every 'imaging_period' number of steps
-                    dWaveOpAdj.append(
-                        solver.compute_dWaveOp('time', solver_data))
+                    dWaveOpAdj.append(solver.compute_dWaveOp('time', solver_data))
 
             # If k is 0, we don't need results for k-1, so save computation and
             # stop early
@@ -464,12 +626,10 @@ class TemporalModeling(object):
 
         return retval
 
-
     def _setup_adjoint_rhs(self, rhs_array, shot, k, operand_simdata, operand_model, operand_dWaveOpAdj):
 
         # basic rhs is always the pseudodata or residual
-        rhs_array = self.solver.mesh.pad_array(shot.receivers.extend_data_to_array(
-            k, data=operand_simdata), out_array=rhs_array)
+        rhs_array = self.solver.mesh.pad_array(shot.receivers.extend_data_to_array(k, data=operand_simdata), out_array=rhs_array)
 
         # for Hessians, sometimes there is more to the rhs
         if (operand_dWaveOpAdj is not None) and (operand_model is not None):
@@ -589,15 +749,12 @@ class TemporalModeling(object):
                         ic += vk*dWaveOp[entry]
 
             if k == nsteps-1:
-                rhs_k = self._setup_adjoint_rhs(
-                    rhs_k,   shot, k,   operand_simdata, operand_model, operand_dWaveOpAdj)
-                rhs_km1 = self._setup_adjoint_rhs(
-                    rhs_km1, shot, k-1, operand_simdata, operand_model, operand_dWaveOpAdj)
+                rhs_k = self._setup_adjoint_rhs(rhs_k,   shot, k,   operand_simdata, operand_model, operand_dWaveOpAdj)
+                rhs_km1 = self._setup_adjoint_rhs(rhs_km1, shot, k-1, operand_simdata, operand_model, operand_dWaveOpAdj)
             else:
                 # shift time forward
                 rhs_k, rhs_km1 = rhs_km1, rhs_k
-            rhs_km1 = self._setup_adjoint_rhs(
-                rhs_km1, shot, k-1, operand_simdata, operand_model, operand_dWaveOpAdj)
+            rhs_km1 = self._setup_adjoint_rhs(rhs_km1, shot, k-1, operand_simdata, operand_model, operand_dWaveOpAdj)
 
             solver.time_step(solver_data, rhs_k, rhs_km1)
 
@@ -849,7 +1006,7 @@ class TemporalModeling(object):
 
         sh_sub = m1_extend.sh_sub
         dof_sub = m1_extend.dof_sub
-        
+
         mesh_ih = copy.deepcopy(mesh)
 
         # # added the padding_mode by Zhilong, still needs to discuss which padding mode to use
@@ -872,7 +1029,7 @@ class TemporalModeling(object):
 
         if 'dWaveOp1' in return_parameters:
             dWaveOp1 = dict()
-            DwaveOp1 = dict()
+            DWaveOp1 = dict()
 
         # Step k = 0
         # p_0 is a zero array because if we assume the input signal is causal
@@ -886,16 +1043,17 @@ class TemporalModeling(object):
             source = shot.sources
             simdata = np.zeros((solver.nsteps, shot.receivers.receiver_count))
             us = dict()
-            dWaveOp1 = dict()
+            dWaveOp1 = list()
+            dWaveOp0ret = list()
 
             if 'simdata' in return_parameters:
                 Simdata[i] = dict()
-            
+
             if 'dWaveOp0' in return_parameters:
-                DWaveOp0[i] = list()
+                DWaveOp0ret[i] = list()
 
             if 'dWaveOp1' in return_parameters:
-                DwaveOp1[i] = list()
+                DWaveOp1[i] = list()
 
             if DWaveOp0In is None:
                 solver_data_u0 = solver.SolverData()
@@ -979,12 +1137,14 @@ class TemporalModeling(object):
             if 'dWaveOp1' in return_parameters:
                 DWaveOp1[i] = dWaveOp1
 
+            if 'dWaveOp0' in return_parameters:
+                DWaveOp0ret[i] = dWaveOp0ret
+
             if 'simdata' in return_parameters:
-                Simdata[i] = simdata 
+                Simdata[i] = simdata
 
             if 'wavefield1' in return_parameters:
                 Us[i] = us
-
 
         retval = dict()
 
@@ -1455,8 +1615,7 @@ def adjoint_test_kappa():
     linfwdret = tools.linear_forward_model_kappa(shot, m0, m1, ['simdata'])
     lindata = linfwdret['simdata']
 
-    adjret = tools.adjoint_model(shot, m0, data, 1,  return_parameters=[
-                                 'imaging_condition', 'adjointfield'], dWaveOp=dWaveOp0, wavefield=inc_field)
+    adjret = tools.adjoint_model(shot, m0, data, 1,  return_parameters=['imaging_condition', 'adjointfield'], dWaveOp=dWaveOp0, wavefield=inc_field)
 
     # multiplied adjmodel by an additional m2 model.
     adjmodel = adjret['imaging_condition'].kappa
@@ -1760,9 +1919,9 @@ def extended_modeling_adjoint_test():
     dmtmp[:, 40] = 1.0
     dmtmp = dmtmp.reshape(-1)
     m1_extend.data[:, (m1_extend.sh_data[1]-1)//2] = dmtmp
-    # for i in range(m1_extend.sh_data[1]):
-    #     m1_extend.data[:,i] = dmtmp
-    
+    for i in range(m1_extend.sh_data[1]):
+        m1_extend.data[:,i] = np.random.normal(0,1,dmtmp.shape)
+
 
 #     np.random.seed(0)
 #
@@ -1772,7 +1931,8 @@ def extended_modeling_adjoint_test():
 
     freqs = [10.0, 12.0]
 #   freqs = np.linspace(3,20,20)
-    linfwdret = tools.linear_forward_model_extend(shots, m0, m1_extend, max_sub_offset, h, ['simdata'])
+    linfwdret = tools.linear_forward_model_extend(
+        shots, m0, m1_extend, max_sub_offset, h, ['simdata'])
     lindatas = linfwdret['simdata']
     # lindatas = []
     # lindatas.append(lindata)
@@ -1787,12 +1947,12 @@ def extended_modeling_adjoint_test():
 
     Ic2 = tools.migrate_shots_extend(shots, m0, lindatas2,
                                      max_sub_offset, h, imaging_period
-                                    )
+                                     )
 
     a = 0.0
     for i in range(len(shots)):
         a += np.sum(lindatas[i] * lindatas2[i])*solver.dt
-    
+
     print(['Data inner product =', a])
 
     Ic_data1 = m1_extend.data.reshape(-1)
@@ -1802,8 +1962,6 @@ def extended_modeling_adjoint_test():
 
     print(['Model inner produc =', b])
 
-
-
     # print(data.shape, solver.nsteps)
     # print(np.sum(data*lindata)*solver.dt)
     # print(np.dot(m1.T, adjmodel).squeeze()*np.prod(m.deltas))
@@ -1811,8 +1969,8 @@ def extended_modeling_adjoint_test():
 
 
 if __name__ == '__main__':
-    # print("Extended modeling test:")
-    # extended_modeling_adjoint_test()
+    print("Extended modeling test:")
+    extended_modeling_adjoint_test()
     print("Constant density solver adjoint test:")
     adjoint_test()
     print("testing pertubation of rho:")
