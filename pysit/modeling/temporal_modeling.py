@@ -1,5 +1,6 @@
 
 import copy as copy
+import time
 import numpy as np
 from pysit.util.derivatives import build_derivative_matrix, build_permutation_matrix, build_heterogenous_matrices
 from pysit.solvers.model_parameter import *
@@ -249,8 +250,9 @@ class TemporalModeling(object):
             if dWaveOpAdj is not None:
                 rp.append('dWaveOpAdj')
 
-            rv = self.adjoint_model_extend(shot, m0, operand_simdata[i], max_sub_offset, h, imaging_period, operand_dWaveOpAdj,
-                                           operand_model, return_parameters=rp, dWaveOp=dWaveOp, wavefield=wavefield)
+            rv = self.adjoint_model_extend(shot, m0, operand_simdata[i], max_sub_offset, h, imaging_period, operand_dWaveOpAdj, 
+                                           operand_model, return_parameters=rp, dWaveOp=dWaveOp,
+                                           wavefield=wavefield)
 
             # If the adjoint field is desired as output.
             if adjointfield is not None:
@@ -555,24 +557,9 @@ class TemporalModeling(object):
                         ic.rho += (D1[0]*uk)*(D1[1]*vk)+(D2[0]*uk)*(D2[1]*vk)
                     else:
                         for ih in range(0, nh):
-                            n_bcx_extend_u_ih = ic.n_bcx_extend_u[ih, :]
-                            n_bcx_extend_v_ih = ic.n_bcx_extend_v[ih, :]
-
-                            mesh._shapes[(False, False)] = (dof_sub, 1)
-                            mesh._shapes[(False, True)] = sh_sub
-                            mesh.parameters[0].lbc._n = n_bcx_extend_u_ih[0]
-                            mesh.parameters[0].rbc._n = n_bcx_extend_u_ih[1]
-
-                            u_tmp = mesh.unpad_array(dWaveOp[entry])
-
-                            mesh.parameters[0].lbc._n = n_bcx_extend_v_ih[0]
-                            mesh.parameters[0].rbc._n = n_bcx_extend_v_ih[1]
-                            v_tmp = mesh.unpad_array(vk)
-
-                            mesh._shapes[(False, False)] = mesh_ih._shapes[(False, False)]
-                            mesh._shapes[(False, True)] = mesh_ih._shapes[(False, True)]
-                            mesh.parameters[0].lbc._n = mesh_ih.parameters[0]['lbc'].n
-                            mesh.parameters[0].rbc._n = mesh_ih.parameters[0]['rbc'].n
+                            
+                            u_tmp = dWaveOp[entry][ic.padding_index_u[0]+ih*ic.skip_index]
+                            v_tmp = vk[ic.padding_index_v[0]-ih*ic.skip_index]
 
                             ic_data_tmp[:, ih] = (v_tmp*u_tmp).reshape((-1,))
                             ic.data += ic_data_tmp
@@ -1012,6 +999,7 @@ class TemporalModeling(object):
         # # added the padding_mode by Zhilong, still needs to discuss which padding mode to use
         # m1_padded = m1.with_padding(padding_mode='edge')
 
+
         # Storage for the field
         if 'wavefield1' in return_parameters:
             us = dict()
@@ -1115,9 +1103,11 @@ class TemporalModeling(object):
                 if k == 0:
                     rhs_k = self.create_extended_rhs(m1_extend, dWaveOp0_k, mesh, mesh_ih, dof_sub, sh_sub, nh)
                     rhs_kp1 = self.create_extended_rhs(m1_extend, dWaveOp0_kp1, mesh, mesh_ih, dof_sub, sh_sub, nh)
+                
                 else:
                     # rhs_k, rhs_kp1 = rhs_kp1, m1_padded*(-1*dWaveOp0_kp1)
                     rhs_k, rhs_kp1 = rhs_kp1, self.create_extended_rhs(m1_extend, dWaveOp0_kp1, mesh, mesh_ih, dof_sub, sh_sub, nh)
+                
 
                 solver.time_step(solver_data, rhs_k, rhs_kp1)
 
@@ -1500,26 +1490,15 @@ class TemporalModeling(object):
 
     def create_extended_rhs(self, m1_extend, dWaveOp0, mesh, mesh_ih, dof_sub, sh_sub, nh):
         rhs_out = []
+        n_data = np.prod(mesh._shapes[(True, True)])
         for ih in range(0, nh):
+            
             m1_ih = m1_extend.data[:, ih]
             m1_ih = m1_ih.reshape((m1_ih.size, 1))
-            n_bcx_extend_u_ih = m1_extend.n_bcx_extend_u[ih, :]
-            n_bcx_extend_v_ih = m1_extend.n_bcx_extend_v[ih, :]
-
-            mesh._shapes[(False, False)] = (dof_sub, 1)
-            mesh._shapes[(False, True)] = sh_sub
-            mesh.parameters[0].lbc._n = n_bcx_extend_u_ih[0]
-            mesh.parameters[0].rbc._n = n_bcx_extend_u_ih[1]
-            rhs_ = m1_ih * (mesh.unpad_array(-1*dWaveOp0))
-
-            mesh.parameters[0].lbc._n = n_bcx_extend_v_ih[0]
-            mesh.parameters[0].rbc._n = n_bcx_extend_v_ih[1]
-            rhs_ = mesh.pad_array(rhs_)
-
-            mesh._shapes[(False, False)] = mesh_ih._shapes[(False, False)]
-            mesh._shapes[(False, True)] = mesh_ih._shapes[(False, True)]
-            mesh.parameters[0].lbc._n = mesh_ih.parameters[0]['lbc'].n
-            mesh.parameters[0].rbc._n = mesh_ih.parameters[0]['rbc'].n
+            rhs__ = m1_ih * ((-1*dWaveOp0[m1_extend.padding_index_u[0].flatten() + ih*m1_extend.skip_index]))
+            rhs_ = np.zeros((n_data,1))
+            rhs_[m1_extend.padding_index_v[0].flatten() - ih*m1_extend.skip_index] = rhs__
+            
 
             if ih == 0:
                 rhs_out = copy.deepcopy(rhs_)
@@ -1527,6 +1506,7 @@ class TemporalModeling(object):
                 rhs_out += rhs_
 
         return rhs_out
+
 
 
 # In this test we perturb m1, while keeping m2 fixed (but m2 can still be heterogenous)
@@ -1855,12 +1835,12 @@ def extended_modeling_adjoint_test():
     #   (M = C^-2 - C0^-2)
     C, C0, m, d = horizontal_reflector(m)
 
-    max_sub_offset = 0.1
+    max_sub_offset = 0.3
     h = 0.01
     m1_extend = ExtendedModelingParameter2D(m, max_sub_offset, h)
 
     # Set up shots
-    Nshots = 2
+    Nshots = 1
     shots = []
 
     xmin = d.x.lbound
@@ -1931,17 +1911,22 @@ def extended_modeling_adjoint_test():
 
     freqs = [10.0, 12.0]
 #   freqs = np.linspace(3,20,20)
+    tt = time.time()
     linfwdret = tools.linear_forward_model_extend(
         shots, m0, m1_extend, max_sub_offset, h, ['simdata'])
+    print('Data generation1: {0}s'.format(time.time()-tt))
+
     lindatas = linfwdret['simdata']
     # lindatas = []
     # lindatas.append(lindata)
 
     imaging_period = 1
+    tt = time.time()
     Ic = tools.migrate_shots_extend(shots, m0, lindatas,
                                     max_sub_offset, h, imaging_period
                                     )
-
+    print('Migration1: {0}s'.format(time.time()-tt))
+    
     linfwdret2 = tools.linear_forward_model_extend(shots, m0, Ic, max_sub_offset, h, ['simdata'])
     lindatas2 = linfwdret2['simdata']
 

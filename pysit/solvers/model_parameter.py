@@ -923,6 +923,10 @@ class ExtendedModelingParameter2D(object):
         self.max_sub_offset = max_sub_offset
         self.deltas = [mesh.x.delta, mesh.z.delta, hx]
         self.origins = [n_bc_extra*mesh.x.delta, 0.0, -max_sub_offset]
+        self.padding_index_u = list()
+        self.padding_index_v = list()
+        sh_grid = mesh.shape(include_bc=True, as_grid=True)
+        self.skip_index = int(self.hx / mesh.x.delta) * mesh._shapes[(True, True)][1]
 
         if vec_input is not None:
             self.data = np.reshape(vec_input, (dof_sub, n_h_extend))
@@ -937,6 +941,39 @@ class ExtendedModelingParameter2D(object):
             self.n_bcx_extend_v[i, :] = (nbc_x[0]+n_bc_extra-h_extend[i],
                                          nbc_x[1]+n_bc_extra+h_extend[i]
                                          )
+
+        self.compute_padding_index(mesh, n_h_extend)
+
+    def compute_padding_index(self, mesh, n_h_extend):
+        mesh_ih = copy.deepcopy(mesh)
+        sh_grid = mesh.shape(include_bc=True, as_grid=True)
+        dof_sub = self.dof_sub
+        sh_sub = self.sh_sub
+        index = np.array(range(0, np.prod(sh_grid)))
+        index = np.reshape(index,(np.prod(sh_grid), 1))
+        mesh._shapes[(False, False)] = (dof_sub, 1)
+        mesh._shapes[(False, True)] = sh_sub
+        
+        for i in range(1):
+            n_bcx_extend_u_ih = self.n_bcx_extend_u[i, :]
+            n_bcx_extend_v_ih = self.n_bcx_extend_v[i, :]
+            mesh.parameters[0].lbc._n = n_bcx_extend_u_ih[0]
+            mesh.parameters[0].rbc._n = n_bcx_extend_u_ih[1]
+        
+            self.padding_index_u.append(mesh.unpad_array(index))
+        
+            mesh.parameters[0].lbc._n = n_bcx_extend_v_ih[0]
+            mesh.parameters[0].rbc._n = n_bcx_extend_v_ih[1]
+        
+            self.padding_index_v.append(mesh.unpad_array(index))
+
+        mesh._shapes[(False, False)] = mesh_ih._shapes[(False, False)]
+        mesh._shapes[(False, True)] = mesh_ih._shapes[(False, True)]
+        mesh.parameters[0].lbc._n = mesh_ih.parameters[0]['lbc'].n
+        mesh.parameters[0].rbc._n = mesh_ih.parameters[0]['rbc'].n
+    
+    
+    
 
     def setter(self, value):
         self.data = np.reshape(value, self.sh_data)
