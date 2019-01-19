@@ -562,7 +562,8 @@ class TemporalModeling(object):
                             v_tmp = vk[ic.padding_index_v[0]-ih*ic.skip_index]
 
                             ic_data_tmp[:, ih] = (v_tmp*u_tmp).reshape((-1,))
-                            ic.data += ic_data_tmp
+                        
+                        ic.data += ic_data_tmp
 
             if k == nsteps-1:
                 rhs_k = self._setup_adjoint_rhs(rhs_k,   shot, k,   operand_simdata, operand_model, operand_dWaveOpAdj)
@@ -608,7 +609,7 @@ class TemporalModeling(object):
             retval['dWaveOpAdj'] = dWaveOpAdj
 
         if do_ic:
-            ic.data = ic.data / nh
+            # ic.data = ic.data 
             retval['imaging_condition'] = ic
 
         return retval
