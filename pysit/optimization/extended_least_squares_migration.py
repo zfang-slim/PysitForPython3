@@ -58,6 +58,7 @@ class ExtendLSM(object):
                                                   self.max_sub_offset, self.h,
                                                   self.imaging_period
                                                   )
+
         else:
             rhs = self.tools.migrate_shots_extend(self.shots, m0, self.simdata,
                                                   self.frequencies,
