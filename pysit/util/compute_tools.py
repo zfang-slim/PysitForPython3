@@ -11,7 +11,7 @@ import obspy.io.segy.core as segy
 
 __all__ = ['odn2grid', 'odn2grid_data_2D_time', 'odn2grid_data_3D_time',
            'odn2grid_data_2D_freq', 'odn2grid_data_3D_freq', 'low_pass_filter',
-           'high_pass_filter', 'band_pass_filter']
+           'high_pass_filter', 'band_pass_filter', 'correlate_fun']
 
 def odn2grid(o, d, n):
     output = dict()
@@ -274,13 +274,36 @@ class band_pass_filter(object):
         y = np.fft.ifft(y)
         return y.real
 
+def correlate_fun(dobs, dpred, mode='fwd'):
+    
+    nd = len(dobs)
+    if mode == 'fwd':
+        output = np.correlate(dobs, dpred, mode='full')
+
+    else:
+        ndobs = len(dobs)
+        ndpred = len(dpred)
+        output = np.zeros(ndobs)
         
+        for i in range(ndobs):
+            output[i] = np.dot(dobs, dpred[ndpred-ndobs-i:ndpred-i])
 
 
-
-
+    return output
 
 if __name__ == '__main__':
+    
+    import numpy as np
+    nd = 11
+    a = np.random.normal(0,1,nd)
+    b = np.random.normal(0,1,nd*2-1)
+    c = np.random.normal(0,1,nd)
+    
+    d = np.dot(b, correlate_fun(a,c))
+    e = np.dot(c, correlate_fun(a,b,mode='adj'))
+    print('d = {0}'.format(d))
+    print('e = {0}'.format(e))
+    
     o = [0.0, 1.0, 2.0]
     d = [1.0, 2.0, 3.0]
     n = [4, 5, 6]
