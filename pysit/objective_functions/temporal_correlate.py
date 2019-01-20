@@ -80,7 +80,7 @@ class TemporalCorrelate(ObjectiveFunctionBase):
             Wf_norm2 = np.dot(Wf, Wf)
             resid[:, i] = Wf / np.sqrt(correlate_data_norm2)
             
-            adjoint_src[:,i] = (2.0*correlate_data_norm2*correlate_fun(dobs[:,i], W*Wf, mode='adj') - 2.0*Wf_norm2*correlate(dobs[:,i], correlate_data, mode='adj')) / correlate_data_norm2**2.0
+            adjoint_src[:,i] = (2.0*correlate_data_norm2*correlate_fun(dobs[:,i], W*Wf, mode='adj') - 2.0*Wf_norm2*correlate_fun(dobs[:,i], correlate_data, mode='adj')) / correlate_data_norm2**2.0
 
         if self.filter_op is not None:
             adjoint_src = self.filter_op * adjoint_src
