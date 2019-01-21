@@ -295,7 +295,6 @@ def optimal_transport_fwi(dobs, dpred, dt):
     
     # Normalization and transfer data to a distribution
     c = 1.5 * np.abs(np.min(dobs))
-    print(c)
     g = dobs + c
     g = g / (np.sum(g)*dt)
     f_plus_c = dpred + c
@@ -319,7 +318,8 @@ def optimal_transport_fwi(dobs, dpred, dt):
         G[i] = int_g
 
     # Compute G^{-1} o F(t)
-    IGoF[ndata-1] = ndata-1
+    IGoF[ndata-1] = (ndata-1)*dt
+    IGoF_ind[ndata-1] = ndata-1
     for i in range(1, ndata-1):
         IGoF_ind[i] = np.searchsorted(G, F[i])
         IGoF[i] = IGoF_ind[i] * dt
