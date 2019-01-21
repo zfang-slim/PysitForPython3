@@ -92,7 +92,7 @@ class TemporalCorrelate(ObjectiveFunctionBase):
         if wavefield is not None:
             wavefield[:] = retval['wavefield'][:]
 
-        return resid, adjoint_src
+        return resid, -1*adjoint_src
 
     def evaluate(self, shots, m0, **kwargs):
         """ Evaluate the least squares objective function over a list of shots."""
