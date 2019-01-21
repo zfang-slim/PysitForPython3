@@ -11,7 +11,7 @@ import obspy.io.segy.core as segy
 
 __all__ = ['odn2grid', 'odn2grid_data_2D_time', 'odn2grid_data_3D_time',
            'odn2grid_data_2D_freq', 'odn2grid_data_3D_freq', 'low_pass_filter',
-           'high_pass_filter', 'band_pass_filter', 'correlate_fun']
+           'high_pass_filter', 'band_pass_filter', 'correlate_fun', 'optimal_transport_fwi']
 
 def odn2grid(o, d, n):
     output = dict()
@@ -291,9 +291,67 @@ def correlate_fun(dobs, dpred, mode='fwd'):
 
     return output
 
+def optimal_transport_fwi(dobs, dpred, dt):
+    
+    # Normalization and transfer data to a distribution
+    c = 3.0 * np.max(dobs)
+    g = dobs + c
+    g = g / (np.sum(g)*dt)
+    f_plus_c = dpred + c
+    s = (np.sum(f_plus_c)*dt)
+    f = f_plus_c / s
+    ndata = len(f)
+    t = np.array(range(0,ndata)) * dt
+
+    F = np.zeros(ndata)
+    G = np.zeros(ndata)
+    IGoF = np.zeros(ndata)
+    IGoF_ind = np.zeros(ndata)
+
+    # Compute F(t) and G(t)
+    int_f = 0.0
+    int_g = 0.0
+    for i in range(0, ndata):
+        int_f += f[i]
+        int_g += g[i]
+        F[i] = int_f
+        G[i] = int_g
+
+    # Compute G^{-1} o F(t)
+    IGoF[ndata-1] = ndata-1
+    for i in range(1, ndata-1):
+        IGoF_ind[i] = np.searchsorted(G, F[i])
+        IGoF[i] = IGoF_ind[i] * dt
+
+    IGoF_ind = IGoF_ind.astype(int)
+
+    # Compute residual
+    t_minus_IGoF = t - IGoF
+    resid = np.sqrt(f) * t_minus_IGoF
+
+    # Compute adjoint source
+
+    adj_src1 = t_minus_IGoF * t_minus_IGoF
+    adj_src2 = (-2*f*dt / g[IGoF_ind]) * t_minus_IGoF
+
+    for i in range(ndata-2, -1, -1):
+        adj_src2[i] += adj_src2[i+1]
+
+    adj_src = adj_src1+adj_src2
+    adj_src = adj_src / s - (dt/(s**2.0)*np.dot(f_plus_c, adj_src))*np.ones(ndata)
+
+    return resid, adj_src, np.linalg.norm(resid)**2.0
+
+
 if __name__ == '__main__':
     
     import numpy as np
+    
+    a = np.array([0,0,-1,0,1,0,-1,0,0])
+    b = np.array([0,-1,0,1,0,-1,0,0,0])
+    dt = 0.2
+    resid, adj_src, r = optimal_transport_fwi(a, b, dt)
+    
     nd = 11
     a = np.random.normal(0,1,nd)
     b = np.random.normal(0,1,nd*2-1)

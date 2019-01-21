@@ -8,4 +8,5 @@ from pysit.objective_functions.frequency_least_squares import *
 from pysit.objective_functions.temporal_envelope import *
 from pysit.objective_functions.temporal_extended_imaging_inversion import *
 from pysit.objective_functions.temporal_correlate import *
+from pysit.objective_functions.temporal_optimal_transport import *
 #from pysit.objective_functions.temporal_extended_imaging_inversion_sub import *
