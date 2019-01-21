@@ -325,6 +325,9 @@ def optimal_transport_fwi(dobs, dpred, dt):
 
     IGoF_ind = IGoF_ind.astype(int)
 
+    idx = np.where(IGoF_ind>ndata-1)
+    IGoF_ind[idx] = ndata-1
+
     # Compute residual
     t_minus_IGoF = t - IGoF
     resid = np.sqrt(f) * t_minus_IGoF
