@@ -11,7 +11,7 @@ __all__ = ['TemporalOptimalTransport']
 
 __docformat__ = "restructuredtext en"
 
-class TemporalCorrelate(ObjectiveFunctionBase):
+class TemporalOptimalTransport(ObjectiveFunctionBase):
     """ How to compute the parts of the objective you need to do optimization """
 
     def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1):
