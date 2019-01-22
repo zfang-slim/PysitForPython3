@@ -297,7 +297,7 @@ def optimal_transport_fwi(dobs, dpred, dt):
     c = 2.0 * np.abs(np.min(dobs))
     if c < np.abs(np.min(dpred)):
         print('c {0}'.format(c))
-        print('min dpred {)}'.format(np.min(dpred)))
+        print('min dpred {0}'.format(np.min(dpred)))
               
     g = dobs + c
     g = g / (np.sum(g)*dt)
@@ -344,8 +344,8 @@ def optimal_transport_fwi(dobs, dpred, dt):
     # Compute residual
     t_minus_IGoF = t - IGoF
     resid = np.sqrt(f) * t_minus_IGoF
-    print('min resid {0}'.format(np.min(resid)))
-    print('max resid {0}'.format(np.max(resid)))
+#    print('min resid {0}'.format(np.min(resid)))
+#    print('max resid {0}'.format(np.max(resid)))
 
     # Compute adjoint source
 
