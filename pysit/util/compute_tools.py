@@ -298,13 +298,13 @@ def optimal_transport_fwi(dobs, dpred, dt):
     g = dobs + c
     g = g / (np.sum(g)*dt)
     f_plus_c = dpred + c
-    if np.min(f_plus_c < 0):
-        print('f min is smaller than 0')
-    
     s = (np.sum(f_plus_c)*dt)
     f = f_plus_c / s
     ndata = len(f)
     t = np.array(range(0,ndata)) * dt
+    
+    print('min f {0}'.format(np.min(f)))
+    print('min g {0}'.format{np.min(g)})
 
     F = np.zeros(ndata)
     G = np.zeros(ndata)
