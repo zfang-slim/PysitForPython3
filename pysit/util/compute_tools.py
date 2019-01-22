@@ -297,7 +297,7 @@ def optimal_transport_fwi(dobs, dpred, dt):
     c = 2.0 * np.abs(np.min(dobs))
     if c < np.abs(np.min(dpred)):
         print('c {0}'.format(c))
-        print('min dpred {)}'.format(np.min(dpred))
+        print('min dpred {)}'.format(np.min(dpred)))
               
     g = dobs + c
     g = g / (np.sum(g)*dt)
