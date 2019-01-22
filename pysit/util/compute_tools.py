@@ -295,6 +295,9 @@ def optimal_transport_fwi(dobs, dpred, dt):
     
     # Normalization and transfer data to a distribution
     c = 2.0 * np.abs(np.min(dobs))
+    if c < np.abs(np.min(dpred)):
+        print('c {0}'.format(c))
+        print('min dpred {)}'.format(np.min(dpred))
     g = dobs + c
     g = g / (np.sum(g)*dt)
     f_plus_c = dpred + c
@@ -303,8 +306,9 @@ def optimal_transport_fwi(dobs, dpred, dt):
     ndata = len(f)
     t = np.array(range(0,ndata)) * dt
     
-    print('min f {0}'.format(np.min(f)))
-    print('min g {0}'.format(np.min(g)))
+    if c < np.abs(np.min(dpred)):
+        print('min f {0}'.format(np.min(f)))
+        print('min g {0}'.format(np.min(g)))
 
     F = np.zeros(ndata)
     G = np.zeros(ndata)
@@ -332,8 +336,9 @@ def optimal_transport_fwi(dobs, dpred, dt):
 
     idx = np.where(IGoF_ind>ndata-1)
     IGoF_ind[idx] = ndata-1
-    print('min IGoF_ind {0}'.format(np.min(IGoF_ind)))
-    print('max IGoF_ind {0}'.format(np.max(IGoF_ind)))
+    if c < np.abs(np.min(dpred)):
+        print('min IGoF_ind {0}'.format(np.min(IGoF_ind)))
+        print('max IGoF_ind {0}'.format(np.max(IGoF_ind)))
 
     # Compute residual
     t_minus_IGoF = t - IGoF
