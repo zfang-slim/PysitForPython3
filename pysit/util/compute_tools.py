@@ -294,7 +294,7 @@ def correlate_fun(dobs, dpred, mode='fwd'):
 def optimal_transport_fwi(dobs, dpred, dt):
     
     # Normalization and transfer data to a distribution
-    c = 2.0 * np.abs(np.min(dobs))
+    c = 2.0 * np.abs(np.max(np.abs(dobs)))
     if c < np.abs(np.min(dpred)):
         print('c {0}'.format(c))
         print('min dpred {0}'.format(np.min(dpred)))
