@@ -96,7 +96,7 @@ class TemporalEnvelope(ObjectiveFunctionBase):
             adjoint_src += (-hilbert(denvelope_ddataH * resid, axis=0)).imag
 
             if self.filter_op is not None:
-                adjoint_src = self.filter_op * adjoint_src
+                adjoint_src = self.filter_op.__adj_mul__(adjoint_src)
             
             return -resid, -adjoint_src
 

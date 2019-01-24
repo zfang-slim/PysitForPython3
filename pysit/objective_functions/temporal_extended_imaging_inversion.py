@@ -132,7 +132,7 @@ class TemporalExtendedImagingInversion(ObjectiveFunctionBase):
         # resid = shot.receivers.interpolate_data(self.solver.ts()) - retval['simdata'][0]
         if self.filter_op is not None:
             resid = self.filter_op * resid
-            adjoint_src = self.filter_op * resid
+            adjoint_src = self.filter_op.__adj_mul__(resid)
         else:
             adjoint_src = resid
 

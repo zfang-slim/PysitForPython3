@@ -88,7 +88,7 @@ class TemporalCorrelate(ObjectiveFunctionBase):
             adjoint_src[:,i] = (2.0*correlate_data_norm2*correlate_fun(dobs[:,i], W*Wf, mode='adj') - 2.0*Wf_norm2*correlate_fun(dobs[:,i], correlate_data, mode='adj')) / correlate_data_norm2**2.0
 
         if self.filter_op is not None:
-            adjoint_src = self.filter_op * adjoint_src
+            adjoint_src = self.filter_op.__adj_mul__(adjoint_src)
 
 
         # If the second derivative info is needed, copy it out

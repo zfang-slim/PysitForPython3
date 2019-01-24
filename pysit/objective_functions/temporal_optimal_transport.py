@@ -81,7 +81,7 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
             resid[:,i], adjoint_src[:,i], ot_value = optimal_transport_fwi(dobs[:,i], dpred[:,i], self.solver.dt)
 
         if self.filter_op is not None:
-            adjoint_src = self.filter_op * adjoint_src
+            adjoint_src = self.filter_op.__adj_mul__(adjoint_src)
 
 
         # If the second derivative info is needed, copy it out
