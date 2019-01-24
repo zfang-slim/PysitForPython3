@@ -11,7 +11,8 @@ import obspy.io.segy.core as segy
 
 __all__ = ['odn2grid', 'odn2grid_data_2D_time', 'odn2grid_data_3D_time',
            'odn2grid_data_2D_freq', 'odn2grid_data_3D_freq', 'low_pass_filter',
-           'high_pass_filter', 'band_pass_filter', 'correlate_fun', 'optimal_transport_fwi']
+           'high_pass_filter', 'band_pass_filter', 'correlate_fun', 'optimal_transport_fwi', 
+           'padding_zeros_fun', 'un_padding_zeros_fun', 'padding_zeros_op']
 
 def odn2grid(o, d, n):
     output = dict()
@@ -73,7 +74,7 @@ class high_pass_filter(object):
         
     '''
 
-    def __init__(self, nsmp, T, cut_freq, transit_freq_length=1.0, axis=0):
+    def __init__(self, nsmp, T, cut_freq, transit_freq_length=1.0, axis=0, padding_zeros=False, nl=0, nr=0):
         '''
         Input:
             data - data can be a 1D array or 2D matrix or 3D cubic
@@ -82,22 +83,31 @@ class high_pass_filter(object):
             cut_freq - the frequency that uses to cut the signal
             transit_freq_length - the length of frequency that transit the filter value from 0 to 1
             axis - the axis over which to compute the low pass filter, default is -1
+            padding_zeros - define if zeros are requried to be padded before and after the signal to avoid the wrapping around affect
+            nl - the number of zero-points to be padded at the left side of the signal
+            nr - the number of zero-points to be padded at the right side of the signal
 
         output:
             dataout - the data after the low pass filter
         '''
 
-        self.T = T 
-        self.nsmp = nsmp
+        self.T_org = T
+        self.T_cmp = T / (nsmp-1) * (nsmp+nl+nr-1)
+        self.nsmp_org = nsmp
+        self.nsmp_cmp = nsmp + nl + nr
         self.cut_freq = cut_freq
         self.transit_freq_length = transit_freq_length
         self.axis = axis
-        
-        df = 1/T
+        self.padding_zeros = padding_zeros
+        self.shape = [nsmp+nl+nr, nsmp]
+        if padding_zeros is True:
+            self.padding_zeros_op = padding_zeros_op(self.nsmp_org, nl, nr, axis=axis)
+
+        df = 1/self.T_cmp
         self.df = df
 
         n_cut = int((cut_freq+transit_freq_length) / df) + 1
-        high_pass_filter = np.ones(nsmp)
+        high_pass_filter = np.ones(self.nsmp_cmp)
         low_freq_part = np.zeros(n_cut)
         ind_transit_start = n_cut - int(transit_freq_length / df) 
         ind_transit_end = n_cut - 1
@@ -110,7 +120,7 @@ class high_pass_filter(object):
         high_freq_part = np.flip(low_freq_part, axis=-1)
 
         high_pass_filter[0:n_cut] = low_freq_part
-        high_pass_filter[nsmp-n_cut:nsmp] = high_freq_part
+        high_pass_filter[self.nsmp_cmp-n_cut:self.nsmp_cmp] = high_freq_part
 
         self.high_pass_filter = high_pass_filter 
 
@@ -119,25 +129,62 @@ class high_pass_filter(object):
         x_shape = np.shape(x)
 
         if len(x_shape) == 1:
-            if x_shape[0] != self.nsmp:
-                raise ValueError('The size of input x should be equal to the nsmp of the low pass filter object')
+            if x_shape[0] != self.shape[1]:
+                raise ValueError(
+                    'The size of input x should be equal to the shape[1] of the high pass filter object')
 
             else:
                y = self._apply_filter(x) 
 
         else:
-            if x_shape[self.axis] != self.nsmp:
-                raise ValueError("The length of input x's operating axis should be equal to the nsmp of the low pass filter object")
+            if x_shape[self.axis] != self.shape[1]:
+                raise ValueError(
+                    "The length of input x's operating axis should be equal to the shape[1] of the high pass filter object")
             else:
                 y = np.apply_along_axis(self._apply_filter, self.axis, x)
 
         return y
 
+    def __adj_mul__(self, x):
+        x_shape = np.shape(x)
+
+        if len(x_shape) == 1:
+            if x_shape[0] != self.shape[0]:
+                raise ValueError(
+                    'The size of input x should be equal to the shape[0] of the high pass filter object for adj_mul')
+
+            else:
+               y = self._apply_adj_filter(x)
+
+        else:
+            if x_shape[self.axis] != self.shape[0]:
+                raise ValueError(
+                    "The length of input x's operating axis should be equal to the shape[0] of the high pass filter object for adj_mul")
+            else:
+                y = np.apply_along_axis(self._apply_adj_filter, self.axis, x)
+
+        return y
+
     def _apply_filter(self, x):
-        y = np.fft.fft(x)
+        if self.padding_zeros is True:
+            y = self.padding_zeros_op * x
+            y = np.fft.fft(y)
+        else:
+            y = np.fft.fft(x)
+
         y = self.high_pass_filter * y
         y = np.fft.ifft(y)
         return y.real
+
+    def _apply_adj_filter(self, x):
+        y = np.fft.fft(x)
+        y = self.high_pass_filter * y
+        y = np.fft.ifft(y)
+
+        if self.padding_zeros is True:
+            y = self.padding_zeros_op.__adj_mul__(y.real)
+
+        return y
 
 
 class low_pass_filter(object):
@@ -145,7 +192,7 @@ class low_pass_filter(object):
         
     '''
 
-    def __init__(self, nsmp, T, cut_freq, transit_freq_length=1.0, axis=0):
+    def __init__(self, nsmp, T, cut_freq, transit_freq_length=1.0, axis=0, padding_zeros=False, nl=0, nr=0):
         '''
         Input:
             data - data can be a 1D array or 2D matrix or 3D cubic
@@ -154,22 +201,31 @@ class low_pass_filter(object):
             cut_freq - the frequency that uses to cut the signal
             transit_freq_length - the length of frequency that transit the filter value from 0 to 1
             axis - the axis over which to compute the low pass filter, default is -1
+            padding_zeros - define if zeros are requried to be padded before and after the signal to avoid the wrapping around affect
+            nl - the number of zero-points to be padded at the left side of the signal
+            nr - the number of zero-points to be padded at the right side of the signal
 
         output:
             dataout - the data after the low pass filter
         '''
 
-        self.T = T
-        self.nsmp = nsmp
+        self.T_org = T
+        self.T_cmp = T / (nsmp-1) * (nsmp+nl+nr-1)
+        self.nsmp_org = nsmp
+        self.nsmp_cmp = nsmp + nl + nr
         self.cut_freq = cut_freq
         self.transit_freq_length = transit_freq_length
         self.axis = axis
+        self.padding_zeros = padding_zeros
+        self.shape = [nsmp+nl+nr, nsmp]
+        if padding_zeros is True:
+            self.padding_zeros_op = padding_zeros_op(self.nsmp_org, nl, nr, axis=axis)
 
-        df = 1/T
+        df = 1/self.T_cmp
         self.df = df
 
         n_cut = int((cut_freq+transit_freq_length) / df) + 1
-        low_pass_filter = np.zeros(nsmp)
+        low_pass_filter = np.zeros(self.nsmp_cmp)
         low_freq_part = np.ones(n_cut)
         ind_transit_start = n_cut - int(transit_freq_length / df)
         ind_transit_end = n_cut - 1
@@ -182,7 +238,7 @@ class low_pass_filter(object):
         high_freq_part = np.flip(low_freq_part, axis=-1)
 
         low_pass_filter[0:n_cut] = low_freq_part
-        low_pass_filter[nsmp-n_cut:nsmp] = high_freq_part
+        low_pass_filter[self.nsmp_cmp-n_cut:self.nsmp_cmp] = high_freq_part
 
         self.low_pass_filter = low_pass_filter
 
@@ -191,27 +247,63 @@ class low_pass_filter(object):
         x_shape = np.shape(x)
 
         if len(x_shape) == 1:
-            if x_shape[0] != self.nsmp:
+            if x_shape[0] != self.shape[1]:
                 raise ValueError(
-                    'The size of input x should be equal to the nsmp of the low pass filter object')
+                    'The size of input x should be equal to the shape[1] of the low pass filter object')
 
             else:
                y = self._apply_filter(x)
 
         else:
-            if x_shape[self.axis] != self.nsmp:
+            if x_shape[self.axis] != self.shape[1]:
                 raise ValueError(
-                    "The length of input x's operating axis should be equal to the nsmp of the low pass filter object")
+                    "The length of input x's operating axis should be equal to the shape[1] of the low pass filter object")
             else:
                 y = np.apply_along_axis(self._apply_filter, self.axis, x)
 
         return y
 
+    def __adj_mul__(self, x):
+        x_shape = np.shape(x)
+
+        if len(x_shape) == 1:
+            if x_shape[0] != self.shape[0]:
+                raise ValueError(
+                    'The size of input x should be equal to the shape[0] of the low pass filter object for adj_mul')
+
+            else:
+               y = self._apply_adj_filter(x)
+
+        else:
+            if x_shape[self.axis] != self.shape[0]:
+                raise ValueError(
+                    "The length of input x's operating axis should be equal to the shape[0] of the low pass filter object for adj_mul")
+            else:
+                y = np.apply_along_axis(self._apply_adj_filter, self.axis, x)
+
+        return y
+
     def _apply_filter(self, x):
-        y = np.fft.fft(x)
+        if self.padding_zeros is True:
+            y = self.padding_zeros_op * x
+            y = np.fft.fft(y)
+        else:
+            y = np.fft.fft(x)
+
         y = self.low_pass_filter * y
         y = np.fft.ifft(y)
         return y.real
+
+    def _apply_adj_filter(self, x):
+        y = np.fft.fft(x)
+        y = self.low_pass_filter * y
+        y = np.fft.ifft(y)
+
+        if self.padding_zeros is True:
+            y = self.padding_zeros_op.__adj_mul__(y.real)
+
+        return y 
+
 
 
 class band_pass_filter(object):
@@ -219,7 +311,7 @@ class band_pass_filter(object):
         
     '''
 
-    def __init__(self, nsmp, T, freq_band, transit_freq_length=1.0, axis=0):
+    def __init__(self, nsmp, T, freq_band, transit_freq_length=1.0, axis=0, padding_zeros=False, nl=0, nr=0):
         '''
         Input:
             data - data can be a 1D array or 2D matrix or 3D cubic
@@ -233,17 +325,24 @@ class band_pass_filter(object):
             dataout - the data after the low pass filter
         '''
 
-        self.T = T
-        self.nsmp = nsmp
+        self.T_org = T
+        self.T_cmp = T / (nsmp-1) * (nsmp+nl+nr-1)
+        self.nsmp_org = nsmp
+        self.nsmp_cmp = nsmp + nl + nr
         self.freq_band = freq_band
         self.transit_freq_length = transit_freq_length
         self.axis = axis
+        self.padding_zeros = padding_zeros
+        self.shape = [nsmp+nl+nr, nsmp]
+        if padding_zeros is True:
+            self.padding_zeros_op = padding_zeros_op(
+                self.nsmp_org, nl, nr, axis=axis)
 
-        df = 1/T
+        df = 1/self.T_cmp
         self.df = df
 
-        LPF = low_pass_filter(nsmp, T, freq_band[1], transit_freq_length=transit_freq_length, axis=axis)
-        HPF = high_pass_filter(nsmp, T, freq_band[0], transit_freq_length=transit_freq_length, axis=axis)
+        LPF = low_pass_filter(nsmp, T, freq_band[1], transit_freq_length=transit_freq_length, axis=axis, padding_zeros=padding_zeros, nl=nl, nr=nr)
+        HPF = high_pass_filter(nsmp, T, freq_band[0], transit_freq_length=transit_freq_length, axis=axis, padding_zeros=padding_zeros, nl=nl, nr=nr)
 
         self.band_pass_filter = LPF.low_pass_filter * HPF.high_pass_filter
 
@@ -252,27 +351,62 @@ class band_pass_filter(object):
         x_shape = np.shape(x)
 
         if len(x_shape) == 1:
-            if x_shape[0] != self.nsmp:
+            if x_shape[0] != self.shape[1]:
                 raise ValueError(
-                    'The size of input x should be equal to the nsmp of the low pass filter object')
+                    'The size of input x should be equal to the shape[1] of the band pass filter object')
 
             else:
                y = self._apply_filter(x)
 
         else:
-            if x_shape[self.axis] != self.nsmp:
+            if x_shape[self.axis] != self.shape[1]:
                 raise ValueError(
-                    "The length of input x's operating axis should be equal to the nsmp of the low pass filter object")
+                    "The length of input x's operating axis should be equal to the shape[1] of the band pass filter object")
             else:
                 y = np.apply_along_axis(self._apply_filter, self.axis, x)
 
         return y
 
+    def __adj_mul__(self, x):
+        x_shape = np.shape(x)
+
+        if len(x_shape) == 1:
+            if x_shape[0] != self.shape[0]:
+                raise ValueError(
+                    'The size of input x should be equal to the shape[0] of the band pass filter object for adj_mul')
+
+            else:
+               y = self._apply_adj_filter(x)
+
+        else:
+            if x_shape[self.axis] != self.shape[0]:
+                raise ValueError(
+                    "The length of input x's operating axis should be equal to band shape[0] of the low pass filter object for adj_mul")
+            else:
+                y = np.apply_along_axis(self._apply_adj_filter, self.axis, x)
+
+        return y
+
     def _apply_filter(self, x):
-        y = np.fft.fft(x)
+        if self.padding_zeros is True:
+            y = self.padding_zeros_op * x
+            y = np.fft.fft(y)
+        else:
+            y = np.fft.fft(x)
+        
         y = self.band_pass_filter * y
         y = np.fft.ifft(y)
         return y.real
+
+    def _apply_adj_filter(self, x):
+        y = np.fft.fft(x)
+        y = self.band_pass_filter * y
+        y = np.fft.ifft(y)
+
+        if self.padding_zeros is True:
+            y = self.padding_zeros_op.__adj_mul__(y.real)
+
+        return y 
 
 def correlate_fun(dobs, dpred, mode='fwd'):
     
@@ -291,10 +425,69 @@ def correlate_fun(dobs, dpred, mode='fwd'):
 
     return output
 
+class padding_zeros_op(object):
+    def __init__(self, n_data, nl, nr, axis=0):
+        self.n_data = n_data
+        self.nl = nl
+        self.nr = nr 
+        self.shape = [nl+nr+n_data, n_data]
+        self.axis = axis
+
+    def __mul__(self, x):
+        x_shape = np.shape(x)
+
+        if len(x_shape) == 1:
+            if x_shape[0] != self.shape[1]:
+                raise ValueError('The size of input x should be equal to shape[1] of the padding_zeros_op operator')
+
+            else:
+               y = padding_zeros_fun(x, self.n_data, self.nl, self.nr)
+
+        else:
+            if x_shape[self.axis] != self.shape[1]:
+                raise ValueError("The length of input x's operating axis should be equal to shape[1] of the padding_zeros_op operator")
+            else:
+                y = np.apply_along_axis(
+                    padding_zeros_fun, self.axis, x, self.n_data, self.nl, self.nr)
+
+        return y
+
+    def __adj_mul__(self, x):
+        x_shape = np.shape(x)
+
+        if len(x_shape) == 1:
+            if x_shape[0] != self.shape[0]:
+                raise ValueError(
+                    'The size of input x should be equal to shape[0] of the padding_zeros_op operator')
+
+            else:
+               y = un_padding_zeros_fun(x, self.n_data, self.nl, self.nr)
+
+        else:
+            if x_shape[self.axis] != self.shape[0]:
+                raise ValueError(
+                    "The length of input x's operating axis should be equal to shape[1] of the padding_zeros_op operator")
+            else:
+                y = np.apply_along_axis(
+                    un_padding_zeros_fun, self.axis, x, self.n_data, self.nl, self.nr)
+
+        return y
+
+
+
+def padding_zeros_fun(data, n_data, nl, nr):
+    output = np.zeros(n_data+nl+nr)
+    output[nl:nl+n_data] = data
+
+    return output
+
+def un_padding_zeros_fun(data, n_data, nl, nr):
+    return data[nl:nl+n_data]
+
 def optimal_transport_fwi(dobs, dpred, dt):
     
     # Normalization and transfer data to a distribution
-    c = 3.0 * np.abs(np.max(np.abs(dobs)))
+    c = 10.0 * np.abs(np.max(np.abs(dobs)))
     if c < np.abs(np.min(dpred)):
         print('c {0}'.format(c))
         print('min dpred {0}'.format(np.min(dpred)))
@@ -364,80 +557,112 @@ def optimal_transport_fwi(dobs, dpred, dt):
 if __name__ == '__main__':
     
     import numpy as np
-    
-    a = np.array([0,0,-1,0,1,0,-1,0,0])
-    b = np.array([0,-1,0,1,0,-1,0,0,0])
-    dt = 0.2
-    resid, adj_src, r = optimal_transport_fwi(a, b, dt)
-    
-    nd = 11
-    a = np.random.normal(0,1,nd)
-    b = np.random.normal(0,1,nd*2-1)
-    c = np.random.normal(0,1,nd)
-    
-    d = np.dot(b, correlate_fun(a,c))
-    e = np.dot(c, correlate_fun(a,b,mode='adj'))
-    print('d = {0}'.format(d))
-    print('e = {0}'.format(e))
-    
-    o = [0.0, 1.0, 2.0]
-    d = [1.0, 2.0, 3.0]
-    n = [4, 5, 6]
-    output = odn2grid(o, d, n)
-    print(output[0])
-    print(output[1])
-    print(output[2])
 
-    o = [0.0, 1.0, 2.0, 3.0, 4.0]
-    d = [1.0, 2.0, 3.0, 4.0, 5.0]
-    n = [4, 1, 5, 1, 6]
-    data_time, data_xrec, data_zrec, data_xsrc, data_zsrc = odn2grid_data_2D_time(o, d, n)
+    # ## Test padding zeros op
 
-    print(data_time)
-    print(data_zrec)
-    print(data_xrec)
-    print(data_zsrc)
-    print(data_xsrc)
+    # n_data = 11
+    # nr = 3
+    # nl = 5
+    # a = np.random.normal(0,1,(n_data,2))
+    # J = padding_zeros_op(n_data, nl, nr)
+    # b = J * a
+    # c = J.__adj_mul__(b)
 
-    nsmp = 101
-    dt = 0.1
+    # print(b)
+    # print(c)
+
+    # ## Test optimal transport 
+    
+    # a = np.array([0,0,-1,0,1,0,-1,0,0])
+    # b = np.array([0,-1,0,1,0,-1,0,0,0])
+    # dt = 0.2
+    # resid, adj_src, r = optimal_transport_fwi(a, b, dt)
+    
+    # nd = 11
+    # a = np.random.normal(0,1,nd)
+    # b = np.random.normal(0,1,nd*2-1)
+    # c = np.random.normal(0,1,nd)
+    
+    # d = np.dot(b, correlate_fun(a,c))
+    # e = np.dot(c, correlate_fun(a,b,mode='adj'))
+    # print('d = {0}'.format(d))
+    # print('e = {0}'.format(e))
+    
+    # o = [0.0, 1.0, 2.0]
+    # d = [1.0, 2.0, 3.0]
+    # n = [4, 5, 6]
+    # output = odn2grid(o, d, n)
+    # print(output[0])
+    # print(output[1])
+    # print(output[2])
+
+    # o = [0.0, 1.0, 2.0, 3.0, 4.0]
+    # d = [1.0, 2.0, 3.0, 4.0, 5.0]
+    # n = [4, 1, 5, 1, 6]
+    # data_time, data_xrec, data_zrec, data_xsrc, data_zsrc = odn2grid_data_2D_time(o, d, n)
+
+    # print(data_time)
+    # print(data_zrec)
+    # print(data_xrec)
+    # print(data_zsrc)
+    # print(data_xsrc)
+
+    nsmp = 501
+    dt = 0.01
     T = (nsmp-1)*dt 
     xt = np.linspace(0, T, nsmp)
-    freqt = np.linspace(0, 10, nsmp)
-    a = 4.0
+    freqt = np.linspace(0, 100, nsmp)
+    a = 6.0
     f0 = signal.ricker(nsmp, a)
+    f1 = np.zeros(f0.shape)
+    f1[0:400] = f0[100:500]
+    f0 = f1
     cut_freq = 0.2
     cut_freqh = 0.5
     freq_band = [0.2, 1.0]
+    nl = 200
+    nr = 100
+    xt2 = np.linspace(-nl*dt, T+nr*dt, nsmp+nl+nr)
 
 
-    LF = low_pass_filter(nsmp, T, cut_freq)
-    f1 = LF * f0
+    # LF = low_pass_filter(nsmp, T, cut_freq, padding_zeros=True, nl=nl, nr=nr)
+    # f1 = LF * f0
 
-    plt.plot(xt,f0)
-    plt.plot(xt,f1)
-    plt.show()
-    plt.figure()
-    plt.plot(freqt, np.abs(np.fft.fft(f0)))
-    plt.plot(freqt, np.abs(np.fft.fft(f1)))
-    plt.show()
+    # plt.plot(xt,f0)
+    # plt.plot(xt,f1)
+    # plt.show()
+    # plt.figure()
+    # plt.plot(freqt, np.abs(np.fft.fft(f0)))
+    # plt.plot(freqt, np.abs(np.fft.fft(f1)))
+    # plt.show()
 
-    HF = high_pass_filter(nsmp, T, cut_freqh)
-    f1 = HF * f0
+    # HF = high_pass_filter(nsmp, T, cut_freqh, padding_zeros=True, nl=nl, nr=nr)
+    # f1 = HF * f0
 
-    plt.plot(xt, f0)
-    plt.plot(xt, f1)
-    plt.show()
-    plt.figure()
-    plt.plot(freqt, np.abs(np.fft.fft(f0)))
-    plt.plot(freqt, np.abs(np.fft.fft(f1)))
-    plt.show()
+    # plt.plot(xt, f0)
+    # plt.plot(xt, f1)
+    # plt.show()
+    # plt.figure()
+    # plt.plot(freqt, np.abs(np.fft.fft(f0)))
+    # plt.plot(freqt, np.abs(np.fft.fft(f1)))
+    # plt.show()
 
-    BF = band_pass_filter(nsmp, T, freq_band)
+    BF = band_pass_filter(nsmp, T, freq_band, padding_zeros=True, nl=nl, nr=nr)
+
+    a = np.random.normal(0,1, BF.shape[0])
+    b = np.random.normal(0, 1, BF.shape[1])
+
+    print(np.inner(a, BF*b))
+    print(np.inner(BF.__adj_mul__(a),b))
+
     f1 = BF * f0
+    f2 = BF.__adj_mul__(f1)
 
     plt.plot(xt, f0)
-    plt.plot(xt, f1)
+    plt.figure()
+    plt.plot(xt2, f1)
+    plt.figure()
+    plt.plot(xt, f2)
     plt.show()
     plt.figure()
     plt.plot(freqt, np.abs(np.fft.fft(f0)))
