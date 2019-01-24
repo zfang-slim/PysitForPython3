@@ -60,9 +60,9 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         if shot.receivers.time_window is None:
             resid = shot.receivers.interpolate_data(self.solver.ts()) - retval['simdata']
         else:
-            shot_pred = copy.deepcopy(shot)
-            shot_pred.receivers.data = retval['simdata']
-            dpred = shot.receivers.time_window(self.solver.ts())
+            # shot_pred = copy.deepcopy(shot)
+            # shot_pred.receivers.data = retval['simdata']
+            dpred = shot.receivers.time_window(self.solver.ts()) * retval['simdata']
             resid = shot.receivers.interpolate_data(self.solver.ts()) - dpred
 
         if self.filter_op is not None:

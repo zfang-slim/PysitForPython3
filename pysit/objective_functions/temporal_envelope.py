@@ -62,10 +62,8 @@ class TemporalEnvelope(ObjectiveFunctionBase):
         if shot.receivers.time_window is None:
             dpred = retval['simdata']
         else:
-            shot_pred = copy.deepcopy(shot)
-            shot_pred.receivers.data = retval['simdata']
-            dpred = shot.receivers.time_window(self.solver.ts())
-            
+            dpred = shot.receivers.time_window(self.solver.ts()) * retval['simdata']
+
         dobs = shot.receivers.interpolate_data(self.solver.ts())
 
         if self.filter_op is not None:

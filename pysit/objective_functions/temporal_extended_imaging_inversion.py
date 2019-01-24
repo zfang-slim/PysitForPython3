@@ -126,9 +126,7 @@ class TemporalExtendedImagingInversion(ObjectiveFunctionBase):
         if shot.receivers.time_window is None:
             resid = shot.receivers.interpolate_data(self.solver.ts()) - retval['simdata'][0]
         else:
-            shot_pred = copy.deepcopy(shot)
-            shot_pred.receivers.data = retval['simdata'][0]
-            dpred = shot.receivers.time_window(self.solver.ts())
+            dpred = shot.receivers.time_window(self.solver.ts()) * retval['simdata'][0]
             resid = shot.receivers.interpolate_data(self.solver.ts()) - dpred
 
         # resid = shot.receivers.interpolate_data(self.solver.ts()) - retval['simdata'][0]
