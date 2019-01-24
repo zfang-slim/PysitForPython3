@@ -122,7 +122,16 @@ class TemporalExtendedImagingInversion(ObjectiveFunctionBase):
         # Compute the residual vector by interpolating the measured data to the
         # timesteps used in the previous forward modeling stage.
         # resid = map(lambda x,y: x.interpolate_data(self.solver.ts())-y, shot.gather(), retval['simdata'])
-        resid = shot.receivers.interpolate_data(self.solver.ts()) - retval['simdata'][0]
+        
+        if shot.receivers.time_window is None:
+            resid = shot.receivers.interpolate_data(self.solver.ts()) - retval['simdata'][0]
+        else:
+            shot_pred = copy.deepcopy(shot)
+            shot_pred.receivers.data = retval['simdata'][0]
+            dpred = shot.receivers.time_window(self.solver.ts())
+            resid = shot.receivers.interpolate_data(self.solver.ts()) - dpred
+
+        # resid = shot.receivers.interpolate_data(self.solver.ts()) - retval['simdata'][0]
         if self.filter_op is not None:
             resid = self.filter_op * resid
             adjoint_src = self.filter_op * resid
