@@ -58,15 +58,22 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
         # resid = map(lambda x,y: x.interpolate_data(self.solver.ts())-y, shot.gather(), retval['simdata'])
         # resid = shot.receivers.interpolate_data(self.solver.ts()) - retval['simdata']
         
+        if shot.receivers.time_window is None:
+            dpred = retval['simdata']
+        else:
+            shot_pred = copy.deepcopy(shot)
+            shot_pred.receivers.data = retval['simdata']
+            dpred = shot.receivers.time_window(self.solver.ts())
+
         if self.filter_op is not None:
             dobs = self.filter_op * shot.receivers.interpolate_data(self.solver.ts())
-            dpred = self.filter_op * retval['simdata']
-#            resid = self.filter_op * resid
-#            adjoint_src = self.filter_op * resid
+            dpred = self.filter_op * dpred
+            # resid = self.filter_op * resid
+            # adjoint_src = self.filter_op * resid
         else:
             dobs = shot.receivers.interpolate_data(self.solver.ts())
-            dpred = retval['simdata']
-#            adjoint_src = resid
+            # dpred = retval['simdata']
+            # adjoint_src = resid
 
         shape_dobs = np.shape(dobs)
         resid = np.zeros(shape_dobs)
