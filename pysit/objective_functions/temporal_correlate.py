@@ -73,10 +73,14 @@ class TemporalCorrelate(ObjectiveFunctionBase):
             # dpred = retval['simdata']
             # adjoint_src = resid
 
+        # n_correlate_data = shape_dobs[0]
         shape_dobs = np.shape(dobs)
-        resid = np.zeros([shape_dobs[0]*2-1, shape_dobs[1]])
+        # n_correlate_data = shape_dobs[0]*2-1
+        n_correlate_data = shape_dobs[0]
+        resid = np.zeros([n_correlate_data, shape_dobs[1]])
         adjoint_src = np.zeros([shape_dobs[0], shape_dobs[1]])
-        W = np.linspace(-self.solver.dt*(shape_dobs[0]-1), self.solver.dt*(shape_dobs[0]-1), shape_dobs[0]*2-1)
+        # W = np.linspace(-self.solver.dt*(shape_dobs[0]-1), self.solver.dt*(shape_dobs[0]-1), shape_dobs[0]*2-1)
+        W = np.linspace(-self.solver.dt*(shape_dobs[0]-1)/2.0, self.solver.dt*(shape_dobs[0]-1)/2.0, n_correlate_data)
         W = np.abs(W)
         for i in range(0, shape_dobs[1]):
             correlate_data = correlate_fun(dobs[:,i], dpred[:,i])
