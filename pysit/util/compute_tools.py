@@ -410,17 +410,19 @@ class band_pass_filter(object):
 
 def correlate_fun(dobs, dpred, mode='fwd'):
     
-    nd = len(dobs)
+    # nd = len(dobs)
     if mode == 'fwd':
-        output = np.correlate(dobs, dpred, mode='full')
+        # output = np.correlate(dobs, dpred, mode='full')
+        output = np.correlate(dpred, dobs, mode='same')
 
     else:
-        ndobs = len(dobs)
-        ndpred = len(dpred)
-        output = np.zeros(ndobs)
+        output = np.convolve(dpred, dobs, mode='same')
+        # ndobs = len(dobs)
+        # ndpred = len(dpred)
+        # output = np.zeros(ndobs)
         
-        for i in range(ndobs):
-            output[i] = np.dot(dobs, dpred[ndpred-ndobs-i:ndpred-i])
+        # for i in range(ndobs):
+        #     output[i] = np.dot(dobs, dpred[ndpred-ndobs-i:ndpred-i])
 
 
     return output
@@ -557,6 +559,16 @@ def optimal_transport_fwi(dobs, dpred, dt):
 if __name__ == '__main__':
     
     import numpy as np
+
+    ## Adjoint test for correlation 
+
+    n_data = 11
+    a_obs = np.random.normal(0,1,n_data)
+    b = np.random.normal(0,1,n_data)
+    c = np.random.normal(0, 1, n_data)
+
+    print(np.dot(c, correlate_fun(a_obs,b)))
+    print(np.dot(correlate_fun(a_obs,c,mode='adj'), b))
 
     # ## Test padding zeros op
 
