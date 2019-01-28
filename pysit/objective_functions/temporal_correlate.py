@@ -156,12 +156,15 @@ class TemporalCorrelate(ObjectiveFunctionBase):
             wavefield=None
             
         r, adjoint_src = self._residual(shot, m0, dWaveOp=dWaveOp, wavefield=wavefield, **kwargs)
-        dWaveOp = []
-        wavefield = []
-        r2, adjoint_src2 = self._residual(shot, m02, dWaveOp=dWaveOp, wavefield=wavefield, **kwargs)
+        dWaveOp2 = []
+        wavefield2 = []
+        r2, adjoint_src2 = self._residual(shot, m02, dWaveOp=dWaveOp2, wavefield=wavefield2, **kwargs)
         
         # Perform the migration or F* operation to get the gradient component
         g = self.modeling_tools.migrate_shot(shot, m0, adjoint_src, self.imaging_period, dWaveOp=dWaveOp, wavefield=wavefield)
+        g2 = self.modeling_tools.migrate_shot(
+            shot, m0, adjoint_src, self.imaging_period, dWaveOp=dWaveOp2, wavefield=wavefield2)
+        g -= g2
 
         if not ignore_minus:
             g = -1*g
