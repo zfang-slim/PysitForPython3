@@ -83,10 +83,10 @@ class TemporalCorrelate(ObjectiveFunctionBase):
         # W1 = np.linspace(-self.solver.dt*(shape_dobs[0]-1)/2.0, self.solver.dt*(shape_dobs[0]-1)/2.0, n_correlate_data)
         W  = np.zeros(n_correlate_data)
         if np.mod(n_correlate_data, 2) == 0:
-            W[0:n_correlate_data//2] = np.linspace(-self.solver.dt*(shape_dobs[0])/2.0, -self.solver.dt, n_correlate_data/2)
+            W[0:n_correlate_data//2] = np.linspace(-self.solver.dt, -self.solver.dt*(shape_dobs[0])/2.0, n_correlate_data/2)
             W[n_correlate_data//2:n_correlate_data] = np.flipud(W[0:n_correlate_data//2])
         else:
-            W[0:(n_correlate_data+1)//2] = np.linspace(-self.solver.dt*(shape_dobs[0]-1)/2.0, 0.0, (n_correlate_data+1)/2)
+            W[0:(n_correlate_data+1)//2] = np.linspace(0.0, -self.solver.dt*(shape_dobs[0]-1)/2.0, (n_correlate_data+1)/2)
             W[(n_correlate_data-1)//2:n_correlate_data] = np.flipud(W[0:(n_correlate_data+1)//2])
 
         # W[0: (n_correlate_data+1)//2] = W1[(n_correlate_data+1)//2-1:n_correlate_data]
