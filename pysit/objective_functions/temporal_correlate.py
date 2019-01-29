@@ -93,6 +93,7 @@ class TemporalCorrelate(ObjectiveFunctionBase):
         # W[(n_correlate_data+1)//2:n_correlate_data] = W1[0:n_correlate_data+1)//2]
         # W = np.linspace(0.0, self.solver.dt*(shape_dobs[0]-1), n_correlate_data)
         W = np.abs(W)
+        W = np.sqrt(W)
         for i in range(0, shape_dobs[1]):
             correlate_data = correlate_fun(dobs[:,i], dpred[:,i])
             Wf = W * correlate_data
