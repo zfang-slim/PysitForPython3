@@ -411,8 +411,8 @@ class band_pass_filter(object):
 def correlate_fun(dobs, dpred, mode='fwd'):
     
     # nd = len(dobs)
-    a = np.fft.fft(dobs)
-    b = np.fft.fft(dpred)
+    # a = np.fft.fft(dobs)
+    # b = np.fft.fft(dpred)
     if mode == 'fwd':
         # output = np.correlate(dobs, dpred, mode='full')
         # output = np.correlate(dpred, dobs, mode='same')
@@ -571,7 +571,7 @@ if __name__ == '__main__':
 
     ## Adjoint test for correlation 
 
-    n_data = 20
+    n_data = 8000
     a_obs = np.random.normal(0,1,n_data)
     b = np.random.normal(0,1,n_data)
     c = np.random.normal(0, 1, n_data)

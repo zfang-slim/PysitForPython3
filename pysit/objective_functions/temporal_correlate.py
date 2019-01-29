@@ -75,19 +75,19 @@ class TemporalCorrelate(ObjectiveFunctionBase):
 
         # n_correlate_data = shape_dobs[0]
         shape_dobs = np.shape(dobs)
-        # n_correlate_data = shape_dobs[0]*2-1
-        n_correlate_data = shape_dobs[0]
+        n_correlate_data = shape_dobs[0]*2-1
+        # n_correlate_data = shape_dobs[0]
         resid = np.zeros([n_correlate_data, shape_dobs[1]])
         adjoint_src = np.zeros([shape_dobs[0], shape_dobs[1]])
-        # W = np.linspace(-self.solver.dt*(shape_dobs[0]-1), self.solver.dt*(shape_dobs[0]-1), shape_dobs[0]*2-1)
+        W = np.linspace(-self.solver.dt*(shape_dobs[0]-1), self.solver.dt*(shape_dobs[0]-1), shape_dobs[0]*2-1)
         # W1 = np.linspace(-self.solver.dt*(shape_dobs[0]-1)/2.0, self.solver.dt*(shape_dobs[0]-1)/2.0, n_correlate_data)
-        W  = np.zeros(n_correlate_data)
-        if np.mod(n_correlate_data, 2) == 0:
-            W[0:n_correlate_data//2] = np.linspace(-self.solver.dt, -self.solver.dt*(shape_dobs[0])/2.0, n_correlate_data/2)
-            W[n_correlate_data//2:n_correlate_data] = np.flipud(W[0:n_correlate_data//2])
-        else:
-            W[0:(n_correlate_data+1)//2] = np.linspace(0.0, -self.solver.dt*(shape_dobs[0]-1)/2.0, (n_correlate_data+1)/2)
-            W[(n_correlate_data-1)//2:n_correlate_data] = np.flipud(W[0:(n_correlate_data+1)//2])
+        # W  = np.zeros(n_correlate_data)
+        # if np.mod(n_correlate_data, 2) == 0:
+        #     W[0:n_correlate_data//2] = np.linspace(-self.solver.dt, -self.solver.dt*(shape_dobs[0])/2.0, n_correlate_data/2)
+        #     W[n_correlate_data//2:n_correlate_data] = np.flipud(W[0:n_correlate_data//2])
+        # else:
+        #     W[0:(n_correlate_data+1)//2] = np.linspace(0.0, -self.solver.dt*(shape_dobs[0]-1)/2.0, (n_correlate_data+1)/2)
+        #     W[(n_correlate_data-1)//2:n_correlate_data] = np.flipud(W[0:(n_correlate_data+1)//2])
 
         # W[0: (n_correlate_data+1)//2] = W1[(n_correlate_data+1)//2-1:n_correlate_data]
         # W[(n_correlate_data+1)//2:n_correlate_data] = W1[0:n_correlate_data+1)//2]
@@ -131,7 +131,7 @@ class TemporalCorrelate(ObjectiveFunctionBase):
 
         return r_norm2*self.solver.dt
 
-    def _gradient_helper(self, shot, m0, m02, ignore_minus=False, ret_pseudo_hess_diag_comp = False, **kwargs):
+    def _gradient_helper(self, shot, m0, ignore_minus=False, ret_pseudo_hess_diag_comp = False, **kwargs):
         """Helper function for computing the component of the gradient due to a
         single shot.
 
@@ -156,15 +156,9 @@ class TemporalCorrelate(ObjectiveFunctionBase):
             wavefield=None
             
         r, adjoint_src = self._residual(shot, m0, dWaveOp=dWaveOp, wavefield=wavefield, **kwargs)
-        dWaveOp2 = []
-        wavefield2 = []
-        r2, adjoint_src2 = self._residual(shot, m02, dWaveOp=dWaveOp2, wavefield=wavefield2, **kwargs)
         
         # Perform the migration or F* operation to get the gradient component
         g = self.modeling_tools.migrate_shot(shot, m0, adjoint_src, self.imaging_period, dWaveOp=dWaveOp, wavefield=wavefield)
-        g2 = self.modeling_tools.migrate_shot(
-            shot, m0, adjoint_src, self.imaging_period, dWaveOp=dWaveOp2, wavefield=wavefield2)
-        g -= g2
 
         if not ignore_minus:
             g = -1*g
@@ -194,7 +188,7 @@ class TemporalCorrelate(ObjectiveFunctionBase):
 
         return pseudo_hessian_diag_contrib
 
-    def compute_gradient(self, shots, m0, m02, aux_info={}, **kwargs):
+    def compute_gradient(self, shots, m0, aux_info={}, **kwargs):
         """Compute the gradient for a set of shots.
 
         Computes the gradient as
@@ -218,7 +212,7 @@ class TemporalCorrelate(ObjectiveFunctionBase):
                 g, r, h = self._gradient_helper(shot, m0, ignore_minus=True, ret_pseudo_hess_diag_comp = True, **kwargs)
                 pseudo_h_diag += h 
             else:
-                g, r = self._gradient_helper(shot, m0, m02, ignore_minus=True, **kwargs)
+                g, r = self._gradient_helper(shot, m0, ignore_minus=True, **kwargs)
             
             grad -= g # handle the minus 1 in the definition of the gradient of this objective
             r_norm2 += np.linalg.norm(r)**2
