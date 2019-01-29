@@ -411,8 +411,8 @@ class band_pass_filter(object):
 def correlate_fun(dobs, dpred, mode='fwd'):
     
     # nd = len(dobs)
-    # a = np.fft.fft(dobs)
-    # b = np.fft.fft(dpred)
+    a = np.fft.fft(dobs)
+    b = np.fft.fft(dpred)
     if mode == 'fwd':
         # output = np.correlate(dobs, dpred, mode='full')
         # output = np.correlate(dpred, dobs, mode='same')
