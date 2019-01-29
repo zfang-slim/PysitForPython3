@@ -75,23 +75,23 @@ class TemporalCorrelate(ObjectiveFunctionBase):
 
         # n_correlate_data = shape_dobs[0]
         shape_dobs = np.shape(dobs)
-        n_correlate_data = shape_dobs[0]*2-1
-        # n_correlate_data = shape_dobs[0]
+        # n_correlate_data = shape_dobs[0]*2-1
+        n_correlate_data = shape_dobs[0]
         resid = np.zeros([n_correlate_data, shape_dobs[1]])
         adjoint_src = np.zeros([shape_dobs[0], shape_dobs[1]])
         W = np.linspace(-self.solver.dt*(shape_dobs[0]-1), self.solver.dt*(shape_dobs[0]-1), shape_dobs[0]*2-1)
         # W1 = np.linspace(-self.solver.dt*(shape_dobs[0]-1)/2.0, self.solver.dt*(shape_dobs[0]-1)/2.0, n_correlate_data)
-        # W  = np.zeros(n_correlate_data)
-        # if np.mod(n_correlate_data, 2) == 0:
-        #     W[0:n_correlate_data//2] = np.linspace(-self.solver.dt, -self.solver.dt*(shape_dobs[0])/2.0, n_correlate_data/2)
-        #     W[n_correlate_data//2:n_correlate_data] = np.flipud(W[0:n_correlate_data//2])
-        # else:
-        #     W[0:(n_correlate_data+1)//2] = np.linspace(0.0, -self.solver.dt*(shape_dobs[0]-1)/2.0, (n_correlate_data+1)/2)
-        #     W[(n_correlate_data-1)//2:n_correlate_data] = np.flipud(W[0:(n_correlate_data+1)//2])
+        W  = np.zeros(n_correlate_data)
+        if np.mod(n_correlate_data, 2) == 0:
+            W[0:n_correlate_data//2] = np.linspace(-self.solver.dt, -self.solver.dt*(shape_dobs[0])/2.0, n_correlate_data/2)
+            W[n_correlate_data//2:n_correlate_data] = np.flipud(W[0:n_correlate_data//2])
+        else:
+            W[0:(n_correlate_data+1)//2] = np.linspace(0.0, -self.solver.dt*(shape_dobs[0]-1)/2.0, (n_correlate_data+1)/2)
+            W[(n_correlate_data-1)//2:n_correlate_data] = np.flipud(W[0:(n_correlate_data+1)//2])
 
-        # W[0: (n_correlate_data+1)//2] = W1[(n_correlate_data+1)//2-1:n_correlate_data]
-        # W[(n_correlate_data+1)//2:n_correlate_data] = W1[0:n_correlate_data+1)//2]
-        # W = np.linspace(0.0, self.solver.dt*(shape_dobs[0]-1), n_correlate_data)
+        W[0: (n_correlate_data+1)//2] = W1[(n_correlate_data+1)//2-1:n_correlate_data]
+        W[(n_correlate_data+1)//2:n_correlate_data] = W1[0:n_correlate_data+1)//2]
+        W = np.linspace(0.0, self.solver.dt*(shape_dobs[0]-1), n_correlate_data)
         W = np.abs(W)
         for i in range(0, shape_dobs[1]):
             correlate_data = correlate_fun(dobs[:,i], dpred[:,i])
