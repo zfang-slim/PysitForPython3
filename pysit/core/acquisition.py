@@ -196,10 +196,12 @@ def equispaced_acquisition_given_locations(mesh, wavelet,
             jdx = subindex[1]
 
         if m.dim == 2:
-            srcpos = (xmin + (xmax-xmin)*(idx+1.0)/(sources+1.0), source_depth)
+            # srcpos = (xmin + (xmax-xmin)*(idx+1.0)/(sources+1.0), source_depth)
+            srcpos = (sources_x_locations[idx], source_depth)
         elif m.dim == 3:
-            srcpos = (xmin + (xmax-xmin)*(idx+1.0)/(sources[0]+1.0), ymin + (
-                ymax-ymin)*(jdx+1.0)/(sources[1]+1.0), source_depth)
+            # srcpos = (xmin + (xmax-xmin)*(idx+1.0)/(sources[0]+1.0), ymin + (
+            #     ymax-ymin)*(jdx+1.0)/(sources[1]+1.0), source_depth)
+            srcpos = (sources_x_locations[idx], sources_y_locations[jdx])
 
         # Define source location and type
         source = PointSource(m, srcpos, wavelet, **source_kwargs)

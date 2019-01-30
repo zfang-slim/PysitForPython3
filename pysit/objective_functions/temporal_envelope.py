@@ -59,10 +59,18 @@ class TemporalEnvelope(ObjectiveFunctionBase):
         # Compute the residual vector by interpolating the measured data to the
         # timesteps used in the previous forward modeling stage.
         # resid = map(lambda x,y: x.interpolate_data(self.solver.ts())-y, shot.gather(), retval['simdata'])
-        if shot.receivers.time_window is None:
-            dpred = retval['simdata']
+
+        if shot.background_data is not None:
+            dpred = retval['simdata'] - shot.background_data
         else:
-            dpred = shot.receivers.time_window(self.solver.ts()) * retval['simdata']
+            dpred = retval['simdata']
+
+        if shot.receivers.time_window is None:
+            # dpred = retval['simdata']
+            dpred = dpred
+        else:
+            # dpred = shot.receivers.time_window(self.solver.ts()) * retval['simdata']
+            dpred = shot.receivers.time_window(self.solver.ts()) * dpred
 
         dobs = shot.receivers.interpolate_data(self.solver.ts())
 

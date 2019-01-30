@@ -49,6 +49,8 @@ class Shot(object):
         self.sources = sources
         sources.set_shot(self)
 
+        self.background_data = None
+
         # # This is a function/function object, not an attribute.
         # self._interpolator = None
         # self._ts = None

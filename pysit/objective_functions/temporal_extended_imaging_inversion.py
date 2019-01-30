@@ -123,11 +123,25 @@ class TemporalExtendedImagingInversion(ObjectiveFunctionBase):
         # timesteps used in the previous forward modeling stage.
         # resid = map(lambda x,y: x.interpolate_data(self.solver.ts())-y, shot.gather(), retval['simdata'])
         
-        if shot.receivers.time_window is None:
-            resid = shot.receivers.interpolate_data(self.solver.ts()) - retval['simdata'][0]
+        if shot.background_data is not None:
+            dpred = retval['simdata'][0] - shot.background_data
         else:
-            dpred = shot.receivers.time_window(self.solver.ts()) * retval['simdata'][0]
+            dpred = retval['simdata'][0]
+
+        if shot.receivers.time_window is None:
+            # dpred = retval['simdata']
+            dpred = dpred
             resid = shot.receivers.interpolate_data(self.solver.ts()) - dpred
+        else:
+            # dpred = shot.receivers.time_window(self.solver.ts()) * retval['simdata']
+            dpred = shot.receivers.time_window(self.solver.ts()) * dpred
+            resid = shot.receivers.interpolate_data(self.solver.ts()) - dpred
+        
+        # if shot.receivers.time_window is None:
+        #     resid = shot.receivers.interpolate_data(self.solver.ts()) - retval['simdata'][0]
+        # else:
+        #     dpred = shot.receivers.time_window(self.solver.ts()) * retval['simdata'][0]
+        #     resid = shot.receivers.interpolate_data(self.solver.ts()) - dpred
 
         # resid = shot.receivers.interpolate_data(self.solver.ts()) - retval['simdata'][0]
         if self.filter_op is not None:
