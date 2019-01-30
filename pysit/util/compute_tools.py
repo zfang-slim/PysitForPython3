@@ -498,7 +498,7 @@ def un_padding_zeros_fun(data, n_data, nl, nr):
 def optimal_transport_fwi(dobs, dpred, dt):
     
     # Normalization and transfer data to a distribution
-    c = 1.3 * np.abs(np.max(np.abs(dobs)))
+    c = 5.0 * np.abs(np.max(np.abs(dobs)))
     if c < np.abs(np.min(dpred)):
         print('c {0}'.format(c))
         print('min dpred {0}'.format(np.min(dpred)))
