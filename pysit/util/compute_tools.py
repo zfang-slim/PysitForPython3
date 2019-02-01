@@ -549,7 +549,7 @@ def optimal_transport_fwi(dobs, dpred, dt):
             IGoF[i] = IGoF_ind[i] * dt
         else:
             beta = (G[IGoF_ind[i]] - F[i]) / (G[IGoF_ind[i]] - G[IGoF_ind[i]-1])
-            IGoF[i] = (IGoF_ind[i] - beta*(G[IGoF_ind[i]] - G[IGoF_ind[i]-1])) * dt
+            IGoF[i] = (IGoF_ind[i] - beta) * dt
 
     
 
