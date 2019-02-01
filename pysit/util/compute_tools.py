@@ -3,6 +3,7 @@ import numpy as np
 import scipy.io as sio
 from scipy import signal
 import matplotlib.pyplot as plt
+from scipy.signal import hilbert
 
 import obspy.io.segy.core as segy
 
@@ -12,7 +13,7 @@ import obspy.io.segy.core as segy
 __all__ = ['odn2grid', 'odn2grid_data_2D_time', 'odn2grid_data_3D_time',
            'odn2grid_data_2D_freq', 'odn2grid_data_3D_freq', 'low_pass_filter',
            'high_pass_filter', 'band_pass_filter', 'correlate_fun', 'optimal_transport_fwi', 
-           'padding_zeros_fun', 'un_padding_zeros_fun', 'padding_zeros_op']
+           'padding_zeros_fun', 'un_padding_zeros_fun', 'padding_zeros_op', 'envelope_fun']
 
 def odn2grid(o, d, n):
     output = dict()
@@ -408,6 +409,12 @@ class band_pass_filter(object):
 
         return y 
 
+def envelope_fun(data, p):
+    data_Hilbert = hilbert(data, axis=0).imag
+    data_envelope = data**2.0 + data_Hilbert**2.0
+
+    return data_envelope**(p/2.0)
+
 def correlate_fun(dobs, dpred, mode='fwd'):
     
     # nd = len(dobs)
@@ -498,7 +505,7 @@ def un_padding_zeros_fun(data, n_data, nl, nr):
 def optimal_transport_fwi(dobs, dpred, dt):
     
     # Normalization and transfer data to a distribution
-    c = 5.0 * np.abs(np.max(np.abs(dobs)))
+    c = 1.0 * np.abs(np.max(np.abs(dobs)))
     if c < np.abs(np.min(dpred)):
         print('c {0}'.format(c))
         print('min dpred {0}'.format(np.min(dpred)))
@@ -532,11 +539,19 @@ def optimal_transport_fwi(dobs, dpred, dt):
     # Compute G^{-1} o F(t)
     IGoF[ndata-1] = (ndata-1)*dt
     IGoF_ind[ndata-1] = ndata-1
-    for i in range(1, ndata-1):
-        IGoF_ind[i] = np.searchsorted(G, F[i])
-        IGoF[i] = IGoF_ind[i] * dt
-
     IGoF_ind = IGoF_ind.astype(int)
+    for i in range(1, ndata-1):
+        # IGoF_ind[i] = np.searchsorted(G, F[i])
+        # IGoF[i] = IGoF_ind[i] * dt
+
+        IGoF_ind[i] = int(np.searchsorted(G, F[i]))
+        if IGoF_ind[i] == 0:
+            IGoF[i] = IGoF_ind[i] * dt
+        else:
+            beta = (G[IGoF_ind[i]] - F[i]) / (G[IGoF_ind[i]] - G[IGoF_ind[i]-1])
+            IGoF[i] = (IGoF_ind[i] - beta) * dt
+
+    
 
 
     idx = np.where(IGoF_ind>ndata-1)
