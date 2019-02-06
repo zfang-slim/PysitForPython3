@@ -524,6 +524,7 @@ def optimal_transport_fwi(dobs, dpred, dt):
 
     F = np.zeros(ndata)
     G = np.zeros(ndata)
+    g_IGoF = np.zeros(ndata)
     IGoF = np.zeros(ndata)
     IGoF_ind = np.zeros(ndata)
 
@@ -537,21 +538,22 @@ def optimal_transport_fwi(dobs, dpred, dt):
         G[i] = int_g
 
     # Compute G^{-1} o F(t)
-    IGoF[ndata-1] = (ndata-1)*dt
-    IGoF_ind[ndata-1] = ndata-1
+    # IGoF[ndata-1] = (ndata-1)*dt
+    # IGoF_ind[ndata-1] = ndata-1
     IGoF_ind = IGoF_ind.astype(int)
-    for i in range(1, ndata-1):
+    F[ndata-1] = G[ndata-1]
+    for i in range(0, ndata):
         # IGoF_ind[i] = np.searchsorted(G, F[i])
         # IGoF[i] = IGoF_ind[i] * dt
 
         IGoF_ind[i] = int(np.searchsorted(G, F[i]))
         if IGoF_ind[i] == 0:
             IGoF[i] = IGoF_ind[i] * dt
+            g_IGoF[i] = g[0]
         else:
             beta = (G[IGoF_ind[i]] - F[i]) / (G[IGoF_ind[i]] - G[IGoF_ind[i]-1])
             IGoF[i] = (IGoF_ind[i] - beta) * dt
-
-    
+            g_IGoF[i] = g[IGoF_ind[i]] - beta * (g[IGoF_ind[i]] - g[IGoF_ind[i]-1])
 
 
     idx = np.where(IGoF_ind>ndata-1)
@@ -569,7 +571,8 @@ def optimal_transport_fwi(dobs, dpred, dt):
     # Compute adjoint source
 
     adj_src1 = t_minus_IGoF * t_minus_IGoF
-    adj_src2 = (-2*f*dt / g[IGoF_ind]) * t_minus_IGoF
+    # adj_src2 = (-2*f*dt / g[IGoF_ind]) * t_minus_IGoF
+    adj_src2 = (-2*f*dt / g_IGoF) * t_minus_IGoF
 
     for i in range(ndata-2, -1, -1):
         adj_src2[i] += adj_src2[i+1]
