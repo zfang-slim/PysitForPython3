@@ -502,19 +502,41 @@ def padding_zeros_fun(data, n_data, nl, nr):
 def un_padding_zeros_fun(data, n_data, nl, nr):
     return data[nl:nl+n_data]
 
-def optimal_transport_fwi(dobs, dpred, dt):
+def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear'):
+
+    ## Transform_mode: linear, quadratic, absolute, exponential
     
     # Normalization and transfer data to a distribution
     c = 5.0 * np.abs(np.max(np.abs(dobs)))
     if c < np.abs(np.min(dpred)):
         print('c {0}'.format(c))
         print('min dpred {0}'.format(np.min(dpred)))
-              
-    g = dobs + c
-    g = g / (np.sum(g)*dt)
-    f_plus_c = dpred + c
-    s = (np.sum(f_plus_c)*dt)
-    f = f_plus_c / s
+
+    if transform_mode == 'linear':          
+        g = dobs + c
+        g = g / (np.sum(g)*dt)
+        f_plus_c = dpred + c
+        s = (np.sum(f_plus_c)*dt)
+        f = f_plus_c / s
+    elif transform_mode == 'quadratic':
+        g = dobs ** 2.0
+        g = g / (np.sum(g)*dt)
+        f_quadr = dpred ** 2.0
+        s = np.sum(f_quadr)*dt
+        f = f_quadr / s
+    elif transform_mode == 'absolute':
+        g = np.abs(dobs)
+        g = g / (np.sum(g)*dt)
+        f_abs = np.abs(dpred)
+        s = np.sum(f_abs)*dt
+        f = f_abs / s
+    elif transform_mode == 'exponential':
+        g = np.exp(dobs)
+        g = g / (np.sum(g)*dt)
+        f_exp = np.exp(dpred)
+        s = np.sum(f_exp)*dt
+        f = f_exp / s
+    
     ndata = len(f)
     t = np.array(range(0,ndata)) * dt
     
@@ -542,7 +564,7 @@ def optimal_transport_fwi(dobs, dpred, dt):
     # IGoF_ind[ndata-1] = ndata-1
     IGoF_ind = IGoF_ind.astype(int)
     # F[ndata-1] = G[ndata-1]
-    F[np.where(F>G[ndata-1])] = G[ndata-1]
+    F[np.where(F>G[ndata-1])] = G[ndata-1]-10**(-14)
     for i in range(0, ndata):
 
         IGoF_ind[i] = int(np.searchsorted(G, F[i]))
@@ -577,7 +599,16 @@ def optimal_transport_fwi(dobs, dpred, dt):
         adj_src2[i] += adj_src2[i+1]
 
     adj_src = adj_src1+adj_src2
-    adj_src = adj_src / s - (dt/(s**2.0)*np.dot(f_plus_c, adj_src))*np.ones(ndata)
+    
+
+    if transform_mode == 'linear':
+        adj_src = adj_src / s - (dt/(s**2.0)*np.dot(f_plus_c, adj_src))*np.ones(ndata)
+    elif transform_mode == 'quadratic':
+        adj_src = adj_src / s - (dt/(s**2.0)*np.dot(f_quadr, adj_src))*2.0*dpred
+    elif transform_mode == 'absolute':
+        adj_src = adj_src / s - (dt/(s**2.0)*np.dot(f_abs, adj_src))*np.sign(dpred)
+    elif transform_mode == 'exponential':
+        adj_src = adj_src / s - (dt/(s**2.0)*np.dot(f_exp, adj_src))*np.exp(dpred)
 
     return resid, adj_src, np.linalg.norm(resid)**2.0
 
