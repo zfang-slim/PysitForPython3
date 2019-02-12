@@ -568,6 +568,9 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear'):
     for i in range(0, ndata):
 
         IGoF_ind[i] = int(np.searchsorted(G, F[i]))
+        if IGoF_ind[i] == ndata-1:
+            print(F[i])
+            
         if IGoF_ind[i] == 0:
             IGoF[i] = IGoF_ind[i] * dt
             g_IGoF[i] = g[0]
@@ -593,7 +596,11 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear'):
 
     adj_src1 = t_minus_IGoF * t_minus_IGoF
     # adj_src2 = (-2*f*dt / g[IGoF_ind]) * t_minus_IGoF
-    adj_src2 = (-2*f*dt / g_IGoF) * t_minus_IGoF
+    f_divid_g = np.zeros(ndata)
+    idx_gnot0 = np.where(g_IGoF > 0)
+    f_divid_g[idx_gnot0] = -2*f[idx_gnot0]*dt / g_IGoF[idx_gnot0]
+
+    adj_src2 = f_divid_g * t_minus_IGoF
 
     for i in range(ndata-2, -1, -1):
         adj_src2[i] += adj_src2[i+1]
@@ -616,6 +623,64 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear'):
 if __name__ == '__main__':
     
     import numpy as np
+
+    nsmp = 501
+    nshift = 101
+    dt = 0.01
+    T = (nsmp-1)*dt
+    xt = np.linspace(0, T, nsmp)
+    freqt = np.linspace(0, 100, nsmp)
+    a = 2.0
+    f0 = signal.ricker(nsmp, a)
+    f1 = np.roll(f0,5)
+    resid, adj_src, obj1 = optimal_transport_fwi(f0, f1, 1, transform_mode='linear')
+    resid, adj_src, obj2 = optimal_transport_fwi(f1, f0, 1, transform_mode='linear')
+    print('obj1: ', obj1)
+    print('obj2: ', obj2)
+    f1 = np.roll(f0, -5)
+    resid, adj_src, obj1 = optimal_transport_fwi(f0, f1, 1, transform_mode='linear')
+    resid, adj_src, obj2 = optimal_transport_fwi(f1, f0, 1, transform_mode='linear')
+    print('obj1: ', obj1)
+    print('obj2: ', obj2)
+
+    resid, adj_src, obj1 = optimal_transport_fwi(f0, f1, 1, transform_mode='absolute')
+    resid, adj_src, obj2 = optimal_transport_fwi(f1, f0, 1, transform_mode='quadratic')
+    print('obj_abs: ', obj1)
+    print('obj_qua: ', obj2)
+
+    obj_quadr = np.zeros(nshift)
+    obj_linear = np.zeros(nshift)
+    obj_abs = np.zeros(nshift)
+    obj_exp = np.zeros(nshift)
+    for i in range(nshift):
+        k = i - (nshift-1) // 2
+        f1 = np.roll(f0,k)
+        resid, adj_src, obj_linear[i] = optimal_transport_fwi(f0, f1, 1, transform_mode='linear')
+        resid, adj_src, obj_quadr[i] = optimal_transport_fwi(f0, f1, 1, transform_mode='quadratic')
+        resid, adj_src, obj_abs[i] = optimal_transport_fwi(f0, f1, 1, transform_mode='absolute')
+        resid, adj_src, obj_exp[i] = optimal_transport_fwi(f0, f1, 1, transform_mode='exponential')
+    
+    plt.figure()
+    plt.plot(obj_linear/np.max(obj_linear), label='linear')
+    plt.plot(obj_quadr/np.max(obj_quadr), label='quadratic')
+    plt.plot(obj_abs/np.max(obj_abs), label='absolute')
+    plt.plot(obj_exp/np.max(obj_exp), label='exponential')
+    plt.legend()
+    plt.show()
+
+
+    nsmp = 9001
+    ntest = 100
+    for i in range(ntest):
+        a = np.random.normal(0,1,nsmp)
+        b = np.random.normal(0,1,nsmp)
+        resid, adj_src, obj1 = optimal_transport_fwi(a, b, 1, transform_mode='linear')
+        resid, adj_src, obj2 = optimal_transport_fwi(b, a, 1, transform_mode='linear')
+        # print(np.abs(obj1-obj2)/obj1)
+        print('obj1: ', obj1)
+        print('obj2: ', obj2)
+
+    quit
 
     ## Adjoint test for correlation 
 
