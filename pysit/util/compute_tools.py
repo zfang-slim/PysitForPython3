@@ -614,12 +614,12 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear'):
     if transform_mode == 'linear':
         adj_src = adj_src / s - (dt/(s**2.0)*np.dot(f_plus_c, adj_src))*np.ones(ndata)
     elif transform_mode == 'quadratic':
-        adj_src = adj_src / s - (dt/(s**2.0)*np.dot(f_quadr, adj_src))*np.ones(ndata)*2.0*dpred
+        adj_src = (adj_src / s - (dt/(s**2.0)*np.dot(f_quadr, adj_src))*np.ones(ndata))*2.0*dpred
         # adj_src = adj_src / s - (dt/(s**2.0)*np.dot(f_quadr, adj_src))*2.0*dpred
     elif transform_mode == 'absolute':
-        adj_src = adj_src / s - (dt/(s**2.0)*np.dot(f_abs, adj_src))*np.ones(ndata)*np.sign(dpred)
+        adj_src = (adj_src / s - (dt/(s**2.0)*np.dot(f_abs, adj_src))*np.ones(ndata))*np.sign(dpred)
     elif transform_mode == 'exponential':
-        adj_src = adj_src / s - (dt/(s**2.0)*np.dot(f_exp, adj_src))*np.ones(ndata)*np.exp(dpred)
+        adj_src = (adj_src / s - (dt/(s**2.0)*np.dot(f_exp, adj_src))*np.ones(ndata))*np.exp(dpred)
 
     return resid, adj_src, np.linalg.norm(resid)**2.0
 
