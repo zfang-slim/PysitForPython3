@@ -569,9 +569,10 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear'):
 
         IGoF_ind[i] = int(np.searchsorted(G, F[i]))
         if IGoF_ind[i] == ndata:
-            print('F: ',F)
-            print('G: ',G[ndata-1])
-            print('Dpred: ', dpred)
+            # print('F: ',F)
+            # print('G: ',G[ndata-1])
+            # print('Dpred: ', dpred)
+            IGoF_ind[i] = ndata-1
 
         if IGoF_ind[i] == 0:
             IGoF[i] = IGoF_ind[i] * dt
