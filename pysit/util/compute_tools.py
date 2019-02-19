@@ -502,12 +502,12 @@ def padding_zeros_fun(data, n_data, nl, nr):
 def un_padding_zeros_fun(data, n_data, nl, nr):
     return data[nl:nl+n_data]
 
-def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear'):
+def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0):
 
     ## Transform_mode: linear, quadratic, absolute, exponential
     
     # Normalization and transfer data to a distribution
-    c = 5.0 * np.abs(np.max(np.abs(dobs)))
+    c = c_ratio * np.abs(np.max(np.abs(dobs)))
     if c < np.abs(np.min(dpred)):
         print('c {0}'.format(c))
         print('min dpred {0}'.format(np.min(dpred)))
