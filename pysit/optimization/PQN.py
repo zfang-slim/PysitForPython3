@@ -107,7 +107,7 @@ class PQN(OptimizationBase):
         if len(mem) > 0:
             H_BFGS = LBFGS_Hessian(mem)
         else:
-            gamma0 = 0.0001 * np.sqrt(x_k.inner_product(x_k) / gradient.inner_product(gradient))
+            gamma0 = 0.01 * np.sqrt(x_k.inner_product(x_k) / gradient.inner_product(gradient))
             H_BFGS = LBFGS_Hessian(mem, gamma=gamma0)
 
         proj_op = self.proj_op
