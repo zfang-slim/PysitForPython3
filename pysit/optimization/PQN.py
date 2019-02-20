@@ -245,7 +245,7 @@ class ProjectedGradientDescent(object):
             if initial_value is None:
                 alpha = 1.0
             else:
-                alpha = 0.01 * np.sqrt(initial_value.inner_product(initial_value) / gradient.inner_product(gradient))
+                alpha = 0.0001 * np.sqrt(initial_value.inner_product(initial_value) / gradient.inner_product(gradient))
         else:
             alpha = alpha0
 
