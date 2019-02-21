@@ -562,32 +562,36 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0)
     # Compute G^{-1} o F(t)
     # IGoF[ndata-1] = (ndata-1)*dt
     # IGoF_ind[ndata-1] = ndata-1
-    IGoF_ind = IGoF_ind.astype(int)
-    # F[ndata-1] = G[ndata-1]
-    F[np.where(F>G[ndata-1])] = G[ndata-1]-10**(-10)
-    for i in range(0, ndata):
 
-        IGoF_ind[i] = int(np.searchsorted(G, F[i]))
-        if IGoF_ind[i] == ndata:
-            # print('F: ',F)
-            # print('G: ',G[ndata-1])
-            # print('Dpred: ', dpred)
-            IGoF_ind[i] = ndata-1
+    IGoF = np.interp(F, G, t)
+    g_IGoF = np.interp(IGoF, t, g)
 
-        if IGoF_ind[i] == 0:
-            IGoF[i] = IGoF_ind[i] * dt
-            g_IGoF[i] = g[0]
-        else:
-            beta = (G[IGoF_ind[i]] - F[i]) / (G[IGoF_ind[i]] - G[IGoF_ind[i]-1])
-            IGoF[i] = (IGoF_ind[i] - beta) * dt
-            g_IGoF[i] = g[IGoF_ind[i]] - beta * (g[IGoF_ind[i]] - g[IGoF_ind[i]-1])
+    # IGoF_ind = IGoF_ind.astype(int)
+    # # F[ndata-1] = G[ndata-1]
+    # F[np.where(F>G[ndata-1])] = G[ndata-1]-10**(-10)
+    # for i in range(0, ndata):
+
+    #     IGoF_ind[i] = int(np.searchsorted(G, F[i]))
+    #     if IGoF_ind[i] == ndata:
+    #         # print('F: ',F)
+    #         # print('G: ',G[ndata-1])
+    #         # print('Dpred: ', dpred)
+    #         IGoF_ind[i] = ndata-1
+
+    #     if IGoF_ind[i] == 0:
+    #         IGoF[i] = IGoF_ind[i] * dt
+    #         g_IGoF[i] = g[0]
+    #     else:
+    #         beta = (G[IGoF_ind[i]] - F[i]) / (G[IGoF_ind[i]] - G[IGoF_ind[i]-1])
+    #         IGoF[i] = (IGoF_ind[i] - beta) * dt
+    #         g_IGoF[i] = g[IGoF_ind[i]] - beta * (g[IGoF_ind[i]] - g[IGoF_ind[i]-1])
 
 
-    idx = np.where(IGoF_ind>ndata-1)
-    IGoF_ind[idx] = ndata-1
-    if c < np.abs(np.min(dpred)):
-        print('min IGoF_ind {0}'.format(np.min(IGoF_ind)))
-        print('max IGoF_ind {0}'.format(np.max(IGoF_ind)))
+    # idx = np.where(IGoF_ind>ndata-1)
+    # IGoF_ind[idx] = ndata-1
+    # if c < np.abs(np.min(dpred)):
+    #     print('min IGoF_ind {0}'.format(np.min(IGoF_ind)))
+    #     print('max IGoF_ind {0}'.format(np.max(IGoF_ind)))
 
     # Compute residual
     t_minus_IGoF = t - IGoF
