@@ -537,6 +537,8 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0)
         s = np.sum(f_exp)*dt
         f = f_exp / s
     
+    f[np.where(np.abs(f)<1e-20)] = 0.0
+    g[np.where(np.abs(g)<1e-20)] = 0.0
     ndata = len(f)
     t = np.array(range(0,ndata)) * dt
     
