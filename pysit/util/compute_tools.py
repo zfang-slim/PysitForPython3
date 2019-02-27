@@ -13,7 +13,8 @@ import obspy.io.segy.core as segy
 __all__ = ['odn2grid', 'odn2grid_data_2D_time', 'odn2grid_data_3D_time',
            'odn2grid_data_2D_freq', 'odn2grid_data_3D_freq', 'low_pass_filter',
            'high_pass_filter', 'band_pass_filter', 'correlate_fun', 'optimal_transport_fwi', 
-           'padding_zeros_fun', 'un_padding_zeros_fun', 'padding_zeros_op', 'envelope_fun']
+           'padding_zeros_fun', 'un_padding_zeros_fun', 'padding_zeros_op', 'envelope_fun',
+           'opSmooth1D', 'opSmooth2D']
 
 def odn2grid(o, d, n):
     output = dict()
@@ -69,6 +70,123 @@ def odn2grid_data_3D_freq(o, d, n):
     data_freq = output[6]
 
     return data_xrec, data_yrec, data_zrec, data_xsrc, data_ysrc, data_zsrc, data_freq
+
+class opSmooth1D(object):
+    '''This is a operator to smooth a 1D data
+        
+    '''
+
+    def __init__(self, n, window_len=3, axis=0, window='hanning'):
+        '''
+            Input:
+            n: number of data points
+            window_len: the dimension of the smoothing window; should be an odd integer
+            window: the type of window from 'flat', 'hanning', 'hamming', 'bartlett', 'blackman',
+             flat window will produce a moving average smoothing.
+        '''
+
+        self.nsmp = n
+        self.window_len = window_len
+        if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+            raise ValueError("Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
+        else:
+            self.window = window 
+        self.shape = [n,n]
+        self.axis = axis
+
+    def _apply_smooth1d(self, x):
+        if x.size != self.nsmp:
+            raise ValueError("The length of the input vector does not equal to nsmp of the smoothing operator")
+        if x.size < self.window_len:
+            raise ValueError("Input vector needs to be bigger than window size.")
+
+        s = np.r_[x[self.window_len-1:0:-1], x, x[-2:-self.window_len-1:-1]]
+
+        if self.window == 'flat':  # moving average
+            w = np.ones(self.window_len, 'd')
+        else:
+            w = eval('np.'+self.window+'(self.window_len)')
+
+        y = np.convolve(w/w.sum(), s, mode='valid')
+
+        return y[(self.window_len//2-1):len(y)-(self.window_len//2)] 
+
+    def __mul__(self, x):
+        x_shape = np.shape(x)
+
+        if len(x_shape) == 1:
+            if x_shape[0] != self.shape[1]:
+                raise ValueError('The size of input x should be equal to the shape[1] of the high pass filter object')
+
+            else:
+               y = self._apply_smooth1d(x)
+
+        else:
+            if x_shape[self.axis] != self.shape[1]:
+                raise ValueError(
+                    "The length of input x's operating axis should be equal to the shape[1] of the high pass filter object")
+            else:
+                y = np.apply_along_axis(self._apply_smooth1d, self.axis, x)
+
+        return y
+
+class opSmooth2D(object):
+    '''This is a operator to smooth a 2D Image
+        
+    '''
+
+    def __init__(self, n, window_len=[3, 3], window='hanning', axis=0):
+        '''
+            Input:
+            n: number of data points
+            window_len: the dimension of the smoothing window; should be an odd integer
+            window: the type of window from 'flat', 'hanning', 'hamming', 'bartlett', 'blackman',
+             flat window will produce a moving average smoothing.
+        '''
+
+        self.nsmp = np.prod(n)
+        self.window_len = window_len
+        if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+            raise ValueError(
+                "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
+        else:
+            self.window = window
+        self.shape = [self.nsmp, self.nsmp]
+        self.target_size = n
+        self.S0 = opSmooth1D(n[0], window_len=window_len[0], axis=0, window=window)
+        self.S1 = opSmooth1D(n[1], window_len=window_len[1], axis=1, window=window)
+        self.axis = axis
+
+    def __mul__(self, x):
+        x_shape = np.shape(x)
+
+        if len(x_shape) == 1:
+            if x_shape[0] != self.shape[1]:
+                raise ValueError(
+                    'The size of input x should be equal to the shape[1] of the high pass filter object')
+
+            else:
+               y = self._apply_1d(x)
+
+        else:
+            if x_shape[self.axis] != self.shape[1]:
+                raise ValueError(
+                    "The length of input x's operating axis should be equal to the shape[1] of the high pass filter object")
+            else:
+                y = np.apply_along_axis(self._apply_1d, self.axis, x)
+
+        return y
+
+    def _apply_1d(self, x):
+         x1 = np.reshape(x, self.target_size)
+         y = self.S1*(self.S0 * x1)
+         y = np.reshape(y, np.shape(x))
+
+         return y
+
+
+
+
 
 class high_pass_filter(object):
     ''' This is a low pass filter object that conducts the 1D low pass filtering
@@ -633,6 +751,40 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0)
 if __name__ == '__main__':
     
     import numpy as np
+
+    nsmp = [100,100]
+    A = np.random.normal(0,1,nsmp)
+    S = opSmooth2D(nsmp, window_len=[20,20])
+    B = S * np.reshape(A,(S.nsmp,1))
+    B = np.reshape(B, nsmp)
+
+    plt.figure()
+    plt.imshow(A)
+    plt.show()
+    plt.figure()
+    plt.imshow(B)
+    plt.show()
+
+    nsmp = 501
+    nshift = 101
+    dt = 0.01
+    T = (nsmp-1)*dt
+    xt = np.linspace(0, T, nsmp)
+    freqt = np.linspace(0, 100, nsmp)
+    a = 2.0
+    f0 = signal.ricker(nsmp, a)
+    F0 = np.zeros((nsmp,2))
+    F0[:,0] = f0
+    F0[:,1] = f0
+    S = opSmooth1D(nsmp,window_len=50)
+    F1 = S * F0
+    plt.figure()
+    plt.plot(F1[:,0])
+    plt.show()
+    plt.figure()
+    plt.plot(F1[:,0])
+    plt.show()
+
 
     nsmp = 501
     nshift = 101
