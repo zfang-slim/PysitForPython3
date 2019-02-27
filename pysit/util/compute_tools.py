@@ -1,4 +1,5 @@
 import numpy as np
+import copy as copy
 
 import scipy.io as sio
 from scipy import signal
@@ -76,10 +77,11 @@ class opSmooth1D(object):
         
     '''
 
-    def __init__(self, n, window_len=3, axis=0, window='hanning'):
+    def __init__(self, n, n_conv, window_len=3, axis=0, window='hanning'):
         '''
             Input:
             n: number of data points
+            n_conv : number of convolution applied
             window_len: the dimension of the smoothing window; should be an odd integer
             window: the type of window from 'flat', 'hanning', 'hamming', 'bartlett', 'blackman',
              flat window will produce a moving average smoothing.
@@ -93,6 +95,7 @@ class opSmooth1D(object):
             self.window = window 
         self.shape = [n,n]
         self.axis = axis
+        self.n_conv = n_conv
 
     def _apply_smooth1d(self, x):
         if x.size != self.nsmp:
@@ -113,20 +116,24 @@ class opSmooth1D(object):
 
     def __mul__(self, x):
         x_shape = np.shape(x)
+        y = copy.deepcopy(x)
 
         if len(x_shape) == 1:
             if x_shape[0] != self.shape[1]:
                 raise ValueError('The size of input x should be equal to the shape[1] of the high pass filter object')
 
             else:
-               y = self._apply_smooth1d(x)
+                for i in range(0, self.n_conv):
+                    y = self._apply_smooth1d(y)
+
 
         else:
             if x_shape[self.axis] != self.shape[1]:
                 raise ValueError(
                     "The length of input x's operating axis should be equal to the shape[1] of the high pass filter object")
             else:
-                y = np.apply_along_axis(self._apply_smooth1d, self.axis, x)
+                for i in range(0, self.n_conv):
+                    y = np.apply_along_axis(self._apply_smooth1d, self.axis, y)
 
         return y
 
@@ -135,10 +142,11 @@ class opSmooth2D(object):
         
     '''
 
-    def __init__(self, n, window_len=[3, 3], window='hanning', axis=0):
+    def __init__(self, n, n_conv, window_len=[3, 3], window='hanning', axis=0):
         '''
             Input:
             n: number of data points
+            n_conv : number of convolution applied on each dimension
             window_len: the dimension of the smoothing window; should be an odd integer
             window: the type of window from 'flat', 'hanning', 'hamming', 'bartlett', 'blackman',
              flat window will produce a moving average smoothing.
@@ -153,9 +161,10 @@ class opSmooth2D(object):
             self.window = window
         self.shape = [self.nsmp, self.nsmp]
         self.target_size = n
-        self.S0 = opSmooth1D(n[0], window_len=window_len[0], axis=0, window=window)
-        self.S1 = opSmooth1D(n[1], window_len=window_len[1], axis=1, window=window)
+        self.S0 = opSmooth1D(n[0], n_conv[0], window_len=window_len[0], axis=0, window=window)
+        self.S1 = opSmooth1D(n[1], n_conv[1], window_len=window_len[1], axis=1, window=window)
         self.axis = axis
+        self.n_conv = n_conv
 
     def __mul__(self, x):
         x_shape = np.shape(x)
