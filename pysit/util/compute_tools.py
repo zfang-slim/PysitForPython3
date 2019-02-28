@@ -98,6 +98,8 @@ class opSmooth1D(object):
         self.n_conv = n_conv
 
     def _apply_smooth1d(self, x):
+        print('size: ', x.size)
+        print('nsmp: ', self.nsmp)
         if x.size != self.nsmp:
             raise ValueError("The length of the input vector does not equal to nsmp of the smoothing operator")
         if x.size < self.window_len:
@@ -761,7 +763,7 @@ if __name__ == '__main__':
     
     import numpy as np
 
-    nsmp = [100,100]
+    nsmp = [200,100]
     A = np.random.normal(0,1,nsmp)
     S = opSmooth2D(nsmp, [100,100], window_len=[5,5])
     B = S * np.reshape(A,(S.nsmp,1))
