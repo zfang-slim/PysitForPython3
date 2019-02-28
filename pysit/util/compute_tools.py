@@ -77,7 +77,7 @@ class opSmooth1D(object):
         
     '''
 
-    def __init__(self, n, n_conv, window_len=3, axis=0, window='hanning'):
+    def __init__(self, n, n_conv, window_len=3, axis=0, window='flat'):
         '''
             Input:
             n: number of data points
@@ -112,7 +112,7 @@ class opSmooth1D(object):
 
         y = np.convolve(w/w.sum(), s, mode='valid')
 
-        return y[(self.window_len//2-1):len(y)-(self.window_len//2)] 
+        return y[((self.window_len+1)//2-1):len(y)-((self.window_len-1)//2)] 
 
     def __mul__(self, x):
         x_shape = np.shape(x)
@@ -763,7 +763,7 @@ if __name__ == '__main__':
 
     nsmp = [100,100]
     A = np.random.normal(0,1,nsmp)
-    S = opSmooth2D(nsmp, window_len=[20,20])
+    S = opSmooth2D(nsmp, [100,100], window_len=[5,5])
     B = S * np.reshape(A,(S.nsmp,1))
     B = np.reshape(B, nsmp)
 
