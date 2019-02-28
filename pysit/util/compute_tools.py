@@ -98,8 +98,6 @@ class opSmooth1D(object):
         self.n_conv = n_conv
 
     def _apply_smooth1d(self, x):
-        print('size: ', x.size)
-        print('nsmp: ', self.nsmp)
         if x.size != self.nsmp:
             raise ValueError("The length of the input vector does not equal to nsmp of the smoothing operator")
         if x.size < self.window_len:
