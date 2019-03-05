@@ -642,7 +642,7 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0)
         if c < np.abs(np.min(dpred)):
             print('c {0}'.format(c))
             print('min dpred {0}'.format(np.min(dpred)))
-            
+
         g = dobs + c
         g = g / (np.sum(g)*dt)
         f_plus_c = dpred + c
@@ -672,9 +672,10 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0)
     ndata = len(f)
     t = np.array(range(0,ndata)) * dt
     
-    if c < np.abs(np.min(dpred)):
-        print('min f {0}'.format(np.min(f)))
-        print('min g {0}'.format(np.min(g)))
+    if transform_mode == 'linear': 
+        if c < np.abs(np.min(dpred)):
+            print('min f {0}'.format(np.min(f)))
+            print('min g {0}'.format(np.min(g)))
 
     F = np.zeros(ndata)
     G = np.zeros(ndata)
