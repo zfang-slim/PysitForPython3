@@ -635,11 +635,14 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0)
     
     # Normalization and transfer data to a distribution
     c = c_ratio * np.abs(np.max(np.abs(dobs)))
-    if c < np.abs(np.min(dpred)):
-        print('c {0}'.format(c))
-        print('min dpred {0}'.format(np.min(dpred)))
+
+        
 
     if transform_mode == 'linear':          
+        if c < np.abs(np.min(dpred)):
+            print('c {0}'.format(c))
+            print('min dpred {0}'.format(np.min(dpred)))
+            
         g = dobs + c
         g = g / (np.sum(g)*dt)
         f_plus_c = dpred + c
