@@ -629,7 +629,7 @@ def padding_zeros_fun(data, n_data, nl, nr):
 def un_padding_zeros_fun(data, n_data, nl, nr):
     return data[nl:nl+n_data]
 
-def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0):
+def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0, exp_a=1.0):
 
     ## Transform_mode: linear, quadratic, absolute, exponential
     
@@ -661,9 +661,9 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0)
         s = np.sum(f_abs)*dt
         f = f_abs / s
     elif transform_mode == 'exponential':
-        g = np.exp(dobs)
+        g = np.exp(dobs * exp_a)
         g = g / (np.sum(g)*dt)
-        f_exp = np.exp(dpred)
+        f_exp = np.exp(dpred * exp_a)
         s = np.sum(f_exp)*dt
         f = f_exp / s
     
@@ -756,7 +756,7 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0)
     elif transform_mode == 'absolute':
         adj_src = (adj_src / s - (dt/(s**2.0)*np.dot(f_abs, adj_src))*np.ones(ndata))*np.sign(dpred)
     elif transform_mode == 'exponential':
-        adj_src = (adj_src / s - (dt/(s**2.0)*np.dot(f_exp, adj_src))*np.ones(ndata))*np.exp(dpred)
+        adj_src = (adj_src / s - (dt/(s**2.0)*np.dot(f_exp, adj_src))*np.ones(ndata))*(np.exp(dpred*exp_a) * exp_a)
 
     return resid, adj_src, np.linalg.norm(resid)**2.0
 
