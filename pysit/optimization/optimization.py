@@ -493,6 +493,9 @@ class OptimizationBase(object):
                 alpha/=2
                 tdir = alpha*direction
                 model = self.base_model + tdir
+                if self.proj_op is not None:
+                    model = self.proj_op(model)
+                    
                 cnt +=1
                 valid = model.validate()
 
