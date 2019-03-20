@@ -58,6 +58,7 @@ class PGD(OptimizationBase):
 
     def _compute_alpha0(self, phi0, grad0, reset=False, upscale_factor=None, **kwargs):
         if reset or (self.prev_alpha is None):
-            return 0.01 * np.sqrt(self.base_model.inner_product(self.base_model) / grad0.inner_product(grad0))
+            print('Works')
+            return 0.0001 * np.sqrt(self.base_model.inner_product(self.base_model) / grad0.inner_product(grad0))
         else:
             return self.prev_alpha / upscale_factor
