@@ -26,7 +26,6 @@ if __name__ == '__main__':
 
     pwrap = ParallelWrapShot()
 
-
     # Set up domain, mesh and velocity model
     pmlx = PML(0.1, 1000)
     pmlz = PML(0.1, 1000)
