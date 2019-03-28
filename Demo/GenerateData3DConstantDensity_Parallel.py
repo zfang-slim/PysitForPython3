@@ -168,7 +168,7 @@ if __name__ == '__main__':
     
     print('Generating frequency-domain data...')
     tt = time.time()
-    generate_seismic_data(shots_freq, solver, base_model, frequencies=frequencies, petsc='mumps')
+    generate_seismic_data(shots_freq, solver, base_model, frequencies=frequencies)
     print('Frequency-domain data generation: {0}s'.format(time.time()-tt))
 
     # Check the result and plot the result

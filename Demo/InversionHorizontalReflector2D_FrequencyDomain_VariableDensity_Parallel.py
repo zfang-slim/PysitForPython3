@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     print('Generating data...')
     tt = time.time()
-    generate_seismic_data(shots, solver, base_model, frequencies=frequencies, petsc='mumps')
+    generate_seismic_data(shots, solver, base_model, frequencies=frequencies)
     print('Data generation: {0}s'.format(time.time()-tt))
     
 
@@ -178,7 +178,7 @@ if __name__ == '__main__':
     
     result = invalg(shots, initial_value, loop_configuration,
                     line_search=line_search,
-                    status_configuration=status_configuration, verbose=True, petsc='mumps')
+                    status_configuration=status_configuration, verbose=True)
     
 
     # Check result
