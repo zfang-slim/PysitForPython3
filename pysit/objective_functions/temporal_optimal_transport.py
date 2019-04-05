@@ -14,7 +14,7 @@ __docformat__ = "restructuredtext en"
 class TemporalOptimalTransport(ObjectiveFunctionBase):
     """ How to compute the parts of the objective you need to do optimization """
 
-    def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), transform_mode='linear', imaging_period=1, c_ratio=5.0, exp_a=1.0):
+    def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), transform_mode='linear', imaging_period=1, c_ratio=5.0, exp_a=1.0, env_p=2.0):
         """imaging_period: Imaging happens every 'imaging_period' timesteps. Use higher numbers to reduce memory consumption at the cost of lower gradient accuracy.
             By assigning this value to the class, it will automatically be used when the gradient function of the temporal objective function is called in an inversion context.
         """
@@ -28,6 +28,7 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
         self.filter_op = filter_op
         self.c_ratio = c_ratio
         self.exp_a = exp_a
+        self.env_p = env_p
 
     def _residual(self, shot, m0, dWaveOp=None, wavefield=None):
         """Computes residual in the usual sense.
@@ -93,7 +94,10 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
         adjoint_src = np.zeros(shape_dobs)
         
         for i in range(0, shape_dobs[1]):
-            resid[:, i], adjoint_src[:, i], ot_value = optimal_transport_fwi(dobs[:, i], dpred[:, i], self.solver.dt, transform_mode=self.transform_mode, c_ratio=self.c_ratio, exp_a=self.exp_a)
+            resid[:, i], adjoint_src[:, i], ot_value = optimal_transport_fwi(dobs[:, i], dpred[:, i], self.solver.dt, 
+                                                                             transform_mode=self.transform_mode, 
+                                                                             c_ratio=self.c_ratio, exp_a=self.exp_a,
+                                                                             env_p=self.env_p)
 
         if self.filter_op is not None:
             adjoint_src = self.filter_op.__adj_mul__(adjoint_src)
