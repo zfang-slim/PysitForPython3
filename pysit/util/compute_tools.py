@@ -540,7 +540,13 @@ def envelope_fun(data, p):
     data_Hilbert = hilbert(data, axis=0).imag
     data_envelope = data**2.0 + data_Hilbert**2.0
 
-    return data_envelope**(p/2.0)
+    d_data_envelope = p * data_envelope**(p/2.0 - 1.0) * data
+
+    denvelope_ddataH = p * data_envelope**(p/2.0 - 1.0) * data_Hilbert
+    d_data_envelope += (-hilbert(denvelope_ddataH, axis=0)).imag
+    
+
+    return data_envelope**(p/2.0), d_data_envelope
 
 def correlate_fun(dobs, dpred, mode='fwd'):
     
@@ -629,7 +635,7 @@ def padding_zeros_fun(data, n_data, nl, nr):
 def un_padding_zeros_fun(data, n_data, nl, nr):
     return data[nl:nl+n_data]
 
-def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0, exp_a=1.0):
+def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0, exp_a=1.0, env_p=2.0):
 
     ## Transform_mode: linear, quadratic, absolute, exponential
     
@@ -666,7 +672,15 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0,
         f_exp = np.exp(dpred * exp_a)
         s = np.sum(f_exp)*dt
         f = f_exp / s
-    
+    elif transform_mode == 'envelope':
+        g, df_envo = envelope_fun(dobs, env_p)
+        g = g / (np.sum(g)*dt)
+        f_env, df_env = envelope_fun(dpred, env_p)
+        s = np.sum(f_env)*dt
+        f = f_env / s
+
+
+
     f[np.where(np.abs(f)<1e-20)] = 0.0
     g[np.where(np.abs(g)<1e-20)] = 0.0
     ndata = len(f)
@@ -757,6 +771,8 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0,
         adj_src = (adj_src / s - (dt/(s**2.0)*np.dot(f_abs, adj_src))*np.ones(ndata))*np.sign(dpred)
     elif transform_mode == 'exponential':
         adj_src = (adj_src / s - (dt/(s**2.0)*np.dot(f_exp, adj_src))*np.ones(ndata))*(np.exp(dpred*exp_a) * exp_a)
+    elif transform_mode == 'envelope':
+        adj_src = (adj_src / s - (dt/(s**2.0)*np.dot(f_env, adj_src)) * np.ones(ndata))*(df_env)
 
     return resid, adj_src, np.linalg.norm(resid)**2.0
 
