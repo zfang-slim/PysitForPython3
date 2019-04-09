@@ -68,7 +68,11 @@ class VariableDensityAcousticTimeBase(VariableDensityAcousticBase):
             max_C = max(abs(C.min()), C.max())  # faster than C.abs().max()
 
         dt = CFL*min_deltas / max_C
+
+        ## Make sure that the number of time samples can be divided by 32, such that we can use the FFT
         nsteps = int(math.ceil((tf - t0)/dt))
+        nsteps = (nsteps // 32 + 1) * 32
+        dt = (tf-t0) / float(nsteps)
 
         self.dt = dt
         self.nsteps = nsteps
