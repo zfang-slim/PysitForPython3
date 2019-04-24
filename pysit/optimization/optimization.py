@@ -226,7 +226,7 @@ class OptimizationBase(object):
             return
 
         if self.verbose:
-            print(*args, file=self.logfile)
+            print(*args, file=self.logfile, flush=True)
 
 #   #### Actual optimization stuff below...
 
