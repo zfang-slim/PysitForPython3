@@ -14,7 +14,95 @@ from pysit.util.compute_tools import *
 
 __all__ = ['equispaced_acquisition',
            'equispaced_acquisition_given_data',
-           'equispaced_acquisition_given_locations']
+           'equispaced_acquisition_given_locations',
+           'marine_acquisition']
+
+
+def marine_acquisition(mesh, wavelet, sources_x_locations=None,
+                       sources_y_locations=None,
+                       max_offset_x=None,
+                       max_offset_y=None,
+                       receivers_dx=None,
+                       receivers_dy=None,
+                       source_depth=None,
+                       source_kwargs={},
+                       receiver_depth=None,
+                       receiver_kwargs={},
+                       parallel_shot_wrap=ParallelWrapShotNull()):
+
+    if sources_x_locations is None:
+        raise ValueError(
+            "The horizontal locations of sources are not defined, please set values to variable 'sources_x_locations' ")
+
+    if max_offset_x is None:
+        raise ValueError(
+            "The horizontal maximal offset is not defined, please set values to variable 'max_offset_x' ")
+
+    if receivers_dx is None:
+        raise ValueError(
+            "The horizontal receiver sampling interval is not defined, please set values to variable 'receivers_dx' ")
+
+    m = mesh
+    d = mesh.domain
+
+    xmin = d.x.lbound
+    xmax = d.x.rbound
+
+    zmin = d.z.lbound
+    zmax = d.z.rbound
+
+    if m.dim == 3:
+        raise ValueError(
+            "3D Marine tow string acquisition has not been implemented")
+
+    if source_depth is None:
+        source_depth = zmin
+
+    if receiver_depth is None:
+        receiver_depth = zmin
+
+    shots = list()
+
+    max_sources = len(sources_x_locations)
+
+    if m.dim == 2:
+        sources = len(sources_x_locations)
+        local_sources = sources / parallel_shot_wrap.size
+
+    for k in range(int(local_sources)):
+        index_true = int(local_sources) * parallel_shot_wrap.rank + k
+        subindex = np.unravel_index(index_true, sources)
+        idx = subindex[0]
+
+        if m.dim == 3:
+            ## 3D marine acquisition has not been implemented
+            jdx = subindex[1]
+
+        if m.dim == 2:
+            # srcpos = (xmin + (xmax-xmin)*(idx+1.0)/(sources+1.0), source_depth)
+            srcpos = (sources_x_locations[idx], source_depth)
+        elif m.dim == 3:
+            # srcpos = (xmin + (xmax-xmin)*(idx+1.0)/(sources[0]+1.0), ymin + (
+            #     ymax-ymin)*(jdx+1.0)/(sources[1]+1.0), source_depth)
+            srcpos = (sources_x_locations[idx], sources_y_locations[jdx])
+
+        # Define source location and type
+        source = PointSource(m, srcpos, wavelet, **source_kwargs)
+
+        # Define set of receivers
+
+        xpos = np.arange(
+            sources_x_locations[idx], max_offset_x+sources_x_locations[idx], receivers_dx)
+        receiversbase = ReceiverSet(
+            m, [PointReceiver(m, (x, receiver_depth), **receiver_kwargs) for x in xpos])
+
+        receivers = copy.deepcopy(receiversbase)
+
+        # Create and store the shot
+        shot = Shot(source, receivers)
+        shots.append(shot)
+
+    return shots
 
 def equispaced_acquisition(mesh, wavelet,
                            sources=1,
