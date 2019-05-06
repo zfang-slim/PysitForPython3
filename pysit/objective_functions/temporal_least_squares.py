@@ -15,7 +15,7 @@ __docformat__ = "restructuredtext en"
 class TemporalLeastSquares(ObjectiveFunctionBase):
     """ How to compute the parts of the objective you need to do optimization """
 
-    def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1):
+    def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1, normalize_trace=False):
         """imaging_period: Imaging happens every 'imaging_period' timesteps. Use higher numbers to reduce memory consumption at the cost of lower gradient accuracy.
             By assigning this value to the class, it will automatically be used when the gradient function of the temporal objective function is called in an inversion context.
         """
@@ -26,6 +26,7 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
 
         self.imaging_period = int(imaging_period)  # Needs to be an integer
         self.filter_op = filter_op
+        self.normalize_trace = normalize_trace
 
     def _residual(self, shot, m0, dWaveOp=None, wavefield=None):
         """Computes residual in the usual sense.
@@ -58,6 +59,7 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         # timesteps used in the previous forward modeling stage.
         # resid = map(lambda x,y: x.interpolate_data(self.solver.ts())-y, shot.gather(), retval['simdata'])
 
+        dobs = shot.receivers.interpolate_data(self.solver.ts())
         if shot.background_data is not None:
             dpred = retval['simdata'] - shot.background_data
         else:
@@ -66,11 +68,11 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         if shot.receivers.time_window is None:
             # dpred = retval['simdata']
             dpred = dpred
-            resid = shot.receivers.interpolate_data(self.solver.ts()) - dpred
+            resid = dobs - dpred
         else:
             # dpred = shot.receivers.time_window(self.solver.ts()) * retval['simdata']
             dpred = shot.receivers.time_window(self.solver.ts()) * dpred
-            resid = shot.receivers.interpolate_data(self.solver.ts()) - dpred 
+            resid = dobs - dpred 
 
         # if shot.receivers.time_window is None:
         #     resid = shot.receivers.interpolate_data(self.solver.ts()) - retval['simdata']
@@ -81,10 +83,25 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         #     resid = shot.receivers.interpolate_data(self.solver.ts()) - dpred
 
         if self.filter_op is not None:
-            resid = self.filter_op * resid
+            dobs = self.filter_op * dobs
+            dpred = self.filter_op * dpred
+            resid = dobs - dpred
             adjoint_src = self.filter_op.__adj_mul__(resid)
         else:
             adjoint_src = resid
+
+        ## Function to normalize each trace    
+        shape_dobs = np.shape(dobs)
+        if self.normalize_trace is True:
+            for i in range(0, shape_dobs[1]):
+                dobs_i = dobs[:, i] / np.linalg.norm(dobs[:, i]) 
+                norm_predi = np.linalg.norm(dpred[:, i])
+                dpred_i = dpred[:, i] / norm_predi
+                resid[:, i] = dobs_i - dpred_i 
+                adjoint_src[:, i] = -(resid[:,i] * dpred_i) / norm_predi**3.0
+                if self.filter_op is not None:
+                    adjoint_src[:, i] = self.filter_op.__adj_mul__(adjoint_src[:, i])
+
 
         # If the second derivative info is needed, copy it out
         if dWaveOp is not None:
