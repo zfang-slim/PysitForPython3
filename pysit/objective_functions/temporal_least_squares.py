@@ -98,9 +98,10 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
                 norm_predi = np.linalg.norm(dpred[:, i])
                 dpred_i = dpred[:, i] / norm_predi
                 resid[:, i] = dobs_i - dpred_i 
-                adjoint_src[:, i] = -(resid[:,i] * dpred_i) / norm_predi**3.0
-                if self.filter_op is not None:
-                    adjoint_src[:, i] = self.filter_op.__adj_mul__(adjoint_src[:, i])
+                adjoint_src[:, i] = resid[:, i] / norm_predi - (np.sum(resid[:, i] * dpred[:, i])) / norm_predi**3.0 * dpred[:, i]
+
+            if self.filter_op is not None:
+                    adjoint_src = self.filter_op.__adj_mul__(adjoint_src)
 
 
         # If the second derivative info is needed, copy it out
