@@ -95,8 +95,6 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         if self.normalize_trace is True:
             for i in range(0, shape_dobs[1]):
                 dobs_i = dobs[:, i] / np.linalg.norm(dobs[:, i]) 
-                if np.linalg.norm(dobs[:, i]) < 10.0**(-10):
-                    print('Trace ', i)
                 norm_predi = np.linalg.norm(dpred[:, i])
                 dpred_i = dpred[:, i] / norm_predi
                 resid[:, i] = dobs_i - dpred_i 
