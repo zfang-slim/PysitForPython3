@@ -2,7 +2,8 @@ import math
 
 import numpy as np
 
-__all__ = ['SourceWaveletBase', 'DerivativeGaussianPulse', 'RickerWavelet', 'GaussianPulse', 'WhiteNoiseSource']
+__all__ = ['SourceWaveletBase', 'DerivativeGaussianPulse',
+           'RickerWavelet', 'GaussianPulse', 'WhiteNoiseSource', 'OrmsbySource']
 
 _sqrt2 = math.sqrt(2.0)
 
@@ -281,3 +282,75 @@ class WhiteNoiseSource(SourceWaveletBase):
             v.append(self._f_hat[nu])
 
         return v[0] if nus_was_not_array else np.array(v)
+
+class OrmsbySource(SourceWaveletBase):
+
+    """ Ormsby wavelet.
+
+    Notes
+    -----
+
+    Do not use for both time and frequency simultaneously, as realizations are
+    not coherent.
+
+    """
+
+    @property
+    def time_source(self):
+        """bool, Indicates if wavelet is defined in time domain."""
+        return True
+
+    @property
+    def frequency_source(self):
+        """bool, Indicates if wavelet is defined in frequency domain."""
+        return True
+
+    def __init__(self, f1, f2, f3, f4, t_shift=0.5, **kwargs):
+
+        # time domain storage, of dubious merit for implementing in this manner.
+        self._f = dict()
+        # frequency domain storage
+        self._f_hat = dict()
+
+        self.f1 = f1
+        self.f2 = f2
+        self.f3 = f3
+        self.f4 = f4
+        self.t_shift = t_shift
+
+    def _evaluate_time(self, ts):
+
+        # Vectorize the time list
+        ts_was_not_array, ts = _arrayify(ts)
+
+        v = list()
+        for t in ts:
+            if t not in self._f:
+                pi = np.pi
+                f1 = self.f1/pi
+                f2 = self.f2/pi
+                f3 = self.f3/pi
+                f4 = self.f4/pi
+                t2 = t - self.t_shift
+                d1 = (pi*f4)**2.0/(pi*f4-pi*f3)*(np.sinc(pi*f4*t2))**2.0 - \
+                     (pi*f3)**2.0/(pi*f4-pi*f3)*(np.sinc(pi*f3*t2))**2.0
+                d2 = (pi*f2)**2.0/(pi*f2-pi*f1)*(np.sinc(pi*f2*t2))**2.0 - \
+                     (pi*f1)**2.0/(pi*f2-pi*f1)*(np.sinc(pi*f1*t2))**2.0
+                d = d1 - d2
+                self._f[t] = d
+            v.append(self._f[t])
+
+        return v[0] if ts_was_not_array else np.array(v)
+
+    def _evaluate_frequency(self, nus):
+
+        # # Vectorize the frequency list
+        # nus_was_not_array, nus = _arrayify(nus)
+
+        # v = list()
+        # for nu in nus:
+        #     if nu not in self._f_hat:
+        #         self._f_hat[nu] = self.variance*(np.random.randn() + np.random.randn()*1j)
+        #     v.append(self._f_hat[nu])
+
+        # return v[0] if nus_was_not_array else np.array(v)
