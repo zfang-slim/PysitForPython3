@@ -339,8 +339,9 @@ class OrmsbySource(SourceWaveletBase):
                 d = d1 - d2
                 self._f[t] = d
             v.append(self._f[t])
+            
 
-        return v[0] if ts_was_not_array else np.array(v)
+        return v[0] if ts_was_not_array else np.array(v) / np.max(v)
 
     def _evaluate_frequency(self, nus):
 
