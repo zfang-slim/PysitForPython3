@@ -354,3 +354,4 @@ class OrmsbySource(SourceWaveletBase):
         #     v.append(self._f_hat[nu])
 
         # return v[0] if nus_was_not_array else np.array(v)
+        return 0
