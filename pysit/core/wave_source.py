@@ -317,6 +317,8 @@ class OrmsbySource(SourceWaveletBase):
         self.f3 = f3
         self.f4 = f4
         self.t_shift = t_shift
+        self.max_amp = (f4**2.0/(f4-f3) - f3**2.0/(f4-f3)) - \
+                        (f2**2.0/(f2-f1) - f1**2.0/(f2-f1))
 
     def _evaluate_time(self, ts):
 
@@ -341,7 +343,7 @@ class OrmsbySource(SourceWaveletBase):
             v.append(self._f[t])
             
 
-        return v[0] if ts_was_not_array else np.array(v) / np.max(v)
+        return v[0]/self.max_amp if ts_was_not_array else np.array(v) / self.max_amp
 
     def _evaluate_frequency(self, nus):
 
