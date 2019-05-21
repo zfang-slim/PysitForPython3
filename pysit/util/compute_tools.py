@@ -308,6 +308,7 @@ class high_pass_filter(object):
         y = np.fft.fft(x)
         y = self.high_pass_filter * y
         y = np.fft.ifft(y)
+        y = y.real
 
         if self.padding_zeros is True:
             y = self.padding_zeros_op.__adj_mul__(y.real)
@@ -426,6 +427,7 @@ class low_pass_filter(object):
         y = np.fft.fft(x)
         y = self.low_pass_filter * y
         y = np.fft.ifft(y)
+        y = y.real
 
         if self.padding_zeros is True:
             y = self.padding_zeros_op.__adj_mul__(y.real)
@@ -530,6 +532,7 @@ class band_pass_filter(object):
         y = np.fft.fft(x)
         y = self.band_pass_filter * y
         y = np.fft.ifft(y)
+        y = y.real
 
         if self.padding_zeros is True:
             y = self.padding_zeros_op.__adj_mul__(y.real)
