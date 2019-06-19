@@ -14,10 +14,11 @@ __docformat__ = "restructuredtext en"
 
 class PGD(OptimizationBase):
 
-    def __init__(self, objective, proj_op=None, *args, **kwargs):
+    def __init__(self, objective, proj_op=None, alpha0=0.001, *args, **kwargs):
         OptimizationBase.__init__(self, objective, *args, **kwargs)
         self.prev_alpha = None
         self.proj_op = proj_op
+        self.alpha0 = alpha0
 
     def _select_step(self, shots, current_objective_value, gradient, iteration, objective_arguments, **kwargs):
         """Compute the adjustment of the gradient step for a set of shots.
@@ -59,6 +60,6 @@ class PGD(OptimizationBase):
     def _compute_alpha0(self, phi0, grad0, reset=False, upscale_factor=None, **kwargs):
         if reset or (self.prev_alpha is None):
             print('Works')
-            return 0.0001 * np.sqrt(self.base_model.inner_product(self.base_model) / grad0.inner_product(grad0))
+            return self.alpha0 * np.sqrt(self.base_model.inner_product(self.base_model) / grad0.inner_product(grad0))
         else:
             return self.prev_alpha / upscale_factor
