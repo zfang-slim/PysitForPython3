@@ -630,6 +630,7 @@ class OptimizationBase(object):
                     stop = True
                 else:
                     alpha *= Wolfe_fac_up
+                    itercnt += 1
 
             elif itercnt > self.max_linesearch_iterations:
                 stop = True
