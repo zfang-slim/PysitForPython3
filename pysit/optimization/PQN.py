@@ -152,6 +152,7 @@ class PQN(OptimizationBase):
         stop = False
         while stop is not True:
             # y = proj_op(x + dx)
+            y = x + dx
             if np.isfinite(np.linalg.norm(y.data)) == 1:
                 stop = True 
             else:
