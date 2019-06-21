@@ -629,16 +629,18 @@ class OptimizationBase(object):
                 if (abs(f2kp1) <= abs(cmpval2)) or ((abs(f2kp1-cmpval2)/abs(cmpval2)) <= fp_comp):
                     stop = True
                 else:
+                    alpha_org = alpha
                     alpha *= Wolfe_fac_up
                     itercnt += 1
             else:
                 itercnt += 1
+                alpha_org = alpha
                 alpha = alpha * geom_fac
                 
             if itercnt > self.max_linesearch_iterations:
                 stop = True
                 self._print('Too many passes ({0}), attempting to use current alpha ({1}).'.format(itercnt, alpha))
-                alpha = self.prev_alpha
+                alpha = alpha_org
 
         self.prev_alpha = alpha
 
