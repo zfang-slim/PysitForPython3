@@ -621,23 +621,24 @@ class OptimizationBase(object):
             fkp1 = aux_info['objective_value'][1]
 
             cmpval = fk + alpha * c1 * gradient.inner_product(tdir)
+            cmpval2 = c2 * gradient.inner_product(tdir)
+            f2kp1 = gradient_kp1.inner_product(tdir)
+            self._print("  Pass {0}: a:{1}; {2} ?<= {3}; {4} ?>={5}".format(itercnt, alpha, fkp1, cmpval, f2kp1, cmpval2))
 
-            if (fkp1 <= cmpval) or ((abs(fkp1-cmpval)/abs(fkp1)) <= fp_comp): # reasonable floating point cutoff
-                cmpval2 = c2 * gradient.inner_product(tdir)
-                f2kp1 = gradient_kp1.inner_product(tdir)
-                self._print("  Pass {0}: a:{1}; {2} ?<= {3}; {4} ?>={5}".format(itercnt, alpha, fkp1, cmpval, f2kp1, cmpval2))
+            if (fkp1 <= cmpval) or ((abs(fkp1-cmpval)/abs(fkp1)) <= fp_comp): # reasonable floating point cutoff               
                 if (abs(f2kp1) <= abs(cmpval2)) or ((abs(f2kp1-cmpval2)/abs(cmpval2)) <= fp_comp):
                     stop = True
                 else:
                     alpha *= Wolfe_fac_up
                     itercnt += 1
-
-            elif itercnt > self.max_linesearch_iterations:
-                stop = True
-                self._print('Too many passes ({0}), attempting to use current alpha ({1}).'.format(itercnt, alpha))
             else:
                 itercnt += 1
                 alpha = alpha * geom_fac
+                
+            if itercnt > self.max_linesearch_iterations:
+                stop = True
+                self._print('Too many passes ({0}), attempting to use current alpha ({1}).'.format(itercnt, alpha))
+                alpha = self.prev_alpha
 
         self.prev_alpha = alpha
 
