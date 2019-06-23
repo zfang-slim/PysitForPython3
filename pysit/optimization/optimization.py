@@ -81,7 +81,7 @@ class OptimizationBase(object):
 
         self.use_parallel = objective.use_parallel()
 
-        self.max_linesearch_iterations = 2
+        self.max_linesearch_iterations = 10
 
         self.logfile = sys.stdout
         self.proj_op = None
