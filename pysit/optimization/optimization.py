@@ -541,6 +541,8 @@ class OptimizationBase(object):
         stop = False
         itercnt = 1
         self._print("  Starting: ".format(itercnt), alpha, fk)
+        Alphas = []
+        Objs = []
         while not stop:
             # Cut the initial alpha until it is as large as can be and still satisfy the valid conditions for an updated model.
             valid=False
@@ -559,6 +561,8 @@ class OptimizationBase(object):
             self.solver.model_parameters = model
 
             fkp1 = self.objective_function.evaluate(shots, model, **objective_arguments)
+            Alphas.append(alpha)
+            Objs.append(fkp1)
 
             cmpval = fk + alpha * goldstein_c * gradient.inner_product(tdir)
 
@@ -568,7 +572,9 @@ class OptimizationBase(object):
                 stop = True
             elif itercnt > self.max_linesearch_iterations:
                 stop = True
-                self._print('Too many passes ({0}), attempting to use current alpha ({1}).'.format(itercnt, alpha))
+                alpha_idx = np.argmin(Objs)
+                alpha = Alphas[alpha_idx]
+                self._print('Too many passes ({0}), attempting to use current alpha ({1}).'.format(alpha_idx, alpha))
             else:
                 itercnt += 1
                 alpha = alpha * geom_fac
@@ -604,6 +610,8 @@ class OptimizationBase(object):
         self._print("  Starting: ".format(itercnt), alpha, fk)
         aux_info = {'objective_value': (True, None),
                     'residual_norm': (True, None)}
+        Alphas = []
+        Objs = []
         while not stop:
             # Cut the initial alpha until it is as large as can be and still satisfy the valid conditions for an updated model.
             valid=False
@@ -623,6 +631,9 @@ class OptimizationBase(object):
 
             gradient_kp1 = self.objective_function.compute_gradient(shots, model, aux_info=aux_info, **objective_arguments)
             fkp1 = aux_info['objective_value'][1]
+            
+            Alphas.append(alpha)
+            Objs.append(fkp1)
 
             cmpval = fk + alpha * c1 * gradient.inner_product(tdir)
             cmpval2 = c2 * gradient.inner_product(tdir)
@@ -643,8 +654,9 @@ class OptimizationBase(object):
                 
             if itercnt > self.max_linesearch_iterations:
                 stop = True
-                self._print('Too many passes ({0}), attempting to use current alpha ({1}).'.format(itercnt, alpha))
-                alpha = alpha_org
+                alpha_idx = np.argmin(Objs)
+                alpha = Alphas[alpha_idx]
+                self._print('Too many passes ({0}), attempting to use current alpha ({1}).'.format(alpha_idx, alpha))
 
         self.prev_alpha = alpha
 
