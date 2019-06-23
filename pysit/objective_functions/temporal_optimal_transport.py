@@ -126,7 +126,7 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
             self.parallel_wrap_shot.comm.Allreduce(np.array(r_norm2), new_r_norm2)
             r_norm2 = new_r_norm2[()] # goofy way to access 0-D array element
 
-         if np.isnan(r_norm2):
+        if np.isnan(r_norm2):
             r_norm2 = 1e12
             
         return r_norm2*self.solver.dt
