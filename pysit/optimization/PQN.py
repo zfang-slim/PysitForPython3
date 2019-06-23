@@ -115,7 +115,8 @@ class PQN(OptimizationBase):
         PGDsolver = ProjectedGradientDescent(quadratic_obj, proj_op)
         if proj_op is not None:
             # initial_value_PGD = proj_op(x_k + H_BFGS.inv(-1.0*gradient))
-            initial_value_PGD = self._compute_initial_PGD(x_k, H_BFGS.inv(-1.0*gradient), proj_op)
+#             initial_value_PGD = self._compute_initial_PGD(x_k, H_BFGS.inv(-1.0*gradient), proj_op)
+            initial_value_PGD = x_k
             x_kp1, f_history, g_history, x_history = PGDsolver(
                 self.maxiter_PGD, self.maxiter_linesearch_PGD, initial_value_PGD, verbose=False)
             direction = x_kp1 - x_k
