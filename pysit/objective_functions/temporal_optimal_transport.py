@@ -126,6 +126,9 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
             self.parallel_wrap_shot.comm.Allreduce(np.array(r_norm2), new_r_norm2)
             r_norm2 = new_r_norm2[()] # goofy way to access 0-D array element
 
+         if np.isnan(r_norm2):
+            r_norm2 = 1e12
+            
         return r_norm2*self.solver.dt
 
     def _gradient_helper(self, shot, m0, ignore_minus=False, ret_pseudo_hess_diag_comp = False, **kwargs):
@@ -234,6 +237,9 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
         r_norm2 *= self.solver.dt
         pseudo_h_diag *= self.solver.dt #The gradient is implemented as a time integral in TemporalModeling.adjoint_model(). I think the pseudo Hessian (F*F in notation Shin) also represents a time integral. So multiply with dt as well to be consistent.
 
+        if np.isnan(r_norm2):
+            r_norm2 = 1e12
+            
         # store any auxiliary info that is requested
         if ('residual_norm' in aux_info) and aux_info['residual_norm'][0]:
             aux_info['residual_norm'] = (True, np.sqrt(r_norm2))
