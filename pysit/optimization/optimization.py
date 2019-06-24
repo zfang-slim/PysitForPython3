@@ -638,7 +638,7 @@ class OptimizationBase(object):
             cmpval = fk + alpha * c1 * gradient.inner_product(tdir)
             cmpval2 = c2 * gradient.inner_product(tdir)
             f2kp1 = gradient_kp1.inner_product(tdir)
-            self._print("  Pass {0}: a:{1}; {2} ?<= {3}; {4} ?>={5}".format(itercnt, alpha, fkp1, cmpval, f2kp1, cmpval2))
+            self._print("  Pass {0}: a:{1}; {2} ?<= {3}; |{4}| ?<= |{5}|".format(itercnt, alpha, fkp1, cmpval, f2kp1, cmpval2))
 
             if (fkp1 <= cmpval) or ((abs(fkp1-cmpval)/abs(fkp1)) <= fp_comp): # reasonable floating point cutoff               
                 if (abs(f2kp1) <= abs(cmpval2)) or ((abs(f2kp1-cmpval2)/abs(cmpval2)) <= fp_comp):
