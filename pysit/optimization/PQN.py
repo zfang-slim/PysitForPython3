@@ -115,7 +115,7 @@ class PQN(OptimizationBase):
         proj_op = self.proj_op
         quadratic_obj = Quadratic_obj(gradient, H_BFGS, x_k)
         PGDsolver = ProjectedGradientDescent(quadratic_obj, proj_op)
-        if (proj_op is not None) and (self.iteration > PQN_start_iteration):
+        if (proj_op is not None) and (self.iteration > self.PQN_start_iteration):
             # initial_value_PGD = proj_op(x_k + H_BFGS.inv(-1.0*gradient))
 #             initial_value_PGD = self._compute_initial_PGD(x_k, H_BFGS.inv(-1.0*gradient), proj_op)
             initial_value_PGD = x_k
