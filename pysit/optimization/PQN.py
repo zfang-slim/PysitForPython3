@@ -18,6 +18,7 @@ class PQN(OptimizationBase):
                  reset_on_new_inner_loop_call=True, 
                  proj_op=None, maxiter_PGD=1000, 
                  maxiter_linesearch_PGD=100, 
+                 PQN_start_iteration=5,
                  *args, **kwargs):
         OptimizationBase.__init__(self, objective, *args, **kwargs)
         self.prev_alpha = None
@@ -28,6 +29,7 @@ class PQN(OptimizationBase):
         self.proj_op=proj_op
         self.maxiter_PGD=maxiter_PGD
         self.maxiter_linesearch_PGD=maxiter_linesearch_PGD
+        self.PQN_start_iteration = PQN_start_iteration
 
         self._reset_memory()
 
@@ -113,7 +115,7 @@ class PQN(OptimizationBase):
         proj_op = self.proj_op
         quadratic_obj = Quadratic_obj(gradient, H_BFGS, x_k)
         PGDsolver = ProjectedGradientDescent(quadratic_obj, proj_op)
-        if proj_op is not None:
+        if (proj_op is not None) and (self.iteration > PQN_start_iteration):
             # initial_value_PGD = proj_op(x_k + H_BFGS.inv(-1.0*gradient))
 #             initial_value_PGD = self._compute_initial_PGD(x_k, H_BFGS.inv(-1.0*gradient), proj_op)
             initial_value_PGD = x_k
