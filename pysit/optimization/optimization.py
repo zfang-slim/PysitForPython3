@@ -392,9 +392,9 @@ class OptimizationBase(object):
             gradient = self.objective_function.compute_gradient(shots, self.base_model, aux_info=aux_info, **objective_arguments)
             objective_value = aux_info['objective_value'][1]
             
-            tmp_data_write = {'data': self.base_model.data}
-            fname = 'x_' + str(i) + '_2.mat'
-            sio.savemat(fname, tmp_data_write)
+            # tmp_data_write = {'data': self.base_model.data}
+            # fname = 'x_' + str(i) + '_2.mat'
+            # sio.savemat(fname, tmp_data_write)
             
             # Process and store meta data about the gradient
             self.store_history('gradient', i, gradient)
