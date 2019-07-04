@@ -685,6 +685,7 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0,
     if np.min(f) < 0:
         resid = 1e10
         adj_src = np.zeros(dpred.shape)
+        print('small c used')
         return resid, adj_src, np.linalg.norm(resid)**2.0
 
 
