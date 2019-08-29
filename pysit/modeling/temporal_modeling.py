@@ -149,6 +149,8 @@ class TemporalModeling(object):
             if 'dWaveOp' in return_parameters:
                 if k % imaging_period == 0:  # Save every 'imaging_period' number of steps
                     dWaveOp.append(solver.compute_dWaveOp('time', solver_data))
+                    a = solver.compute_dWaveOp('time', solver_data)
+                    print(a.dtype)
 
             # When k is the nth step, the next step is uneeded, so don't swap
             # any values.  This way, uk at the end is always the final step
@@ -164,10 +166,8 @@ class TemporalModeling(object):
 
         if 'wavefield' in return_parameters:
             retval['wavefield'] = us
-            print(getsizeof(us))
         if 'dWaveOp' in return_parameters:
             retval['dWaveOp'] = dWaveOp
-            print(getsizeof(dWaveOp))
         if 'simdata' in return_parameters:
             retval['simdata'] = simdata
 
