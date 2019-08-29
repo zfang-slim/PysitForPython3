@@ -3,7 +3,6 @@ import copy as copy
 import time
 import numpy as np
 from sys import getsizeof
-import sys
 from pysit.util.derivatives import build_derivative_matrix, build_permutation_matrix, build_heterogenous_matrices
 from pysit.solvers.model_parameter import *
 from numpy.random import uniform
@@ -11,27 +10,6 @@ from numpy.random import uniform
 __all__ = ['TemporalModeling']
 
 __docformat__ = "restructuredtext en"
-
-
-def get_size(obj, seen=None):
-    """Recursively finds size of objects"""
-    size = sys.getsizeof(obj)
-    if seen is None:
-        seen = set()
-    obj_id = id(obj)
-    if obj_id in seen:
-        return 0
-    # Important mark as seen *before* entering recursion to gracefully handle
-    # self-referential objects
-    seen.add(obj_id)
-    if isinstance(obj, dict):
-        size += sum([get_size(v, seen) for v in obj.values()])
-        size += sum([get_size(k, seen) for k in obj.keys()])
-    elif hasattr(obj, '__dict__'):
-        size += get_size(obj.__dict__, seen)
-    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
-        size += sum([get_size(i, seen) for i in obj])
-    return size
 
 
 class TemporalModeling(object):
@@ -188,7 +166,6 @@ class TemporalModeling(object):
             retval['wavefield'] = us
         if 'dWaveOp' in return_parameters:
             retval['dWaveOp'] = dWaveOp
-            print(get_size(dWaveOp))
         if 'simdata' in return_parameters:
             retval['simdata'] = simdata
 
