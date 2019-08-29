@@ -165,7 +165,7 @@ class TemporalModeling(object):
             retval['wavefield'] = us
         if 'dWaveOp' in return_parameters:
             retval['dWaveOp'] = dWaveOp
-            print(type(dWaveOp[0][0]))
+            print(type(dWaveOp[0][0][0]))
         if 'simdata' in return_parameters:
             retval['simdata'] = simdata
 
