@@ -119,12 +119,10 @@ class TemporalModeling(object):
 
         rhs_k = np.zeros(mesh.shape(include_bc=True))
         rhs_kp1 = np.zeros(mesh.shape(include_bc=True))
-        print(type(dt))
 
         for k in range(nsteps):
 
             uk = solver_data.k.primary_wavefield
-            print(uk.dtype)
             uk_bulk = mesh.unpad_array(uk)
 
             if 'wavefield' in return_parameters:
