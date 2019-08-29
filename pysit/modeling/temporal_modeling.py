@@ -2,6 +2,7 @@
 import copy as copy
 import time
 import numpy as np
+from sys import getsizeof
 from pysit.util.derivatives import build_derivative_matrix, build_permutation_matrix, build_heterogenous_matrices
 from pysit.solvers.model_parameter import *
 from numpy.random import uniform
@@ -165,7 +166,7 @@ class TemporalModeling(object):
             retval['wavefield'] = us
         if 'dWaveOp' in return_parameters:
             retval['dWaveOp'] = dWaveOp
-            print(type(dWaveOp[0][0][0]))
+            print(getsizeof(dWaveOp))
         if 'simdata' in return_parameters:
             retval['simdata'] = simdata
 
