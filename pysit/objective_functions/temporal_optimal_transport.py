@@ -164,8 +164,13 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
             g = -1*g
 
         if ret_pseudo_hess_diag_comp:
-            return g, r, self._pseudo_hessian_diagonal_component_shot(dWaveOp)
+            pseudo_h_diag = self._pseudo_hessian_diagonal_component_shot(dWaveOp)
+            dWaveOp = None
+            wavefield = None
+            return g, r, pseudo_h_diag
         else:
+            dWaveOp = None
+            wavefield = None
             return g, r
 
     def _pseudo_hessian_diagonal_component_shot(self, dWaveOp):
