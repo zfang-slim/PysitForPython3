@@ -164,6 +164,7 @@ class TemporalModeling(object):
 
         if 'wavefield' in return_parameters:
             retval['wavefield'] = us
+            print(getsizeof(us))
         if 'dWaveOp' in return_parameters:
             retval['dWaveOp'] = dWaveOp
             print(getsizeof(dWaveOp))
