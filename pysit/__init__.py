@@ -26,6 +26,8 @@ from pysit.modeling import *
 from pysit.objective_functions import *
 from pysit.optimization import *
 from pysit.solvers import *
+from pysit.cnn import *
+from pysit.MCMC import *
 import pysit.vis as vis
 
 # Set up the pysit configuration file
