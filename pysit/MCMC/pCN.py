@@ -130,9 +130,15 @@ class pCN(object):
             A_accept.append(a_accept)
             Phi.append(phi1)
             # print('Accept probability:', a_accept)
+            
             if np.mod(i,print_interval) == 0:
-                print('Iteration:', i)
-                print('f: ', phi_min)
+                if self.use_parallel is True:
+                    if self.objective_function.parallel_wrap_shot.comm.Get_rank() == 0:
+                        print('Iteration:', i)
+                        print('f: ', phi_min)
+                else:
+                    print('Iteration:', i)
+                    print('f: ', phi_min)
 
             if a_accept > r_probs[i]:
                 Ms.append(m1_cnn)
