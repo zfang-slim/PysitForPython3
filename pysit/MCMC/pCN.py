@@ -8,6 +8,7 @@ import tensorflow as tf
 
 import numpy as np
 import scipy.io as sio
+from pysit.util.io import *
 
 __all__=['pCN']
 
@@ -75,6 +76,7 @@ class pCN(object):
                  noise_sigma=1.0,
                  isuq=False,
                  print_interval=10,
+                 save_interval=None,
                  initial_value_cnn=None,
                  verbose=False,
                  append=False,
@@ -146,6 +148,15 @@ class pCN(object):
                 phi0 = phi1
             else:
                 Ms.append(m0_cnn)
+
+            if save_interval is not None:
+                if np.mod(i,save_interval) == 0:
+                    Snp = np.array(Ms)
+                    n_size = np.shape(Snp)
+                    n_size_new = [n_size[0], n_size[2]]
+                    Snp = np.reshape(Snp, n_size_new)
+                    write_data('./Samples.mat', Snp, [1,1], [1,1], n_size_new)
+                    write_data('./Samples.mat', Snp, [1,1], [1,1], n_size_new)
 
             
 
