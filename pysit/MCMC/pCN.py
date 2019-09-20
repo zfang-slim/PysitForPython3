@@ -112,6 +112,7 @@ class pCN(object):
         Ms = []
         A_accept = []
         Phi = []
+        Beta = []
         Ms.append(m0_cnn)
         r_probs = np.random.uniform(0.0, 1.0, nsmps)
         m_min_cnn = m0_cnn
@@ -120,6 +121,7 @@ class pCN(object):
 
         for i in range(nsmps):
             # mtmp_cnn = tf.random.uniform([1, n_cnn_para])
+            Beta.append(beta)
             mtmp_cnn = tf.random.normal([1, n_cnn_para])
             m1_cnn = np.sqrt(1-beta**2.0)*m0_cnn + beta*mtmp_cnn
             phi1 = self.objective_function.evaluate(shots, initial_model, m1_cnn) / noise_sigma**2.0
@@ -146,8 +148,10 @@ class pCN(object):
                 Ms.append(m1_cnn)
                 m0_cnn = m1_cnn
                 phi0 = phi1
+                beta *= 1.2
             else:
                 Ms.append(m0_cnn)
+                beta *= 0.5
 
             if save_interval is not None:
                 if np.mod(i,save_interval) == 0:
@@ -156,7 +160,10 @@ class pCN(object):
                     n_size_new = [n_size[0], n_size[2]]
                     Snp = np.reshape(Snp, n_size_new)
                     write_data('./Samples.mat', Snp, [1,1], [1,1], n_size_new)
-                    write_data('./Samples.mat', Snp, [1,1], [1,1], n_size_new)
+                    write_data('./MAP.mat', np.array(m_min_cnn), [1,1], [1,1], np.array(m_min_cnn).shape)
+                    write_data('./probability.mat', A_accept, [1], [1], len(A_accept))
+                    write_data('./objective_function.mat', Phi, [1], [1], len(Phi))
+                    write_data('./betas.mat', Beta, [1], [1], len(Beta))
 
             
 
