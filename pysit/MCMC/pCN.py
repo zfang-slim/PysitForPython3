@@ -151,7 +151,8 @@ class pCN(object):
                 beta *= 1.2
             else:
                 Ms.append(m0_cnn)
-                beta *= 0.5
+                if a_accept < 0.1:
+                    beta *= 0.5
 
             if save_interval is not None:
                 if np.mod(i,save_interval) == 0:
