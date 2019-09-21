@@ -116,7 +116,7 @@ class pCN(object):
         Phi = []
         Beta = []
         Ms.append(m0_cnn)
-        if self.parallel_wrap.use_parallel:
+        if parallel_wrap.use_parallel:
             if parallel_wrap.comm.Get_rank() == 0:
                 r_probs = np.random.uniform(0.0, 1.0, nsmps)
             else:
@@ -134,7 +134,7 @@ class pCN(object):
         for i in range(nsmps):
             # mtmp_cnn = tf.random.uniform([1, n_cnn_para])
             Beta.append(beta)
-            if self.parallel_wrap.use_parallel:
+            if parallel_wrap.use_parallel:
                 if parallel_wrap.comm.Get_rank() == 0:
                     mtmp_cnn = tf.random.normal([1, n_cnn_para])
                 else:
