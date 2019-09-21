@@ -179,15 +179,16 @@ class pCN(object):
 
             if save_interval is not None:
                 if np.mod(i,save_interval) == 0:
-                    Snp = np.array(Ms)
-                    n_size = np.shape(Snp)
-                    n_size_new = [n_size[0], n_size[2]]
-                    Snp = np.reshape(Snp, n_size_new)
-                    write_data('./Samples' + str(parallel_wrap.comm.Get_rank()) + '.mat', Snp, [1,1], [1,1], n_size_new)
-                    write_data('./MAP.mat', np.array(m_min_cnn), [1,1], [1,1], np.array(m_min_cnn).shape)
-                    write_data('./probability.mat', A_accept, [1], [1], len(A_accept))
-                    write_data('./objective_function.mat', Phi, [1], [1], len(Phi))
-                    write_data('./betas.mat', Beta, [1], [1], len(Beta))
+                    if (parallel_wrap.use_parallel is None) or (parallel_wrap.comm.Get_rank() == 0):
+                        Snp = np.array(Ms)
+                        n_size = np.shape(Snp)
+                        n_size_new = [n_size[0], n_size[2]]
+                        Snp = np.reshape(Snp, n_size_new)
+                        write_data('./Samples.mat', Snp, [1,1], [1,1], n_size_new)
+                        write_data('./MAP.mat', np.array(m_min_cnn), [1,1], [1,1], np.array(m_min_cnn).shape)
+                        write_data('./probability.mat', A_accept, [1], [1], len(A_accept))
+                        write_data('./objective_function.mat', Phi, [1], [1], len(Phi))
+                        write_data('./betas.mat', Beta, [1], [1], len(Beta))
 
             
 
