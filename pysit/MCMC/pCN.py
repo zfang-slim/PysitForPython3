@@ -78,6 +78,7 @@ class pCN(object):
                  print_interval=10,
                  save_interval=None,
                  initial_value_cnn=None,
+                 parallel_wrap=ParallelWrapShotNull(),
                  verbose=False,
                  append=False,
                  write=False,
@@ -114,7 +115,17 @@ class pCN(object):
         Phi = []
         Beta = []
         Ms.append(m0_cnn)
-        r_probs = np.random.uniform(0.0, 1.0, nsmps)
+        if self.parallel_wrap.use_parallel:
+            if parallel_wrap.comm.Get_rank() == 0:
+                r_probs = np.random.uniform(0.0, 1.0, nsmps)
+            else:
+                r_probs = None
+
+            r_probs = parallel_wrap.comm.bcast(r_probs, root=0) 
+                
+        else:
+            r_probs = np.random.uniform(0.0, 1.0, nsmps)
+
         m_min_cnn = m0_cnn
         phi_min = phi0
         
@@ -122,7 +133,17 @@ class pCN(object):
         for i in range(nsmps):
             # mtmp_cnn = tf.random.uniform([1, n_cnn_para])
             Beta.append(beta)
-            mtmp_cnn = tf.random.normal([1, n_cnn_para])
+            if self.parallel_wrap.use_parallel:
+                if parallel_wrap.comm.Get_rank() == 0:
+                    mtmp_cnn = tf.random.normal([1, n_cnn_para])
+                else:
+                    mtmp_cnn = None
+
+                mtmp_cnn = parallel_wrap.comm.bcast(mtmp_cnn, root=0) 
+                
+            else:
+                mtmp_cnn = tf.random.normal([1, n_cnn_para])
+
             m1_cnn = np.sqrt(1-beta**2.0)*m0_cnn + beta*mtmp_cnn
             phi1 = self.objective_function.evaluate(shots, initial_model, m1_cnn) / noise_sigma**2.0
 
@@ -161,7 +182,7 @@ class pCN(object):
                     n_size = np.shape(Snp)
                     n_size_new = [n_size[0], n_size[2]]
                     Snp = np.reshape(Snp, n_size_new)
-                    write_data('./Samples.mat', Snp, [1,1], [1,1], n_size_new)
+                    write_data('./Samples' + str(parallel_wrap.comm.Get_rank()) + '.mat', Snp, [1,1], [1,1], n_size_new)
                     write_data('./MAP.mat', np.array(m_min_cnn), [1,1], [1,1], np.array(m_min_cnn).shape)
                     write_data('./probability.mat', A_accept, [1], [1], len(A_accept))
                     write_data('./objective_function.mat', Phi, [1], [1], len(Phi))
