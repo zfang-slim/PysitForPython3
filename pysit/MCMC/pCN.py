@@ -9,6 +9,7 @@ import tensorflow as tf
 import numpy as np
 import scipy.io as sio
 from pysit.util.io import *
+from pysit.util.parallel import ParallelWrapShotNull
 
 __all__=['pCN']
 
