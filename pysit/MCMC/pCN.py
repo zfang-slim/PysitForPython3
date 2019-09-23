@@ -180,7 +180,13 @@ class pCN(object):
             if save_interval is not None:
                 if np.mod(i,save_interval) == 0:
                     if (parallel_wrap.use_parallel is None) or (parallel_wrap.comm.Get_rank() == 0):
-                        Snp = np.array(Ms)
+                        if i == 0:
+                            Snp = np.array(Ms)
+                        else:
+                            Msi = Ms[len(Snp):len(Ms)]
+                            Snpi = np.array(Msi)
+                            Snp = np.concatenate((Snp, Snpi), axis=0)
+                        
                         n_size = np.shape(Snp)
                         n_size_new = [n_size[0], n_size[2]]
                         Snp = np.reshape(Snp, n_size_new)
