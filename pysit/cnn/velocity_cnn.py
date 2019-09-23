@@ -37,11 +37,22 @@ class Vel_CNN_Overthrust(object):
         self.generator = generator
         self.discriminator = discriminator
 
-    def generate_vel(self, m):
-        y = self.generator(m)
+    def generate_vel(self, m, training=True):
+        y = self.generator(m, training=training)
         y = y * 1911.0 + 2989.0
         y = y / 1000.0
         return y
+
+    def compute_derivative(self, m, gradient_v):
+        with tf.GradientTape() as gen_tape:
+            gen_tape.watch(m)
+            yy = self.generate_vel(m, training=False)
+            yy = tf.reshape(yy, (np.prod(yy.shape),1))
+            f = tf.math.reduce_sum(yy*gradient_v)
+            g = gen_tape.gradient(f, m)
+            
+
+        return g
 
     @staticmethod
     def make_generator_model():
@@ -104,6 +115,7 @@ class Vel_CNN_Overthrust(object):
         model.add(layers.Dense(1))
 
         return model
+
 
 
 if __name__ == '__main__':

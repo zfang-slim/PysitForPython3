@@ -118,6 +118,7 @@ class TemporalLeastSquaresCNN(ObjectiveFunctionBase):
         """ Evaluate the least squares objective function over a list of shots."""
 
         m0_data = self.cnn.generate_vel(m0_cnn)
+        m0_data = np.array(m0_data)
         m0.data = np.reshape(m0_data, np.shape(m0.data))
         r_norm2 = 0
         for shot in shots:
@@ -194,7 +195,7 @@ class TemporalLeastSquaresCNN(ObjectiveFunctionBase):
 
         return pseudo_hessian_diag_contrib
 
-    def compute_gradient(self, shots, m0, aux_info={}, **kwargs):
+    def compute_gradient(self, shots, m0, m0_cnn, aux_info={}, **kwargs):
         """Compute the gradient for a set of shots.
 
         Computes the gradient as
@@ -209,6 +210,9 @@ class TemporalLeastSquaresCNN(ObjectiveFunctionBase):
         """
 
         # compute the portion of the gradient due to each shot
+        m0_data = self.cnn.generate_vel(m0_cnn)
+        m0_data = np.array(m0_data)
+        m0.data = np.reshape(m0_data, np.shape(m0.data))
         grad = m0.perturbation()
         r_norm2 = 0.0
         pseudo_h_diag = np.zeros(m0.asarray().shape)
