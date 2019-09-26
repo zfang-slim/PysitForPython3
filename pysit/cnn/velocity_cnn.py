@@ -37,9 +37,9 @@ class Vel_CNN_Overthrust(object):
         self.generator = generator
         self.discriminator = discriminator
 
-    def generate_vel(self, m, training=False):
+    def generate_vel(self, m, training=False, a=1911.0, b=2989.0):
         y = self.generator(m, training=training)
-        y = y * 1911.0 + 2989.0
+        y = y * a + b
         y = y / 1000.0
         return y
 
