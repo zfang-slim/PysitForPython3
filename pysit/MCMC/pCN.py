@@ -192,7 +192,7 @@ class pCN(object):
                             Snp = np.concatenate((Snp, Snpi), axis=0)
                         
                         n_size = np.shape(Snp)
-                        n_size_new = [n_size[0], n_size[2]]
+                        n_size_new = [n_size[0], n_size[-1]]
                         Snp = np.reshape(Snp, n_size_new)
                         write_data('./Samples.mat', Snp, [1,1], [1,1], n_size_new)
                         write_data('./MAP.mat', np.array(m_min_cnn), [1,1], [1,1], np.array(m_min_cnn).shape)
