@@ -427,6 +427,9 @@ class OptimizationBase(object):
                         fname = 'x_' + str(i) + '.mat'
                         sio.savemat(fname, tmp_data_write)
 
+            if self.use_parallel is True:
+                self.objective_function.parallel_wrap_shot.comm.Barrier()
+
             # Apply new step
             self.base_model += step
 
@@ -437,6 +440,9 @@ class OptimizationBase(object):
                     tmp_data_write = {'data': self.base_model.data}
                     fname = 'x_' + str(i+1) + '.mat'
                     sio.savemat(fname, tmp_data_write)
+
+            if self.use_parallel is True:
+                self.objective_function.parallel_wrap_shot.comm.Barrier()
 
             ttt = time.time()-tt
             self.store_history('run_time', i, ttt)

@@ -200,6 +200,10 @@ class pCN(object):
                         write_data('./objective_function.mat', Phi, [1], [1], len(Phi))
                         write_data('./betas.mat', Beta, [1], [1], len(Beta))
 
+                    if parallel_wrap.use_parallel is not None:
+                        parallel_wrap.comm.Barrier()
+
+
             
 
         result = dict()
