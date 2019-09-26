@@ -17,7 +17,7 @@ class Vel_CNN_Overthrust(object):
 
     """
 
-    def __init__(self, weights_file):
+    def __init__(self, weights_file, a=1911.0, b=2989.0):
 
         # Define the generator and discriminator
         generator = self.make_generator_model()
@@ -36,10 +36,12 @@ class Vel_CNN_Overthrust(object):
         
         self.generator = generator
         self.discriminator = discriminator
+        self.a = a
+        self.b = b
 
-    def generate_vel(self, m, training=False, a=1911.0, b=2989.0):
+    def generate_vel(self, m, training=False):
         y = self.generator(m, training=training)
-        y = y * a + b
+        y = y * self.a + self.b
         y = y / 1000.0
         return y
 
