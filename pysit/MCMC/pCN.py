@@ -185,6 +185,8 @@ class pCN(object):
                         else:
                             Msi = Ms[len(Snp):len(Ms)]
                             Snpi = np.array(Msi)
+                            nsize = np.shape(Snpi)
+                            Snpi = np.reshape(Snpi, [nsize[0], nsize[-1]])
                             print(np.shape(Snp))
                             print(np.shape(Snpi))
                             Snp = np.concatenate((Snp, Snpi), axis=0)
