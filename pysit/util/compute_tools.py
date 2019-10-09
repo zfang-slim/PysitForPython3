@@ -227,9 +227,10 @@ class high_pass_filter(object):
         self.transit_freq_length = transit_freq_length
         self.axis = axis
         self.padding_zeros = padding_zeros
-        self.shape = [nsmp+nl+nr, nsmp]
+        self.shape = [nsmp, nsmp]
         if padding_zeros is True:
             self.padding_zeros_op = padding_zeros_op(self.nsmp_org, nl, nr, axis=axis)
+            self.shape = [nsmp+nl+nr, nsmp]
 
         df = 1/self.T_cmp
         self.df = df
@@ -463,10 +464,10 @@ class band_pass_filter(object):
         self.transit_freq_length = transit_freq_length
         self.axis = axis
         self.padding_zeros = padding_zeros
-        self.shape = [nsmp+nl+nr, nsmp]
+        self.shape = [nsmp, nsmp]
         if padding_zeros is True:
-            self.padding_zeros_op = padding_zeros_op(
-                self.nsmp_org, nl, nr, axis=axis)
+            self.padding_zeros_op = padding_zeros_op(self.nsmp_org, nl, nr, axis=axis)
+            self.shape = [nsmp+nl+nr, nsmp]
 
         df = 1/self.T_cmp
         self.df = df
