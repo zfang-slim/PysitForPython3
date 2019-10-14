@@ -14,7 +14,7 @@ __docformat__ = "restructuredtext en"
 class TemporalCorrelate(ObjectiveFunctionBase):
     """ How to compute the parts of the objective you need to do optimization """
 
-    def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1):
+    def __init__(self, solver, filter_op=None, zero_lag=False, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1):
         """imaging_period: Imaging happens every 'imaging_period' timesteps. Use higher numbers to reduce memory consumption at the cost of lower gradient accuracy.
             By assigning this value to the class, it will automatically be used when the gradient function of the temporal objective function is called in an inversion context.
         """
@@ -25,6 +25,7 @@ class TemporalCorrelate(ObjectiveFunctionBase):
 
         self.imaging_period = int(imaging_period) #Needs to be an integer
         self.filter_op = filter_op
+        self.zero_lag = zero_lag
 
     def _residual(self, shot, m0, dWaveOp=None, wavefield=None):
         """Computes residual in the usual sense.
@@ -88,27 +89,42 @@ class TemporalCorrelate(ObjectiveFunctionBase):
         adjoint_src = np.zeros([shape_dobs[0], shape_dobs[1]])
         # W = np.linspace(-self.solver.dt*(shape_dobs[0]-1), self.solver.dt*(shape_dobs[0]-1), shape_dobs[0]*2-1)
         # W1 = np.linspace(-self.solver.dt*(shape_dobs[0]-1)/2.0, self.solver.dt*(shape_dobs[0]-1)/2.0, n_correlate_data)
-        W  = np.zeros(n_correlate_data)
-        if np.mod(n_correlate_data, 2) == 0:
-            W[0:n_correlate_data//2] = np.linspace(-self.solver.dt, -self.solver.dt*(shape_dobs[0])/2.0, n_correlate_data/2)
-            W[n_correlate_data//2:n_correlate_data] = np.flipud(W[0:n_correlate_data//2])
-        else:
-            W[0:(n_correlate_data+1)//2] = np.linspace(0.0, -self.solver.dt*(shape_dobs[0]-1)/2.0, (n_correlate_data+1)/2)
-            W[(n_correlate_data-1)//2:n_correlate_data] = np.flipud(W[0:(n_correlate_data+1)//2])
+        if self.zero_lag is False:
+            W  = np.zeros(n_correlate_data)
+            if np.mod(n_correlate_data, 2) == 0:
+                W[0:n_correlate_data//2] = np.linspace(-self.solver.dt, -self.solver.dt*(shape_dobs[0])/2.0, n_correlate_data/2)
+                W[n_correlate_data//2:n_correlate_data] = np.flipud(W[0:n_correlate_data//2])
+            else:
+                W[0:(n_correlate_data+1)//2] = np.linspace(0.0, -self.solver.dt*(shape_dobs[0]-1)/2.0, (n_correlate_data+1)/2)
+                W[(n_correlate_data-1)//2:n_correlate_data] = np.flipud(W[0:(n_correlate_data+1)//2])
 
-        # W[0: (n_correlate_data+1)//2] = W1[(n_correlate_data+1)//2-1:n_correlate_data]
-        # W[(n_correlate_data+1)//2:n_correlate_data] = W1[0:n_correlate_data+1)//2]
-        # W = np.linspace(0.0, self.solver.dt*(shape_dobs[0]-1), n_correlate_data)
-        W = np.abs(W)
-        W = np.sqrt(W)
-        for i in range(0, shape_dobs[1]):
-            correlate_data = correlate_fun(dobs[:,i], dpred[:,i])
-            Wf = W * correlate_data
-            correlate_data_norm2 = np.dot(correlate_data, correlate_data)
-            Wf_norm2 = np.dot(Wf, Wf)
-            resid[:, i] = Wf / np.sqrt(correlate_data_norm2)
-            
-            adjoint_src[:,i] = (2.0*correlate_data_norm2*correlate_fun(dobs[:,i], W*Wf, mode='adj') - 2.0*Wf_norm2*correlate_fun(dobs[:,i], correlate_data, mode='adj')) / correlate_data_norm2**2.0
+            # W[0: (n_correlate_data+1)//2] = W1[(n_correlate_data+1)//2-1:n_correlate_data]
+            # W[(n_correlate_data+1)//2:n_correlate_data] = W1[0:n_correlate_data+1)//2]
+            # W = np.linspace(0.0, self.solver.dt*(shape_dobs[0]-1), n_correlate_data)
+            W = np.abs(W)
+            W = np.sqrt(W)
+            for i in range(0, shape_dobs[1]):
+                correlate_data = correlate_fun(dobs[:,i], dpred[:,i])
+                Wf = W * correlate_data
+                correlate_data_norm2 = np.dot(correlate_data, correlate_data)
+                Wf_norm2 = np.dot(Wf, Wf)
+                resid[:, i] = Wf / np.sqrt(correlate_data_norm2)
+                
+                adjoint_src[:,i] = (2.0*correlate_data_norm2*correlate_fun(dobs[:,i], W*Wf, mode='adj') - 2.0*Wf_norm2*correlate_fun(dobs[:,i], correlate_data, mode='adj')) / correlate_data_norm2**2.0
+
+        else:
+            for i in range(0, shape_dobs[1]):
+                resid = np.zeros([1, shape_dobs[1]])
+                dobsi = dobs[:,i]
+                dpredi = dpred[:,i]
+                norm_dobsi = np.linalg.norm(dobsi)
+                norm_dpredi = np.linalg.norm(dpredi)
+                dobsi_n = dobsi / norm_dobsi
+                dpredi_n = dpredi / norm_dpredi
+                resid[:,i] = -np.sum(dobsi_n * dpredi_n)
+                adjoint_src_1 = - dobsi / norm_dpredi / norm_dobsi
+                adjoint_src_2 = resid[:,i] * dpredi / norm_dpredi**2.0
+                adjoint_src[:,i] = adjoint_src_1 + adjoint_src_2
 
         if self.filter_op is not None:
             adjoint_src = self.filter_op.__adj_mul__(adjoint_src)
@@ -128,7 +144,10 @@ class TemporalCorrelate(ObjectiveFunctionBase):
         r_norm2 = 0
         for shot in shots:
             r, adjoint_src = self._residual(shot, m0)
-            r_norm2 += np.linalg.norm(r)**2
+            if self.zero_lag is False:
+                r_norm2 += np.linalg.norm(r)**2
+            else:
+                r_norm2 += np.sum(r)
 
         # sum-reduce and communicate result
         if self.parallel_wrap_shot.use_parallel:
@@ -223,8 +242,11 @@ class TemporalCorrelate(ObjectiveFunctionBase):
                 g, r = self._gradient_helper(shot, m0, ignore_minus=True, **kwargs)
             
             grad -= g # handle the minus 1 in the definition of the gradient of this objective
-            r_norm2 += np.linalg.norm(r)**2
-
+            if self.zero_lag is False:
+                r_norm2 += np.linalg.norm(r)**2
+            else:
+                r_norm2 += np.sum(r)
+                
         # sum-reduce and communicate result
         if self.parallel_wrap_shot.use_parallel:
             # Allreduce wants an array, so we give it a 0-D array
