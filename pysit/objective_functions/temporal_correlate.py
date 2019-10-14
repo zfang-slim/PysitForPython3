@@ -113,8 +113,8 @@ class TemporalCorrelate(ObjectiveFunctionBase):
                 adjoint_src[:,i] = (2.0*correlate_data_norm2*correlate_fun(dobs[:,i], W*Wf, mode='adj') - 2.0*Wf_norm2*correlate_fun(dobs[:,i], correlate_data, mode='adj')) / correlate_data_norm2**2.0
 
         else:
+            resid = np.zeros([1, shape_dobs[1]])
             for i in range(0, shape_dobs[1]):
-                resid = np.zeros([1, shape_dobs[1]])
                 dobsi = dobs[:,i]
                 dpredi = dpred[:,i]
                 norm_dobsi = np.linalg.norm(dobsi)
@@ -246,7 +246,7 @@ class TemporalCorrelate(ObjectiveFunctionBase):
                 r_norm2 += np.linalg.norm(r)**2
             else:
                 r_norm2 += np.sum(r)
-                
+
         # sum-reduce and communicate result
         if self.parallel_wrap_shot.use_parallel:
             # Allreduce wants an array, so we give it a 0-D array
