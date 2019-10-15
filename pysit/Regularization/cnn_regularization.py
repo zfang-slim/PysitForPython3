@@ -20,10 +20,12 @@ class Vel_CNN_Regularization(object):
         m0 = tf.convert_to_tensor(m0)
         y = self.CNN_Op.decoder_vel(m0)
         obj_val = 0.5*np.array(tf.math.reduce_sum(y*y))
+        obj_val *= self.lambda 
         grad = self.CNN_Op.compute_decoder_derivative(m0)
         grad = np.array(grad)
         if grad_to_vel is False:
             grad = grad * (-0.5) * m.data**3.0
+        grad *= self.lambda
 
         return obj_val, grad
 
