@@ -15,12 +15,13 @@ __docformat__ = "restructuredtext en"
 class TemporalLeastSquares(ObjectiveFunctionBase):
     """ How to compute the parts of the objective you need to do optimization """
 
-    def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1, normalize_trace=False):
+    def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1, normalize_trace=False, regularization=None):
         """imaging_period: Imaging happens every 'imaging_period' timesteps. Use higher numbers to reduce memory consumption at the cost of lower gradient accuracy.
             By assigning this value to the class, it will automatically be used when the gradient function of the temporal objective function is called in an inversion context.
         """
         self.solver = solver
         self.modeling_tools = TemporalModeling(solver)
+        self.regularization = regularization
 
         self.parallel_wrap_shot = parallel_wrap_shot
 
@@ -127,7 +128,13 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
             self.parallel_wrap_shot.comm.Allreduce(np.array(r_norm2), new_r_norm2)
             r_norm2 = new_r_norm2[()]  # goofy way to access 0-D array element
 
-        return 0.5*r_norm2*self.solver.dt
+        output = 0.5*r_norm2*self.solver.dt
+
+        if self.regularization is not None:
+            reg_val, reg_grad = self.regularization(m0)
+            output += reg_val
+
+        return output
 
     def _gradient_helper(self, shot, m0, ignore_minus=False, ret_pseudo_hess_diag_comp=False, **kwargs):
         """Helper function for computing the component of the gradient due to a
@@ -240,11 +247,18 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         # The gradient is implemented as a time integral in TemporalModeling.adjoint_model(). I think the pseudo Hessian (F*F in notation Shin) also represents a time integral. So multiply with dt as well to be consistent.
         pseudo_h_diag *= self.solver.dt
 
+        obj_val = 0.5*r_norm2
+        if self.regularization is not None:
+            reg_val, reg_grad = self.regularization(m0)
+            grad.data += reg_grad
+            obj_val += reg_val
+
+
         # store any auxiliary info that is requested
         if ('residual_norm' in aux_info) and aux_info['residual_norm'][0]:
             aux_info['residual_norm'] = (True, np.sqrt(r_norm2))
         if ('objective_value' in aux_info) and aux_info['objective_value'][0]:
-            aux_info['objective_value'] = (True, 0.5*r_norm2)
+            aux_info['objective_value'] = (True, obj_val)
         if ('pseudo_hess_diag' in aux_info) and aux_info['pseudo_hess_diag'][0]:
             aux_info['pseudo_hess_diag'] = (True, pseudo_h_diag)
 
