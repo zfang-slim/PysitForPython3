@@ -9,7 +9,7 @@ from tensorflow.keras import layers
 import time
 import scipy.io as sio
 
-__all__ = ['Vel_CNN_Overthrust']
+__all__ = ['Vel_CNN_Overthrust','Vel_CNN_Overthrust2']
 
 class Vel_CNN_Overthrust(object):
     """
@@ -211,23 +211,8 @@ class Vel_CNN_Overthrust2(object):
         model.add(layers.BatchNormalization())
         model.add(layers.LeakyReLU())
         
-        model.add(layers.Conv2DTranspose(64, (5, 5), strides=(1, 1), padding='same', use_bias=False))
-        assert model.output_shape == (None, 32, 32, 64)
-        model.add(layers.BatchNormalization())
-        model.add(layers.LeakyReLU())
-        
         model.add(layers.Conv2DTranspose(64, (5, 5), strides=(2, 2), padding='same', use_bias=False))
         assert model.output_shape == (None, 64, 64, 64)
-        model.add(layers.BatchNormalization())
-        model.add(layers.LeakyReLU())
-        
-        model.add(layers.Conv2DTranspose(64, (5, 5), strides=(1, 1), padding='same', use_bias=False))
-        assert model.output_shape == (None, 64, 64, 64)
-        model.add(layers.BatchNormalization())
-        model.add(layers.LeakyReLU())
-        
-        model.add(layers.Conv2DTranspose(32, (5, 5), strides=(1, 1), padding='same', use_bias=False))
-        assert model.output_shape == (None, 64, 64, 32)
         model.add(layers.BatchNormalization())
         model.add(layers.LeakyReLU())
 
@@ -250,6 +235,8 @@ class Vel_CNN_Overthrust2(object):
 
         model.add(layers.Flatten())
         model.add(layers.Dense(1))
+
+        return model
 
     @staticmethod
     def make_decoder():

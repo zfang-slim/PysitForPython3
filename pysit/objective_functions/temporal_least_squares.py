@@ -131,7 +131,7 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         output = 0.5*r_norm2*self.solver.dt
 
         if self.regularization is not None:
-            reg_val, reg_grad = self.regularization(m0)
+            reg_val, reg_grad = self.regularization(m0.data)
             output += reg_val
 
         return output
@@ -249,7 +249,7 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
 
         obj_val = 0.5*r_norm2
         if self.regularization is not None:
-            reg_val, reg_grad = self.regularization(m0)
+            reg_val, reg_grad = self.regularization(m0.data)
             grad.data += reg_grad
             obj_val += reg_val
 
