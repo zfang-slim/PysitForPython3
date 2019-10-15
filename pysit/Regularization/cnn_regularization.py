@@ -10,9 +10,9 @@ class Vel_CNN_Regularization(object):
 
     """
 
-    def __init__(self, CNN_Op, lambda=1.0, grad_to_vel=False):
+    def __init__(self, CNN_Op, alpha=1.0, grad_to_vel=False):
         self.CNN_Op = CNN_Op
-        self.lambda = lambda 
+        self.alpha = alpha 
         self.grad_to_vel = grad_to_vel
 
     def __call__(self, m):
@@ -20,12 +20,12 @@ class Vel_CNN_Regularization(object):
         m0 = tf.convert_to_tensor(m0)
         y = self.CNN_Op.decoder_vel(m0)
         obj_val = 0.5*np.array(tf.math.reduce_sum(y*y))
-        obj_val *= self.lambda 
+        obj_val *= self.alpha 
         grad = self.CNN_Op.compute_decoder_derivative(m0)
         grad = np.array(grad)
         if grad_to_vel is False:
             grad = grad * (-0.5) * m.data**3.0
-        grad *= self.lambda
+        grad *= self.alpha
 
         return obj_val, grad
 
