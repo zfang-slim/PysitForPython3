@@ -123,7 +123,7 @@ class TemporalCorrelate(ObjectiveFunctionBase):
                 dpredi_n = dpredi / norm_dpredi
                 resid[:,i] = -np.sum(dobsi_n * dpredi_n)
                 adjoint_src_1 = - dobsi / norm_dpredi / norm_dobsi
-                adjoint_src_2 = -0.5 * resid[:,i] * dpredi / norm_dpredi**2.0
+                adjoint_src_2 = -resid[:,i] * dpredi / norm_dpredi**2.0
                 adjoint_src[:,i] = adjoint_src_1 + adjoint_src_2
 
         if self.filter_op is not None:
