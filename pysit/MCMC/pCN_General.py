@@ -56,12 +56,11 @@ class pCN_General(object):
 
         """
         self.objective_function = objective
-        self.solver = objective.solver
         self.prior_op = prior_op
         self.noise_sigma = noise_sigma
         self.verbose = False
 
-        self.use_parallel = parallel_wrap.use_parallel()
+        self.use_parallel = parallel_wrap.use_parallel
         self.parallel_wrap = parallel_wrap
 
         self.max_linesearch_iterations = 10
@@ -107,7 +106,7 @@ class pCN_General(object):
         parallel_wrap = self.parallel_wrap
         m0 = copy.deepcopy(initial_value)
 
-        phi0 = self.objective_function.evaluate(m0) / self.noise_sigma**2.0
+        phi0 = (self.objective_function(m0)) / self.noise_sigma**2.0
         Ms = []
         A_accept = []
         Phi = []
@@ -143,7 +142,7 @@ class pCN_General(object):
                 mtmp = self.prior_op.generate_smp()
 
             m1 = np.sqrt(1-beta**2.0)*m0 + beta*mtmp
-            phi1 = self.objective_function.evaluate(m1) / self.noise_sigma**2.0
+            phi1 = (self.objective_function(m1)) / self.noise_sigma**2.0
 
             if phi1 < phi_min:
                 phi_min = phi1
@@ -162,12 +161,16 @@ class pCN_General(object):
                 else:
                     print('Iteration:', i)
                     print('f: ', phi_min)
+                    print('beta: ', beta)
+                    print('a_rate: ', a_accept)
+                    print('r_rate: ', r_probs[i])
 
             if a_accept > r_probs[i]:
                 Ms.append(m1)
                 m0 = m1
                 phi0 = phi1
-                beta *= 1.2
+                if a_accept > 0.8:
+                    beta *= 1.2
             else:
                 Ms.append(m0)
                 if a_accept < 0.1:
