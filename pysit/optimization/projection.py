@@ -22,18 +22,26 @@ class PMLExtensionPrj(object):
 class BoxConstraintPrj(object):
     ## The projection operator that conducts the box constraint
 
-    def __init__(self, bound):
+    def __init__(self, bound, pointwise=False):
         self.name = 'BoxConstraint'
         self.bound = bound
+        self.pointwise = pointwise
 
     def __call__(self, x):
         y = copy.deepcopy(x)
-        idx = np.where(y.data < self.bound[0])
-        y.data[idx] = self.bound[0]
-        idx = np.where(y.data > self.bound[1])
-        y.data[idx] = self.bound[1]
-        idx = np.where(np.isnan(y.data))
-        y.data[idx] = self.bound[1]
+        if self.pointwise is not True:
+            idx = np.where(y.data < self.bound[0])
+            y.data[idx] = self.bound[0]
+            idx = np.where(y.data > self.bound[1])
+            y.data[idx] = self.bound[1]
+            idx = np.where(np.isnan(y.data))
+            y.data[idx] = self.bound[1]
+        else:
+            for i in range(len(y.data)):
+                if y.data[i] < self.bound[i,0]:
+                    y.data[i] = self.bound[i,0]
+                elif y.data[i] > self.bound[i,1]:
+                    y.data[i] = self.bound[i,1]
 
         return y
 
