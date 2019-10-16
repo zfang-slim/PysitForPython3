@@ -15,7 +15,7 @@ __docformat__ = "restructuredtext en"
 class TemporalLeastSquares(ObjectiveFunctionBase):
     """ How to compute the parts of the objective you need to do optimization """
 
-    def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1, normalize_trace=False, regularization=None):
+    def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1, normalize_trace=False, regularization=None, normalize_obs=True):
         """imaging_period: Imaging happens every 'imaging_period' timesteps. Use higher numbers to reduce memory consumption at the cost of lower gradient accuracy.
             By assigning this value to the class, it will automatically be used when the gradient function of the temporal objective function is called in an inversion context.
         """
@@ -28,6 +28,7 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         self.imaging_period = int(imaging_period)  # Needs to be an integer
         self.filter_op = filter_op
         self.normalize_trace = normalize_trace
+        self.normalize_obs = normalize_obs
 
     def _residual(self, shot, m0, dWaveOp=None, wavefield=None):
         """Computes residual in the usual sense.
@@ -94,12 +95,22 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         ## Function to normalize each trace    
         shape_dobs = np.shape(dobs)
         if self.normalize_trace is True:
-            for i in range(0, shape_dobs[1]):
-                dobs_i = dobs[:, i] / np.linalg.norm(dobs[:, i]) 
-                norm_predi = np.linalg.norm(dpred[:, i])
-                dpred_i = dpred[:, i] / norm_predi
-                resid[:, i] = dobs_i - dpred_i 
-                adjoint_src[:, i] = resid[:, i] / norm_predi - (np.sum(resid[:, i] * dpred[:, i])) / norm_predi**3.0 * dpred[:, i]
+            if self.normalize_obs is not True:
+                for i in range(0, shape_dobs[1]):
+                    dobs_i = dobs[:, i] / np.linalg.norm(dobs[:, i]) 
+                    norm_predi = np.linalg.norm(dpred[:, i])
+                    dpred_i = dpred[:, i] / norm_predi
+                    resid[:, i] = dobs_i - dpred_i 
+                    adjoint_src[:, i] = resid[:, i] / norm_predi - (np.sum(resid[:, i] * dpred[:, i])) / norm_predi**3.0 * dpred[:, i]
+
+            else:
+                for i in range(0, shape_dobs[1]):
+                    norm_obsi = np.linalg.norm(dobs[:, i]) 
+                    dobs_i = dobs[:, i] / norm_obsi
+                    dpred_i = dpred[:, i] / norm_obsi
+                    resid[:, i] = dobs_i - dpred_i 
+                    adjoint_src[:, i] = resid[:, i] / norm_obsi
+
 
             if self.filter_op is not None:
                     adjoint_src = self.filter_op.__adj_mul__(adjoint_src)
