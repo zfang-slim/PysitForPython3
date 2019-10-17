@@ -1,12 +1,26 @@
 import numpy as np
 
+import os
+
 import scipy.io as sio
 
 import obspy.io.segy.core as segy
 
 __all__ = ['read_model', 'read_data', 'write_data',
            'write_gathered_parallel_data_time',
-           'read_data_2D_parallel_env']
+           'read_data_2D_parallel_env','load_inter_model']
+
+def load_inter_model(ExpDir, initial_model):
+    path, dirs, files = next(os.walk(ExpDir))
+    file_count = len(files)
+    fname = ExpDir + '/x_' + str(file_count-1) + '.mat'
+    A = sio.loadmat(fname)
+    vi = A['data']
+    initial_model.data = np.reshape(vi, np.shape(initial_model.data))
+
+    return file_count-1, initial_model
+
+
 
 def read_model(fname):
     """ Reads a model in segy format and returns it as an array."""

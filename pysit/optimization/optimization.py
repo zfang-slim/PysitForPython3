@@ -281,6 +281,7 @@ class OptimizationBase(object):
                  status_configuration={},
                  linesearch_configuration={},
                  write=False,
+                 history_iter=0,
                  **kwargs):
         """The main function for executing a number of steps of the descent
         algorith.
@@ -313,6 +314,8 @@ class OptimizationBase(object):
         self.verbose=verbose
 
         self.write = write
+
+        self.history_iter = history_iter
 
         self.line_search = line_search
         if type(line_search) is str:
@@ -424,7 +427,7 @@ class OptimizationBase(object):
                 else:
                     if i == 0:
                         tmp_data_write = {'data': self.base_model.data}
-                        fname = 'x_' + str(i) + '.mat'
+                        fname = 'x_' + str(i+self.history_iter) + '.mat'
                         sio.savemat(fname, tmp_data_write)
 
             if self.use_parallel is True:
@@ -438,7 +441,7 @@ class OptimizationBase(object):
                     []
                 else:
                     tmp_data_write = {'data': self.base_model.data}
-                    fname = 'x_' + str(i+1) + '.mat'
+                    fname = 'x_' + str(i+1+self.history_iter) + '.mat'
                     sio.savemat(fname, tmp_data_write)
 
             if self.use_parallel is True:
