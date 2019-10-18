@@ -47,7 +47,7 @@ class Vel_CNN_Regularization2(object):
         y = self.CNN_Op.decoder_vel(m0)
         m_out = self.CNN_Op.generate_vel(y)
         m_out_1 = np.array(m_out).flatten()
-        res = m_out - m0
+        res = tf.reshape(m_out, tf.shape(m0)) - m0
         res_1 = m_out_1 - m_input
 
         obj_val = 0.5*np.linalg.norm(res_1)**2.0
