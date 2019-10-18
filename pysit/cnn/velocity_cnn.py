@@ -51,7 +51,7 @@ class Vel_CNN_Overthrust(object):
         with tf.GradientTape() as gen_tape:
             gen_tape.watch(m)
             yy = self.generate_vel(m, training=False)
-            yy = tf.reshape(yy, (np.prod(yy.shape),1))
+            yy = tf.reshape(yy, np.shape(gradient_v))
             f = tf.math.reduce_sum(yy*gradient_v)
             g = gen_tape.gradient(f, m)
             
@@ -172,7 +172,7 @@ class Vel_CNN_Overthrust2(object):
         with tf.GradientTape() as gen_tape:
             gen_tape.watch(m)
             yy = self.generate_vel(m, training=False)
-            yy = tf.reshape(yy, (np.prod(yy.shape),1))
+            yy = tf.reshape(yy, np.shape(gradient_v))
             f = tf.math.reduce_sum(yy*gradient_v)
             g = gen_tape.gradient(f, m)
             
@@ -183,7 +183,7 @@ class Vel_CNN_Overthrust2(object):
         with tf.GradientTape() as gen_tape:
             gen_tape.watch(x)
             yy = self.decoder_vel(x, training=False)
-            yy = tf.reshape(yy, (np.prod(yy.shape),1))
+            yy = tf.reshape(yy, np.shape(y))
             f = tf.math.reduce_sum(yy*y)
             g = gen_tape.gradient(f, x)
 
