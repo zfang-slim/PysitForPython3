@@ -13,12 +13,14 @@ __all__ = ['read_model', 'read_data', 'write_data',
 def load_inter_model(ExpDir, initial_model):
     path, dirs, files = next(os.walk(ExpDir))
     file_count = len(files)
-    fname = ExpDir + '/x_' + str(file_count-1) + '.mat'
-    A = sio.loadmat(fname)
-    vi = A['data']
-    initial_model.data = np.reshape(vi, np.shape(initial_model.data))
-
-    return file_count-1, initial_model
+    if file_count > 0:
+        fname = ExpDir + '/x_' + str(file_count-1) + '.mat'
+        A = sio.loadmat(fname)
+        vi = A['data']
+        initial_model.data = np.reshape(vi, np.shape(initial_model.data))
+        file_count -= 1
+    
+    return file_count, initial_model
 
 
 
