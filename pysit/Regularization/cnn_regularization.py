@@ -62,6 +62,6 @@ class Vel_CNN_Regularization2(object):
             grad = grad * (-0.5) * m_input**3.0
         grad *= self.alpha
 
-        grad = np.reshape(np.shape(m))
+        grad = np.reshape(grad, np.shape(m))
 
         return obj_val, grad        
