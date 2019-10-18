@@ -179,12 +179,12 @@ class Vel_CNN_Overthrust2(object):
 
         return g
 
-    def compute_decoder_derivative(self, x):
+    def compute_decoder_derivative(self, x, y):
         with tf.GradientTape() as gen_tape:
             gen_tape.watch(x)
             yy = self.decoder_vel(x, training=False)
             yy = tf.reshape(yy, (np.prod(yy.shape),1))
-            f = tf.math.reduce_sum(yy*yy)
+            f = tf.math.reduce_sum(yy*y)
             g = gen_tape.gradient(f, x)
 
         return g
