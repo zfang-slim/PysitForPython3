@@ -21,7 +21,7 @@ class Unet_Vel_OverthrustPrj(object):
         y = self.CNN_Op.decoder_vel(m0)
         m_out = self.CNN_Op.generate_vel(y)
         m_out_1 = np.array(m_out).flatten()
-        m_out_1 = np.reshape(np.shape(output.data))
+        m_out_1 = np.reshape(m_out_1, np.shape(output.data))
         output.data = m_out_1
 
         return output       
