@@ -45,7 +45,7 @@ class Vel_CNN_Regularization2(object):
         m_input = m.flatten()
         m0 = tf.convert_to_tensor(m, dtype=tf.float32)
         y = self.CNN_Op.decoder_vel(m0)
-        m_out = self.CNN_Op.generator_vel(y)
+        m_out = self.CNN_Op.generate_vel(y)
         m_out_1 = np.array(m_out).flatten()
         res = m_out - m0
         res_1 = m_out_1 - m_input
