@@ -53,8 +53,8 @@ class Vel_CNN_Regularization2(object):
         obj_val = 0.5*np.linalg.norm(res_1)**2.0
         obj_val *= self.alpha 
         grad1 = -res_1
-        grad2 = self.CNN_Op.compute_generator_derivative(m0, res)
-        grad2 = self.CNN_Op.compute_decoder_derivative(y, grad2)
+        grad2 = self.CNN_Op.compute_generator_derivative(y, res)
+        grad2 = self.CNN_Op.compute_decoder_derivative(m0, grad2)
         grad = grad1 + np.array(grad2).flatten()
         # grad = self.CNN_Op.compute_decoder_derivative(m0)
         # grad = np.array(grad)
