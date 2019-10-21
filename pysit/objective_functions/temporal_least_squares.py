@@ -84,17 +84,11 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         #     dpred = shot.receivers.time_window(self.solver.ts()) * retval['simdata']
         #     resid = shot.receivers.interpolate_data(self.solver.ts()) - dpred
 
-        if self.filter_op is not None:
-            dobs = self.filter_op * dobs
-            dpred = self.filter_op * dpred
-            resid = dobs - dpred
-            adjoint_src = self.filter_op.__adj_mul__(resid)
-        else:
-            adjoint_src = resid
-
         ## Function to normalize each trace    
         shape_dobs = np.shape(dobs)
         if self.normalize_trace is True:
+            resid = np.zeros(shape_dobs)
+            adjoint_src = np.zeros(shape_dobs)
             if self.normalize_obs is not True:
                 for i in range(0, shape_dobs[1]):
                     dobs_i = dobs[:, i] / np.linalg.norm(dobs[:, i]) 
@@ -110,10 +104,20 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
                     dpred_i = dpred[:, i] / norm_obsi
                     resid[:, i] = dobs_i - dpred_i 
                     adjoint_src[:, i] = resid[:, i] / norm_obsi
-
-
             if self.filter_op is not None:
-                    adjoint_src = self.filter_op.__adj_mul__(adjoint_src)
+                adjoint_src = self.filter_op.__adj_mul__(adjoint_src)
+
+        else:
+            if self.filter_op is not None:
+                dobs = self.filter_op * dobs
+                dpred = self.filter_op * dpred
+                resid = dobs - dpred
+                adjoint_src = self.filter_op.__adj_mul__(resid)
+            else:
+                adjoint_src = resid
+
+
+            
 
 
         # If the second derivative info is needed, copy it out
