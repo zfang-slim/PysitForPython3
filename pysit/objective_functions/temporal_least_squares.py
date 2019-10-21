@@ -99,17 +99,26 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
             adjoint_src = np.zeros(shape_dobs)
             if self.normalize_obs is not True:
                 for i in range(0, shape_dobs[1]):
-                    dobs_i = dobs[:, i] / np.linalg.norm(dobs[:, i]) 
-                    norm_predi = np.linalg.norm(dpred[:, i])
-                    dpred_i = dpred[:, i] / norm_predi
-                    resid[:, i] = dobs_i - dpred_i 
-                    adjoint_src[:, i] = resid[:, i] / norm_predi - (np.sum(resid[:, i] * dpred[:, i])) / norm_predi**3.0 * dpred[:, i]
-
+                    norm_obsi = np.linalg.norm(dobs[:, i])
+                    if norm_obsi > 1e-14: 
+                        dobs_i = dobs[:, i] / norm_obsi
+                        norm_predi = np.linalg.norm(dpred[:, i])
+                        dpred_i = dpred[:, i] / norm_predi
+                        resid[:, i] = dobs_i - dpred_i 
+                        adjoint_src[:, i] = resid[:, i] / norm_predi - (np.sum(resid[:, i] * dpred[:, i])) / norm_predi**3.0 * dpred[:, i]
+                    else:
+                        resid[:, i] = dobs[:, i] - dpred[:, i]
+                        adjoint_src[:, i] = dobs[:, i] - dpred[:, i]
+ 
             else:
                 for i in range(0, shape_dobs[1]):
                     norm_obsi = np.linalg.norm(dobs[:, i]) 
-                    dobs_i = dobs[:, i] / norm_obsi
-                    dpred_i = dpred[:, i] / norm_obsi
+                    if norm_obsi > 1e-14:
+                        dobs_i = dobs[:, i] / norm_obsi
+                        dpred_i = dpred[:, i] / norm_obsi
+                    else:
+                        dobs_i = dobs[:, i] 
+                        dpred_i = dpred[:, i] 
                     resid[:, i] = dobs_i - dpred_i 
                     adjoint_src[:, i] = resid[:, i] / norm_obsi
             if self.filter_op is not None:
