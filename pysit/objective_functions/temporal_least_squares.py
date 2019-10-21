@@ -84,6 +84,14 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         #     dpred = shot.receivers.time_window(self.solver.ts()) * retval['simdata']
         #     resid = shot.receivers.interpolate_data(self.solver.ts()) - dpred
 
+        if self.filter_op is not None:
+            dobs = self.filter_op * dobs
+            dpred = self.filter_op * dpred
+            resid = dobs - dpred
+            adjoint_src = self.filter_op.__adj_mul__(resid)
+        else:
+            adjoint_src = resid
+
         ## Function to normalize each trace    
         shape_dobs = np.shape(dobs)
         if self.normalize_trace is True:
@@ -107,14 +115,7 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
             if self.filter_op is not None:
                 adjoint_src = self.filter_op.__adj_mul__(adjoint_src)
 
-        else:
-            if self.filter_op is not None:
-                dobs = self.filter_op * dobs
-                dpred = self.filter_op * dpred
-                resid = dobs - dpred
-                adjoint_src = self.filter_op.__adj_mul__(resid)
-            else:
-                adjoint_src = resid
+            
 
 
             
