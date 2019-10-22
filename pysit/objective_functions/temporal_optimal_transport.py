@@ -94,10 +94,15 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
         adjoint_src = np.zeros(shape_dobs)
         
         for i in range(0, shape_dobs[1]):
-            resid[:, i], adjoint_src[:, i], ot_value = optimal_transport_fwi(dobs[:, i], dpred[:, i], self.solver.dt, 
-                                                                             transform_mode=self.transform_mode, 
-                                                                             c_ratio=self.c_ratio, exp_a=self.exp_a,
-                                                                             env_p=self.env_p)
+            if np.linalg.norm(dobs[:,i]) < 1e-14 & np.linalg.norm(dpred[:,i]) < 1e-14:
+                resid[:, i] = 0.0
+                adjoint_src[:, i] = 0.0
+                ot_value = 0.0
+            else:
+                resid[:, i], adjoint_src[:, i], ot_value = optimal_transport_fwi(dobs[:, i], dpred[:, i], self.solver.dt, 
+                                                                                transform_mode=self.transform_mode, 
+                                                                                c_ratio=self.c_ratio, exp_a=self.exp_a,
+                                                                                env_p=self.env_p)
 
         if self.filter_op is not None:
             adjoint_src = self.filter_op.__adj_mul__(adjoint_src)
