@@ -1,9 +1,30 @@
 import numpy as np 
 import copy 
+import tensorflow as tf
 
-__all__ = ['PMLExtensionPrj', 'BoxConstraintPrj', 'WaterVelocityPrj', 'JointPrj']
+__all__ = ['PMLExtensionPrj', 'BoxConstraintPrj', 'WaterVelocityPrj', 'JointPrj', 'Unet_Vel_OverthrustPrj']
 
 __docformat__ = "restructuredtext en"
+
+class Unet_Vel_OverthrustPrj(object):
+    """
+        Unet projector trained by overthrust model
+
+    """
+
+    def __init__(self, CNN_Op):
+        self.CNN_Op = CNN_Op
+
+    def __call__(self, m):
+        output = copy.deepcopy(m)
+        m0 = tf.convert_to_tensor(m.data, dtype=tf.float32)
+        y = self.CNN_Op.decoder_vel(m0)
+        m_out = self.CNN_Op.generate_vel(y)
+        m_out_1 = np.array(m_out).flatten()
+        m_out_1 = np.reshape(m_out_1, np.shape(output.data))
+        output.data = m_out_1
+
+        return output       
 
 class PMLExtensionPrj(object):
     ## The projection operator that projects a model with PML to a model with normal extension PML

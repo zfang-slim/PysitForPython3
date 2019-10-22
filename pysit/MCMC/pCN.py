@@ -170,7 +170,8 @@ class pCN(object):
                 Ms.append(m1_cnn)
                 m0_cnn = m1_cnn
                 phi0 = phi1
-                beta *= 1.2
+                if a_accept > 0.8:
+                    beta *= 1.2
             else:
                 Ms.append(m0_cnn)
                 if a_accept < 0.1:
