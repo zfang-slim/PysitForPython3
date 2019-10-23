@@ -94,7 +94,8 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
         adjoint_src = np.zeros(shape_dobs)
         
         for i in range(0, shape_dobs[1]):
-            if np.linalg.norm(dobs[:,i]) < 1e-10:
+            xrec = shot.receivers.receiver_list[i].position[0]
+            if xrec > m0.mesh.domain.x.rbound:
                 resid[:, i] = 0.0
                 adjoint_src[:, i] = 0.0
                 ot_value = 0.0
