@@ -98,6 +98,7 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
                 resid[:, i] = 0.0
                 adjoint_src[:, i] = 0.0
                 ot_value = 0.0
+                print(i)
             else:
                 resid[:, i], adjoint_src[:, i], ot_value = optimal_transport_fwi(dobs[:, i], dpred[:, i], self.solver.dt, 
                                                                                 transform_mode=self.transform_mode, 
