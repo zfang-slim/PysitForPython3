@@ -94,7 +94,7 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
         adjoint_src = np.zeros(shape_dobs)
         
         for i in range(0, shape_dobs[1]):
-            if np.linalg.norm(dobs[:,i]) < 1e-14 and np.linalg.norm(dpred[:,i]) < 1e-14:
+            if np.linalg.norm(dobs[:,i]):
                 resid[:, i] = 0.0
                 adjoint_src[:, i] = 0.0
                 ot_value = 0.0
