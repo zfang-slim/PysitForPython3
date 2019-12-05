@@ -29,6 +29,7 @@ from pysit.solvers import *
 from pysit.cnn import *
 from pysit.MCMC import *
 from pysit.Regularization import *
+from pysit.Tomo import *
 import pysit.vis as vis
 
 # Set up the pysit configuration file
