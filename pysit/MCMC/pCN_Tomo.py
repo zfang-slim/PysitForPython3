@@ -180,7 +180,8 @@ class pCN_Tomo(object):
 
             if save_interval is not None:
                 if np.mod(i,save_interval) == 0:
-                    if (parallel_wrap.use_parallel is None) or (parallel_wrap.comm.Get_rank() == 0):
+                    if (parallel_wrap.use_parallel is None):
+                        #  or (parallel_wrap.comm.Get_rank() == 0):
                         if i == 0:
                             Snp = np.array(Ms)
                         else:
