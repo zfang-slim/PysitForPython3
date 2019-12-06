@@ -3,6 +3,7 @@ import os
 import pkg_resources
 import pykonal 
 import pandas as pd
+import copy as copy
 from pysit.cnn.velocity_cnn import Vel_CNN_Overthrust
 from pysit.util.parallel import ParallelWrapShotNull
 
@@ -51,7 +52,7 @@ class TomoObj(object):
         self.solver_tomo.vv = m
         for isrc in range(len(self.sources)):
             source = self.sources[isrc]
-            solver = self.solver_tomo
+            solver = copy.deepcopy(self.solver_tomo)
             solver.add_source(source.source_pos)
             solver.solve()
             ui = pykonal.LinearInterpolator3D(solver.pgrid, solver.uu)

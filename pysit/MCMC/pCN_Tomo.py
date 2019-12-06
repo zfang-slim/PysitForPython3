@@ -130,7 +130,7 @@ class pCN_Tomo(object):
         m_min_cnn = m0_cnn
         phi_min = phi0
         
-
+        
         for i in range(nsmps):
             # mtmp_cnn = tf.random.uniform([1, n_cnn_para])
             Beta.append(beta)
@@ -207,7 +207,6 @@ class pCN_Tomo(object):
 
 
             
-
         result = dict()
         result['MAP'] = m_min_cnn
         result['samples'] = Ms
