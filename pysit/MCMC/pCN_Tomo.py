@@ -180,7 +180,7 @@ class pCN_Tomo(object):
 
             if save_interval is not None:
                 if np.mod(i,save_interval) == 0:
-                    if (parallel_wrap.use_parallel is None):
+                    if (parallel_wrap.use_parallel is False):
                         #  or (parallel_wrap.comm.Get_rank() == 0):
                         if i == 0:
                             Snp = np.array(Ms)
@@ -202,7 +202,7 @@ class pCN_Tomo(object):
                         write_data('./objective_function.mat', Phi, [1], [1], len(Phi))
                         write_data('./betas.mat', Beta, [1], [1], len(Beta))
 
-                    if parallel_wrap.use_parallel is not None:
+                    if parallel_wrap.use_parallel is True:
                         parallel_wrap.comm.Barrier()
 
 
