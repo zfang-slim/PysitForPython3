@@ -110,6 +110,7 @@ class pCN_Tomo(object):
             m0_cnn = initial_value_cnn
 
         phi0 = self.objective_function.evaluate(m0_cnn)
+        phi0p = phi0 + 0.5 * tf.math.reduce_sum(m0_cnn*m0_cnn)
         Ms = []
         A_accept = []
         Phi = []
@@ -128,7 +129,7 @@ class pCN_Tomo(object):
             r_probs = np.random.uniform(0.0, 1.0, nsmps)
 
         m_min_cnn = m0_cnn
-        phi_min = phi0
+        phi_min = phi0p
         
         
         for i in range(nsmps):
@@ -147,14 +148,15 @@ class pCN_Tomo(object):
 
             m1_cnn = np.sqrt(1-beta**2.0)*m0_cnn + beta*mtmp_cnn
             phi1 = self.objective_function.evaluate(m1_cnn)
+            phi1p = phi1 + 0.5 * tf.math.reduce_sum(m1_cnn*m1_cnn)
 
-            if phi1 < phi_min:
-                phi_min = phi1
+            if phi1p < phi_min:
+                phi_min = phi1p
                 m_min_cnn = m1_cnn
 
             a_accept = np.min((np.exp(phi0-phi1), 1))
             A_accept.append(a_accept)
-            Phi.append(phi1)
+            Phi.append(phi1p)
             # print('Accept probability:', a_accept)
             
             if np.mod(i,print_interval) == 0:
