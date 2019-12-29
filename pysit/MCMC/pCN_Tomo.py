@@ -110,7 +110,7 @@ class pCN_Tomo(object):
             m0_cnn = initial_value_cnn
 
         phi0 = self.objective_function.evaluate(m0_cnn)
-        phi0p = phi0 + 0.5 * tf.math.reduce_sum(m0_cnn*m0_cnn)
+        phi0p = phi0 + 0.5 * np.array(tf.math.reduce_sum(m0_cnn*m0_cnn))
         Ms = []
         A_accept = []
         Phi = []
@@ -148,7 +148,7 @@ class pCN_Tomo(object):
 
             m1_cnn = np.sqrt(1-beta**2.0)*m0_cnn + beta*mtmp_cnn
             phi1 = self.objective_function.evaluate(m1_cnn)
-            phi1p = phi1 + 0.5 * tf.math.reduce_sum(m1_cnn*m1_cnn)
+            phi1p = phi1 + 0.5 * np.array(tf.math.reduce_sum(m1_cnn*m1_cnn))
 
             if phi1p < phi_min:
                 phi_min = phi1p
