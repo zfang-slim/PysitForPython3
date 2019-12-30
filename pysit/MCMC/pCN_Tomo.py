@@ -81,6 +81,7 @@ class pCN_Tomo(object):
                  append=False,
                  write=False,
                  m0_cnn=None,
+                 beta_ratio=1.1,
                  **kwargs):
                  #  
         """The main function for executing a number of steps of the descent
@@ -173,12 +174,12 @@ class pCN_Tomo(object):
                 m0_cnn = m1_cnn
                 phi0 = phi1
                 if a_accept > 0.8:
-                    beta *= 1.2
+                    beta *= beta_ratio
             else:
                 Ms.append(m0_cnn)
                 if a_accept < 0.1:
                     if beta > 1e-4:
-                        beta *= 1/1.2
+                        beta *= 1/beta_ratio
 
             if save_interval is not None:
                 if np.mod(i,save_interval) == 0:
