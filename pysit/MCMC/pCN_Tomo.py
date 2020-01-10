@@ -180,7 +180,7 @@ class pCN_Tomo(object):
                 Ms.append(m0_cnn)
                 if a_accept < 0.1:
                     if beta > 1e-4:
-                        beta *= 1/beta_ratio
+                        beta *= 1/beta_ratio * 0.8
 
             if save_interval is not None:
                 if np.mod(i,save_interval) == 0:
