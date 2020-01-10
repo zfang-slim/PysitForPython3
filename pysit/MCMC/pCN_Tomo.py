@@ -173,7 +173,7 @@ class pCN_Tomo(object):
                 Ms.append(m1_cnn)
                 m0_cnn = m1_cnn
                 phi0 = phi1
-                if a_accept > 0.8:
+                if a_accept > 0.4:
                     if a_accept < 0.99:
                         beta *= beta_ratio
             else:
