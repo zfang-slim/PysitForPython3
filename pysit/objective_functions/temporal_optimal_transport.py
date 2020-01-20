@@ -106,6 +106,15 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
                                                                                 c_ratio=self.c_ratio, exp_a=self.exp_a * exp_ai,
                                                                                 env_p=self.env_p, npad=int(2.0/self.solver.dt))
 
+                exp_ai = np.log(5.0) / np.max(-dobs[:, i])
+                resid2, adjoint_src2, ot_value = optimal_transport_fwi(-dobs[:, i], -dpred[:, i], self.solver.dt, 
+                                                                                transform_mode=self.transform_mode, 
+                                                                                c_ratio=self.c_ratio, exp_a=self.exp_a * exp_ai,
+                                                                                env_p=self.env_p, npad=int(2.0/self.solver.dt))
+
+                resid[:,i] += resid2
+                adjoint_src[:, i] += -adjoint_src2
+
         if self.filter_op is not None:
             adjoint_src = self.filter_op.__adj_mul__(adjoint_src)
 
