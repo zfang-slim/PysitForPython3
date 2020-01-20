@@ -98,12 +98,13 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
             if xrec > m0.mesh.domain.x.rbound:
                 resid[:, i] = 0.0
                 adjoint_src[:, i] = 0.0
-                ot_value = 0.0
+                # ot_value = 0.0
             else:
+                exp_ai = np.log(5.0) / np.max(dobs[:, i])
                 resid[:, i], adjoint_src[:, i], ot_value = optimal_transport_fwi(dobs[:, i], dpred[:, i], self.solver.dt, 
                                                                                 transform_mode=self.transform_mode, 
-                                                                                c_ratio=self.c_ratio, exp_a=self.exp_a,
-                                                                                env_p=self.env_p)
+                                                                                c_ratio=self.c_ratio, exp_a=self.exp_a * exp_ai,
+                                                                                env_p=self.env_p, npad=int(2.0/self.solver.dt))
 
         if self.filter_op is not None:
             adjoint_src = self.filter_op.__adj_mul__(adjoint_src)

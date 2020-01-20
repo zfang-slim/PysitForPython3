@@ -639,12 +639,15 @@ def padding_zeros_fun(data, n_data, nl, nr):
 def un_padding_zeros_fun(data, n_data, nl, nr):
     return data[nl:nl+n_data]
 
-def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0, exp_a=1.0, env_p=2.0):
+def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0, exp_a=1.0, env_p=2.0, npad=0):
 
     ## Transform_mode: linear, quadratic, absolute, exponential
     
     # Normalization and transfer data to a distribution
     c = c_ratio * np.abs(np.max(np.abs(dobs)))
+    dobs = padding_zeros_fun(dobs, len(dobs), npad, npad)
+    dpred = padding_zeros_fun(dpred, len(dobs), npad, npad)
+    
 
         
 
@@ -782,6 +785,8 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0,
         adj_src = (adj_src / s - (dt/(s**2.0)*np.dot(f_exp, adj_src))*np.ones(ndata))*(np.exp(dpred*exp_a) * exp_a)
     elif transform_mode == 'envelope':
         adj_src = (adj_src / s - (dt/(s**2.0)*np.dot(f_env, adj_src)) * np.ones(ndata))*(df_env)
+
+    adj_src = un_padding_zeros_fun(adj_src, len(dobs), npad, npad)
 
     return resid, adj_src, np.linalg.norm(resid)**2.0
 
