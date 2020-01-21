@@ -786,7 +786,7 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0,
     elif transform_mode == 'envelope':
         adj_src = (adj_src / s - (dt/(s**2.0)*np.dot(f_env, adj_src)) * np.ones(ndata))*(df_env)
 
-    adj_src = un_padding_zeros_fun(adj_src, len(dobs)-2.0*npad, npad, npad)
+    adj_src = un_padding_zeros_fun(adj_src, len(dobs)-2*npad, npad, npad)
 
     return resid, adj_src, np.linalg.norm(resid)**2.0
 
