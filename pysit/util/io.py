@@ -13,7 +13,7 @@ __all__ = ['read_model', 'read_data', 'write_data',
 
 def load_inter_model(ExpDir, initial_model):
     path, dirs, files = next(os.walk(ExpDir))
-    num_files = len(fnmatch.filter(os.listdir(ExpDir),'*.mat'))
+    num_files = len(fnmatch.filter(os.listdir(ExpDir),'x_*.mat'))
     file_count = num_files
     if file_count > 0:
         fname = ExpDir + '/x_' + str(file_count-1) + '.mat'
