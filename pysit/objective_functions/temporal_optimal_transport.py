@@ -14,7 +14,7 @@ __docformat__ = "restructuredtext en"
 class TemporalOptimalTransport(ObjectiveFunctionBase):
     """ How to compute the parts of the objective you need to do optimization """
 
-    def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), transform_mode='linear', imaging_period=1, c_ratio=5.0, exp_a=1.0, env_p=2.0, auto_expa=True, paddata=True):
+    def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), transform_mode='linear', imaging_period=1, c_ratio=5.0, exp_a=1.0, env_p=2.0, auto_expa=True, paddata=False, FlagCnsdNeg=False):
         """imaging_period: Imaging happens every 'imaging_period' timesteps. Use higher numbers to reduce memory consumption at the cost of lower gradient accuracy.
             By assigning this value to the class, it will automatically be used when the gradient function of the temporal objective function is called in an inversion context.
         """
@@ -31,6 +31,7 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
         self.env_p = env_p
         self.paddata = paddata
         self.auto_expa = auto_expa
+        self.FlagCnsdNeg = FlagCnsdNeg
 
     def _residual(self, shot, m0, dWaveOp=None, wavefield=None):
         """Computes residual in the usual sense.
@@ -114,17 +115,18 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
                                                                                 transform_mode=self.transform_mode, 
                                                                                 c_ratio=self.c_ratio, exp_a=self.exp_a * exp_ai,
                                                                                 env_p=self.env_p, npad=npad)
-                if self.auto_expa is True:
-                    exp_ai = np.log(5.0) / np.max(-dobs[:, i])
-                else:
-                    exp_ai = 1.0
-                resid2, adjoint_src2, ot_value = optimal_transport_fwi(-dobs[:, i], -dpred[:, i], self.solver.dt, 
-                                                                                transform_mode=self.transform_mode, 
-                                                                                c_ratio=self.c_ratio, exp_a=self.exp_a * exp_ai,
-                                                                                env_p=self.env_p, npad=npad)
+                if self.FlagCnsdNeg is True:                                                                                
+                    if self.auto_expa is True:
+                        exp_ai = np.log(5.0) / np.max(-dobs[:, i])
+                    else:
+                        exp_ai = 1.0
+                    resid2, adjoint_src2, ot_value = optimal_transport_fwi(-dobs[:, i], -dpred[:, i], self.solver.dt, 
+                                                                                    transform_mode=self.transform_mode, 
+                                                                                    c_ratio=self.c_ratio, exp_a=self.exp_a * exp_ai,
+                                                                                    env_p=self.env_p, npad=npad)
 
-                resid[:,i] += resid2
-                adjoint_src[:, i] += -adjoint_src2
+                    resid[:,i] += resid2
+                    adjoint_src[:, i] += -adjoint_src2
 
         if self.filter_op is not None:
             adjoint_src = self.filter_op.__adj_mul__(adjoint_src)
