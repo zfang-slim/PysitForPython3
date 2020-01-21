@@ -646,7 +646,7 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0,
     # Normalization and transfer data to a distribution
     c = c_ratio * np.abs(np.max(np.abs(dobs)))
     dobs = padding_zeros_fun(dobs, len(dobs), npad, npad)
-    dpred = padding_zeros_fun(dpred, len(dobs), npad, npad)
+    dpred = padding_zeros_fun(dpred, len(pred), npad, npad)
     
 
         
