@@ -93,7 +93,12 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
             # adjoint_src = resid
 
         shape_dobs = np.shape(dobs)
-        resid = np.zeros(shape_dobs)
+        if self.paddata is True:
+            npad = int(2.0/self.solver.dt)
+        else:
+            npad = 0
+        shape_resid = [shape_dobs[0]+2*npad, shape_dobs[1]]
+        resid = np.zeros(shape_resid)
         adjoint_src = np.zeros(shape_dobs)
         
         for i in range(0, shape_dobs[1]):
@@ -107,10 +112,7 @@ class TemporalOptimalTransport(ObjectiveFunctionBase):
                     exp_ai = np.log(5.0) / np.max(dobs[:, i])
                 else:
                     exp_ai = 1.0
-                if self.paddata is True:
-                    npad = int(2.0/self.solver.dt)
-                else:
-                    npad = 0
+
                 resid[:, i], adjoint_src[:, i], ot_value = optimal_transport_fwi(dobs[:, i], dpred[:, i], self.solver.dt, 
                                                                                 transform_mode=self.transform_mode, 
                                                                                 c_ratio=self.c_ratio, exp_a=self.exp_a * exp_ai,
