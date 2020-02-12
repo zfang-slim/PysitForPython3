@@ -9,7 +9,41 @@ from tensorflow.keras import layers
 import time
 import scipy.io as sio
 
-__all__ = ['Vel_CNN_Overthrust','Vel_CNN_Overthrust2']
+__all__ = ['Vel_CNN_Overthrust','Vel_CNN_Overthrust2', 'Vel_CNN_Overthrust3']
+
+class Vel_CNN_Overthrust3(object):
+    """
+        CNN net for velocity model generation
+    """
+
+    def __init__(self, weights_file, a=1911.0, b=2989.0):
+
+        # Define the generator and discriminator
+        generator = tf.keras.models.load_model(weights_file)
+        discriminator = None
+        
+        self.generator = generator
+        self.discriminator = discriminator
+        self.a = a
+        self.b = b
+        self.image_size = [1, 64, 64, 1]
+        self.coder_size = [1, 50]
+
+    def generate_vel(self, m, training=False):
+        y = self.generator(m, training=training)
+        y = y * self.a + self.b
+        y = y / 1000.0
+        return y
+
+    def compute_derivative(self, m, gradient_v):
+        with tf.GradientTape() as gen_tape:
+            gen_tape.watch(m)
+            yy = self.generate_vel(m, training=False)
+            yy = tf.reshape(yy, np.shape(gradient_v))
+            f = tf.math.reduce_sum(yy*gradient_v)
+            g = gen_tape.gradient(f, m)
+
+
 
 class Vel_CNN_Overthrust(object):
     """
