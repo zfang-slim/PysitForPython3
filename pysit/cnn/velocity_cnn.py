@@ -43,6 +43,8 @@ class Vel_CNN_Overthrust3(object):
             f = tf.math.reduce_sum(yy*gradient_v)
             g = gen_tape.gradient(f, m)
 
+        return g
+
 
 
 class Vel_CNN_Overthrust(object):
