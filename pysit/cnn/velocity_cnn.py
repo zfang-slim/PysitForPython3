@@ -16,7 +16,7 @@ class Vel_CNN_Overthrust3(object):
         CNN net for velocity model generation
     """
 
-    def __init__(self, weights_file, a=1911.0, b=2989.0):
+    def __init__(self, weights_file, a=1911.0, b=2989.0, istranspose=False):
 
         # Define the generator and discriminator
         generator = tf.keras.models.load_model(weights_file)
@@ -28,11 +28,14 @@ class Vel_CNN_Overthrust3(object):
         self.b = b
         self.image_size = [1, 64, 64, 1]
         self.coder_size = [1, 50]
+        self.istranspose = istranspose
 
     def generate_vel(self, m, training=False):
         y = self.generator(m, training=training)
         y = y * self.a + self.b
         y = y / 1000.0
+        if self.istranspose is True:
+            y = tf.transpose(y)
         return y
 
     def compute_derivative(self, m, gradient_v):
