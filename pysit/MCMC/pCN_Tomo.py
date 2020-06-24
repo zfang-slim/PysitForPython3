@@ -82,6 +82,7 @@ class pCN_Tomo(object):
                  write=False,
                  m0_cnn=None,
                  beta_ratio=1.1,
+                 weight_m = 1.0,
                  **kwargs):
                  #  
         """The main function for executing a number of steps of the descent
@@ -138,7 +139,7 @@ class pCN_Tomo(object):
             Beta.append(beta)
             if parallel_wrap.use_parallel:
                 if parallel_wrap.comm.Get_rank() == 0:
-                    mtmp_cnn = tf.random.normal([1, n_cnn_para])
+                    mtmp_cnn = tf.random.normal([1, n_cnn_para]) / weight_m
                 else:
                     mtmp_cnn = None
 
@@ -149,7 +150,7 @@ class pCN_Tomo(object):
 
             m1_cnn = np.sqrt(1-beta**2.0)*m0_cnn + beta*mtmp_cnn
             phi1 = self.objective_function.evaluate(m1_cnn)
-            phi1p = phi1 + 0.5 * np.array(tf.math.reduce_sum(m1_cnn*m1_cnn))
+            phi1p = phi1 + 0.5 * np.array(tf.math.reduce_sum(m1_cnn*m1_cnn)) * weight_m**2.0
 
             if phi1p < phi_min:
                 phi_min = phi1p
