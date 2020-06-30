@@ -112,7 +112,7 @@ class pCN_Tomo(object):
             m0_cnn = initial_value_cnn
 
         phi0 = self.objective_function.evaluate(m0_cnn)
-        phi0p = phi0 + 0.5 * np.array(tf.math.reduce_sum(m0_cnn*m0_cnn))
+        phi0p = phi0 + 0.5 * np.array(tf.math.reduce_sum(m0_cnn*m0_cnn))* weight_m**2.0
         Ms = []
         A_accept = []
         Phi = []
