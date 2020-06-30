@@ -83,6 +83,8 @@ class pCN(object):
                  verbose=False,
                  append=False,
                  write=False,
+                 weight_m=1.0,
+                 beta_ratio=1.1,
                  **kwargs):
         """The main function for executing a number of steps of the descent
         algorith.
@@ -111,6 +113,7 @@ class pCN(object):
             m0_cnn = initial_value_cnn
 
         phi0 = self.objective_function.evaluate(shots, initial_model, m0_cnn) / noise_sigma**2.0
+        phi0p = phi0 + 0.5 * np.array(tf.math.reduce_sum(m0_cnn*m0_cnn))* weight_m**2.0
         Ms = []
         A_accept = []
         Phi = []
@@ -136,7 +139,7 @@ class pCN(object):
             Beta.append(beta)
             if parallel_wrap.use_parallel:
                 if parallel_wrap.comm.Get_rank() == 0:
-                    mtmp_cnn = tf.random.normal([1, n_cnn_para])
+                    mtmp_cnn = tf.random.normal([1, n_cnn_para]) / weight_m
                 else:
                     mtmp_cnn = None
 
@@ -147,14 +150,15 @@ class pCN(object):
 
             m1_cnn = np.sqrt(1-beta**2.0)*m0_cnn + beta*mtmp_cnn
             phi1 = self.objective_function.evaluate(shots, initial_model, m1_cnn) / noise_sigma**2.0
+            phi1p = phi1 + 0.5 * np.array(tf.math.reduce_sum(m1_cnn*m1_cnn)) * weight_m**2.0
 
-            if phi1 < phi_min:
-                phi_min = phi1
+            if phi1p < phi_min:
+                phi_min = phi1p
                 m_min_cnn = m1_cnn
 
             a_accept = np.min((np.exp(phi0-phi1), 1))
             A_accept.append(a_accept)
-            Phi.append(phi1)
+            Phi.append(phi1p)
             # print('Accept probability:', a_accept)
             
             if np.mod(i,print_interval) == 0:
@@ -171,12 +175,12 @@ class pCN(object):
                 m0_cnn = m1_cnn
                 phi0 = phi1
                 if a_accept > 0.8:
-                    beta *= 1.2
+                    beta *= beta_ratio
             else:
                 Ms.append(m0_cnn)
                 if a_accept < 0.1:
                     if beta > 1e-4:
-                        beta *= 0.5
+                        beta *= 1/beta_ratio * 0.8
 
             if save_interval is not None:
                 if np.mod(i,save_interval) == 0:
