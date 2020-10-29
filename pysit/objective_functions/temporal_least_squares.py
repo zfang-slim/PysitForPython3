@@ -15,7 +15,7 @@ __docformat__ = "restructuredtext en"
 class TemporalLeastSquares(ObjectiveFunctionBase):
     """ How to compute the parts of the objective you need to do optimization """
 
-    def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1, normalize_trace=False, regularization=None, normalize_obs=True):
+    def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1, normalize_trace=False, regularization=None, normalize_obs=True, DownSample_op=opI()):
         """imaging_period: Imaging happens every 'imaging_period' timesteps. Use higher numbers to reduce memory consumption at the cost of lower gradient accuracy.
             By assigning this value to the class, it will automatically be used when the gradient function of the temporal objective function is called in an inversion context.
         """
@@ -29,6 +29,7 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         self.filter_op = filter_op
         self.normalize_trace = normalize_trace
         self.normalize_obs = normalize_obs
+        self.DownSample_op = DownSample_op
 
     def _residual(self, shot, m0, dWaveOp=None, wavefield=None):
         """Computes residual in the usual sense.
@@ -84,6 +85,9 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         #     dpred = shot.receivers.time_window(self.solver.ts()) * retval['simdata']
         #     resid = shot.receivers.interpolate_data(self.solver.ts()) - dpred
 
+        
+        resid = self.DownSample_op(resid)
+
         if self.filter_op is not None:
             dobs = self.filter_op * dobs
             dpred = self.filter_op * dpred
@@ -92,6 +96,7 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         else:
             adjoint_src = resid
 
+        
         ## Function to normalize each trace    
         shape_dobs = np.shape(dobs)
         if self.normalize_trace is True:
@@ -124,8 +129,7 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
             if self.filter_op is not None:
                 adjoint_src = self.filter_op.__adj_mul__(adjoint_src)
 
-            
-
+        adjoint_src = self.DownSample_op.__adj_mul__(resid)
 
             
 

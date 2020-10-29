@@ -72,6 +72,119 @@ def odn2grid_data_3D_freq(o, d, n):
 
     return data_xrec, data_yrec, data_zrec, data_xsrc, data_ysrc, data_zsrc, data_freq
 
+class opI(object):
+    '''This is an Identical operator
+    '''
+    def __init__(self):
+
+        pass
+
+    def __mul__(self, x):
+        return x
+    def __adj_mul__(self, x):
+        return x
+
+class opDownSample(object):
+    '''This is an operator to downsample a 1D data
+        In the future, we may need to replace it by a 1D interpolation operator
+    '''
+    def __init__(self, n, down_ratio, axis=0):
+        '''
+            Input:
+            n: number of input data points
+            down_ratio: the down sample ratio, i.e. every 'down_ratio' points we pick a data point
+            axis: along which axis we apply the operator, default is 0
+        '''
+
+        self.n_input = n
+        self.n_output = (n-1) // down_ratio + 1
+        self.shape = [self.n_output, self.n_input]
+        self.down_ratio = down_ratio
+        self.axis = axis
+        # self.addpoints_adj = n-1-(self.n_output-1)*down_ratio
+
+    def _apply_downsample(self, x):
+        if x.size != self.shape[1]:
+            raise ValueError("The length of the input vector does not equal to nsmp of the downsample operator")
+        
+        return x[0::self.down_ratio]
+    
+
+    def _apply_adj_downsample(self, x):
+        if x.size != self.shape[0]:
+            raise ValueError("The length of the input vector does not equal to nsmp of the downsample operator")
+
+        y = np.zeros(self.shape[1])
+        y[0::self.down_ratio] = x  
+        
+        return y
+
+    def __mul__(self, x):
+        x_shape = np.shape(x)
+        y = copy.deepcopy(x)
+
+        if len(x_shape) == 1:
+            if x_shape[0] != self.shape[1]:
+                raise ValueError('The size of input x should be equal to the shape[1] of the opDownSample object')
+
+            else:
+                y = self._apply_downsample(y)
+
+        else:
+            if x_shape[self.axis] != self.shape[1]:
+                raise ValueError(
+                    "The length of input x's operating axis should be equal to the shape[1] of the high pass filter object")
+            else:
+                y = np.apply_along_axis(self._apply_downsample, self.axis, y)
+
+        return y
+
+    # def __adj_mul__(self, x):
+    #     x_shape = np.shape(x)
+
+    #     if len(x_shape) == 1:
+    #         if x_shape[0] != self.shape[0]:
+    #             raise ValueError(
+    #                 'The size of input x should be equal to shape[0] of the opDownSample operator')
+
+    #         else:
+    #            y = un_padding_zeros_fun(x, self.n_data, self.nl, self.nr)
+
+    #     else:
+    #         if x_shape[self.axis] != self.shape[0]:
+    #             raise ValueError(
+    #                 "The length of input x's operating axis should be equal to shape[1] of the padding_zeros_op operator")
+    #         else:
+    #             y = np.apply_along_axis(
+    #                 un_padding_zeros_fun, self.axis, x, self.n_data, self.nl, self.nr)
+
+    #     return y
+
+
+    def __adj_mul__(self, x):
+        x_shape = np.shape(x)
+
+        if len(x_shape) == 1:
+            if x_shape[0] != self.shape[0]:
+                raise ValueError(
+                    'The size of input x should be equal to the shape[0] of the downsample object for adj_mul')
+
+            else:
+               y = self._apply_adj_downsample(x)
+
+        else:
+            if x_shape[self.axis] != self.shape[0]:
+                raise ValueError(
+                    "The length of input x's operating axis should be equal to the shape[0] of the downsample object for adj_mul")
+            else:
+                y = np.apply_along_axis(self._apply_adj_downsample, self.axis, x)
+
+        return y
+    
+
+    
+
+
 class opSmooth1D(object):
     '''This is a operator to smooth a 1D data
         
@@ -794,6 +907,42 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0,
 if __name__ == '__main__':
     
     import numpy as np
+
+    ## Test the downsample operator
+
+    n1 = 27
+    nc = 3
+    down_ratio = 4
+    A = np.random.randn(n1, nc)
+    DS = opDownSample(n1, down_ratio)
+    B = DS * A
+    x1 = np.linspace(1,n1,n1)
+    x2 = x1[0::down_ratio]
+
+    C = DS.__adj_mul__(B)
+    
+    test_vec1 = np.random.randn(n1)
+    test_vec2 = np.random.randn(DS.shape[0])
+    print(np.inner(test_vec2, DS*test_vec1) - np.inner(DS.__adj_mul__(test_vec2), test_vec1))
+
+    # for i in range(nc):
+    #     plt.plot(x1,A[:,i],'p')
+    #     plt.plot(x2,B[:,i],'x')
+    #     plt.plot(x1,C[:,i],'+')
+    #     plt.show()
+
+    
+
+    quit()
+
+
+    print(A)
+    print(B)
+
+
+
+
+
 
     nsmp = [200,100]
     A = np.random.normal(0,1,nsmp)
