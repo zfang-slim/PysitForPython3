@@ -86,7 +86,8 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         #     dpred = shot.receivers.time_window(self.solver.ts()) * retval['simdata']
         #     resid = shot.receivers.interpolate_data(self.solver.ts()) - dpred
 
-        
+        dobs = self.DownSample_op * dobs
+        dpred = self.DownSample_op * dpred
         resid = self.DownSample_op * resid
 
         if self.filter_op is not None:
