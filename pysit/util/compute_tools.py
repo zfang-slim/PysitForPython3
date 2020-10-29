@@ -15,7 +15,7 @@ __all__ = ['odn2grid', 'odn2grid_data_2D_time', 'odn2grid_data_3D_time',
            'odn2grid_data_2D_freq', 'odn2grid_data_3D_freq', 'low_pass_filter',
            'high_pass_filter', 'band_pass_filter', 'correlate_fun', 'optimal_transport_fwi', 
            'padding_zeros_fun', 'un_padding_zeros_fun', 'padding_zeros_op', 'envelope_fun',
-           'opSmooth1D', 'opSmooth2D']
+           'opSmooth1D', 'opSmooth2D','opI','opDownSample']
 
 def odn2grid(o, d, n):
     output = dict()
