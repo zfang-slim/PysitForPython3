@@ -6,6 +6,7 @@ import copy as copy
 from pysit.objective_functions.objective_function import ObjectiveFunctionBase
 from pysit.util.parallel import ParallelWrapShotNull
 from pysit.modeling.temporal_modeling import TemporalModeling
+from pysit.util.compute_tools import opI
 
 __all__ = ['TemporalLeastSquares']
 
