@@ -131,9 +131,9 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
             if self.filter_op is not None:
                 adjoint_src = self.filter_op.__adj_mul__(adjoint_src)
 
-        print(resid.shape)
-        print(DownSample_op.shape)
-        adjoint_src = self.DownSample_op.__adj_mul__(resid)
+        print(adjoint_src.shape)
+        print(self.DownSample_op.shape)
+        adjoint_src = self.DownSample_op.__adj_mul__(adjoint_src)
 
             
 
