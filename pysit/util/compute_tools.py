@@ -752,7 +752,7 @@ def padding_zeros_fun(data, n_data, nl, nr):
 def un_padding_zeros_fun(data, n_data, nl, nr):
     return data[nl:nl+n_data]
 
-def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0, exp_a=1.0, env_p=2.0, npad=0):
+def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0, exp_a=1.0, env_p=2.0, npad=0, otq_add=0):
 
     ## Transform_mode: linear, quadratic, absolute, exponential
     
@@ -776,10 +776,15 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0,
         f = f_plus_c / s
     elif transform_mode == 'quadratic':
         g = dobs ** 2.0
+        g = g / (np.sum(g))
+        add_c = otq_add / len(g) 
+        g = g + add_c
         g = g / (np.sum(g)*dt)
         f_quadr = dpred ** 2.0
-        s = np.sum(f_quadr)*dt
-        f = f_quadr / s
+        s = np.sum(f_quadr)
+        f1 = f_quadr / s + add_c
+        s2 = np.sum(f1)*dt
+        f = f1 / s2
     elif transform_mode == 'absolute':
         g = np.abs(dobs)
         g = g / (np.sum(g)*dt)
@@ -890,7 +895,9 @@ def optimal_transport_fwi(dobs, dpred, dt, transform_mode='linear', c_ratio=5.0,
     if transform_mode == 'linear':
         adj_src = adj_src / s - (dt/(s**2.0)*np.dot(f_plus_c, adj_src))*np.ones(ndata)
     elif transform_mode == 'quadratic':
-        adj_src = (adj_src / s - (dt/(s**2.0)*np.dot(f_quadr, adj_src))*np.ones(ndata))*2.0*dpred
+        adj_src_tmp = (adj_src / s2    - (dt/(s2**2.0)*np.dot(f1, adj_src))*np.ones(ndata))
+        adj_src     = (adj_src_tmp / s - (1/(s**2.0)*np.dot(f_quadr, adj_src_tmp))*np.ones(ndata))*2.0*dpred
+        # adj_src = (adj_src / s - (dt/(s**2.0)*np.dot(f_quadr, adj_src))*np.ones(ndata))*2.0*dpred
         # adj_src = adj_src / s - (dt/(s**2.0)*np.dot(f_quadr, adj_src))*2.0*dpred
     elif transform_mode == 'absolute':
         adj_src = (adj_src / s - (dt/(s**2.0)*np.dot(f_abs, adj_src))*np.ones(ndata))*np.sign(dpred)
