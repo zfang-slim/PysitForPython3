@@ -60,7 +60,7 @@ class TemporalModeling(object):
     def _setup_forward_rhs(self, rhs_array, data):
         return self.solver.mesh.pad_array(data, out_array=rhs_array)
 
-    def forward_model(self, shot, m0, imaging_period=1, return_parameters=[]):
+    def forward_model(self, shot, m0, imaging_period=1, return_parameters=[], dWaveOp=None):
         """Applies the forward model to the model for the given solver.
 
         Parameters
@@ -108,7 +108,8 @@ class TemporalModeling(object):
 
         # Storage for the time derivatives of p
         if 'dWaveOp' in return_parameters:
-            dWaveOp = list()
+            if dWaveOp is None:
+                dWaveOp = list()
 
         # Step k = 0
         # p_0 is a zero array because if we assume the input signal is causal
