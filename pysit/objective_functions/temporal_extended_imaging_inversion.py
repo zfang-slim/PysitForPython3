@@ -18,7 +18,7 @@ class TemporalExtendedImagingInversion(ObjectiveFunctionBase):
 
     def __init__(self, solver, h, filter_op=None, dm_extend=None, max_sub_offset=0.0,
                  weight_matrix=None, regularization_value=None, krylov_maxiter=10,
-                 parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1):
+                 WaveCompressInfo=None, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1):
         """imaging_period: Imaging happens every 'imaging_period' timesteps. Use higher numbers to reduce memory consumption at the cost of lower gradient accuracy.
             By assigning this value to the class, it will automatically be used when the gradient function of the temporal objective function is called in an inversion context.
         """

@@ -15,7 +15,7 @@ __docformat__ = "restructuredtext en"
 class TemporalCorrelate(ObjectiveFunctionBase):
     """ How to compute the parts of the objective you need to do optimization """
 
-    def __init__(self, solver, filter_op=None, zero_lag=False, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1):
+    def __init__(self, solver, filter_op=None, zero_lag=False, WaveCompressInfo=None, parallel_wrap_shot=ParallelWrapShotNull(), imaging_period=1):
         """imaging_period: Imaging happens every 'imaging_period' timesteps. Use higher numbers to reduce memory consumption at the cost of lower gradient accuracy.
             By assigning this value to the class, it will automatically be used when the gradient function of the temporal objective function is called in an inversion context.
         """

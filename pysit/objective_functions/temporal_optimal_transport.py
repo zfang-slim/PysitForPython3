@@ -15,7 +15,9 @@ __docformat__ = "restructuredtext en"
 class TemporalOptimalTransport(ObjectiveFunctionBase):
     """ How to compute the parts of the objective you need to do optimization """
 
-    def __init__(self, solver, filter_op=None, parallel_wrap_shot=ParallelWrapShotNull(), transform_mode='linear', imaging_period=1, c_ratio=5.0, exp_a=1.0, env_p=2.0, auto_expa=True, paddata=False, FlagCnsdNeg=False, otq_add=0):
+    def __init__(self, solver, filter_op=None, WaveCompressInfo=None, parallel_wrap_shot=ParallelWrapShotNull(), 
+                transform_mode='linear', imaging_period=1, c_ratio=5.0, exp_a=1.0, env_p=2.0, auto_expa=True, 
+                paddata=False, FlagCnsdNeg=False, otq_add=0):
         """imaging_period: Imaging happens every 'imaging_period' timesteps. Use higher numbers to reduce memory consumption at the cost of lower gradient accuracy.
             By assigning this value to the class, it will automatically be used when the gradient function of the temporal objective function is called in an inversion context.
         """
