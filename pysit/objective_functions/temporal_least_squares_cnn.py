@@ -23,6 +23,7 @@ class TemporalLeastSquaresCNN(ObjectiveFunctionBase):
             By assigning this value to the class, it will automatically be used when the gradient function of the temporal objective function is called in an inversion context.
         """
         self.solver = solver
+        self.WaveCompressInfo = WaveCompressInfo
         self.modeling_tools = TemporalModeling(solver)
 
         self.parallel_wrap_shot = parallel_wrap_shot
