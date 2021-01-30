@@ -7,6 +7,7 @@ from pysit.objective_functions.objective_function import ObjectiveFunctionBase
 from pysit.util.parallel import ParallelWrapShotNull
 from pysit.modeling.temporal_modeling import TemporalModeling
 from pysit.cnn.velocity_cnn import Vel_CNN_Overthrust
+from pysit.util.wave_compress import *
 
 __all__ = ['TemporalLeastSquaresCNN']
 
@@ -148,7 +149,10 @@ class TemporalLeastSquaresCNN(ObjectiveFunctionBase):
         """
 
         # Compute the residual vector and its norm
-        dWaveOp = []
+        if self.WaveCompressInfo is None:
+            dWaveOp=[]
+        else:
+            dWaveOp=CompressWaveList(self.WaveCompressInfo)
 
         # If this is true, then we are dealing with variable density. In this case, we want our forward solve
         # To also return the wavefield, because we need to take gradients of the wavefield in the adjoint model

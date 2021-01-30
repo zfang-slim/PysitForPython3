@@ -6,6 +6,7 @@ from pysit.objective_functions.objective_function import ObjectiveFunctionBase
 from pysit.util.parallel import ParallelWrapShotNull
 from pysit.modeling.temporal_modeling import TemporalModeling
 from pysit.optimization.extended_least_squares_migration import ExtendLSM
+from pysit.util.wave_compress import *
 
 __all__ = ['TemporalExtendedImagingInversion']
 

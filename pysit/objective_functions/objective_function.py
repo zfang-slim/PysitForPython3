@@ -8,9 +8,10 @@ __docformat__ = "restructuredtext en"
 
 class ObjectiveFunctionBase(object):
 
-    def __init__(self, solver, parallel_wrap_shot=ParallelWrapShotNull()):
+    def __init__(self, solver, WaveCompressInfo=None, parallel_wrap_shot=ParallelWrapShotNull()):
         self.solver = solver
         self.modeling_tools = None
+        self.WaveCompressInfo = WaveCompressInfo
 
         self.parallel_wrap_shot = parallel_wrap_shot
 
