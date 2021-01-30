@@ -31,7 +31,7 @@ class CompressWavefield(object):
         self.is_compress = False
         
     def append(self, wave):
-        self.wave_tensor[self.n_record_slices,:,:] = wave
+        self.wave_tensor[self.n_record_slices,:,:] = wave.reshape([self.tensor_shape[1], self.tensor_shape[2]])
         self.n_record_slices += 1
         if self.n_record_slices == self.tensor_shape[0]:
             tucker_tensor = tucker(self.wave_tensor, rank=self.rank)
