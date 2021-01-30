@@ -111,6 +111,7 @@ class CompressWaveList(list):
         if id_sub_tensor == self.current_tensor_id:
             return self.current_tensor[id_sub_wave,:,:]
         else:
+            print(id_sub_tensor)
             self.current_tensor_id = id_sub_tensor
             self.current_tensor = self.tensor_list[id_sub_tensor].reconstruct_tensor()
             return self.current_tensor[id_sub_wave,:,:]
