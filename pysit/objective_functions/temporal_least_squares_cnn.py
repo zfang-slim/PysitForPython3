@@ -58,7 +58,7 @@ class TemporalLeastSquaresCNN(ObjectiveFunctionBase):
             rp.append('wavefield')
 
         # Run the forward modeling step
-        retval = self.modeling_tools.forward_model(shot, m0, self.imaging_period, return_parameters=rp)
+        retval = self.modeling_tools.forward_model(shot, m0, self.imaging_period, return_parameters=rp, dWaveOp=dWaveOp)
 
         # Compute the residual vector by interpolating the measured data to the
         # timesteps used in the previous forward modeling stage.
@@ -111,7 +111,8 @@ class TemporalLeastSquaresCNN(ObjectiveFunctionBase):
 
         # If the second derivative info is needed, copy it out
         if dWaveOp is not None:
-            dWaveOp[:] = retval['dWaveOp'][:]
+            # dWaveOp[:] = retval['dWaveOp'][:]
+            dWaveOp = retval['dWaveOp']
         if wavefield is not None:
             wavefield[:] = retval['wavefield'][:]
 
@@ -154,7 +155,8 @@ class TemporalLeastSquaresCNN(ObjectiveFunctionBase):
         if self.WaveCompressInfo is None:
             dWaveOp=[]
         else:
-            dWaveOp=CompressWaveList(self.WaveCompressInfo)
+            WaveCompressInfoLocal = copy.deepcopy(self.WaveCompressInfo)
+            dWaveOp=CompressWaveList(WaveCompressInfoLocal)
 
         # If this is true, then we are dealing with variable density. In this case, we want our forward solve
         # To also return the wavefield, because we need to take gradients of the wavefield in the adjoint model

@@ -68,6 +68,7 @@ class CompressWaveList(list):
         self.n_sub_waves = 0
         self.current_tensor = None
         self.current_tensor_id = None
+        self.output_shape = [np.prod(compress_wave_infor.tensor_shape[1:3]), 1]
     
     def append(self, wave):
         if self.n_waves == 0:
@@ -85,6 +86,7 @@ class CompressWaveList(list):
         self.n_sub_waves += 1
         
         if self.n_sub_waves == self.compress_wave_infor.tensor_shape[0]:
+            print(self.tensor_list[-1].rank)
             self.update_compress_wave_infor()
             self.n_sub_waves = 0
             
@@ -109,14 +111,11 @@ class CompressWaveList(list):
         id_sub_tensor, id_sub_wave = self.compute_subindex(index, n_slices)
         
         if id_sub_tensor == self.current_tensor_id:
-            return self.current_tensor[id_sub_wave,:,:]
+            return self.current_tensor[id_sub_wave,:,:].reshape(self.output_shape)
         else:
-            print(len(self.tensor_list))
-            print(id_sub_tensor)
-            print(index)
             self.current_tensor_id = id_sub_tensor
             self.current_tensor = self.tensor_list[id_sub_tensor].reconstruct_tensor()
-            return self.current_tensor[id_sub_wave,:,:]
+            return self.current_tensor[id_sub_wave,:,:].reshape(self.output_shape)
         
         
     def compute_subindex(self, index, n_slices):
