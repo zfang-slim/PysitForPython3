@@ -12,8 +12,12 @@ import matplotlib.pyplot as plt
 __all__ = ['CompressWaveInfor', 'CompressWavefield', 'CompressWaveList']
 
 class CompressWaveInfor(object):
-    def __init__(self, rank, addrank, tensor_shape, relerr=1e-2):
+    def __init__(self, rank, addrank, tensor_shape, rankfloat=None, relerr=1e-2):
         self.rank = rank
+        if rankfloat is None:
+            self.rankfloat = self.rank.astype(float)
+        else:
+            self.rankfloat = rankfloat
         self.addrank = addrank
         self.tensor_shape = tensor_shape
         self.relerr = relerr
@@ -22,7 +26,7 @@ class CompressWavefield(object):
     def __init__(self, compress_wave_infor):
         self.relerr = compress_wave_infor.relerr
         self.rank = compress_wave_infor.rank
-        self.rankfloat = self.rank.astype(float)
+        self.rankfloat = compress_wave_infor.rankfloat
         self.addrank = compress_wave_infor.addrank
         self.tensor_shape = compress_wave_infor.tensor_shape
         self.compress_error = 0
