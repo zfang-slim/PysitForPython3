@@ -1,6 +1,7 @@
 
 
 import numpy as np
+import copy as copy
 
 from pysit.objective_functions.objective_function import ObjectiveFunctionBase
 from pysit.util.parallel import ParallelWrapShotNull
