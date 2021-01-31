@@ -1,5 +1,6 @@
 import numpy as np
 import copy as copy
+import math
 
 import scipy.io as sio
 from scipy import signal
@@ -47,11 +48,15 @@ class CompressWavefield(object):
                 dtensor = self.wave_tensor-tensor_reconstruct
                 wave_norm = np.linalg.norm(self.wave_tensor.flatten())
                 err_k = np.linalg.norm(dtensor.flatten()) / wave_norm
-                
-            self.compress_waves_tensor = tucker_tensor
-            self.is_compress = True
-            self.wave_tensor = None
-            self.compress_error = err_k
+
+            if math.isnan(err_k):
+                self.compress_waves_tensor = tucker_tensor
+                self.compress_error = err_k
+            else:     
+                self.compress_waves_tensor = tucker_tensor
+                self.is_compress = True
+                self.wave_tensor = None
+                self.compress_error = err_k
             
     def reconstruct_tensor(self):
         if self.is_compress is True:
@@ -86,7 +91,7 @@ class CompressWaveList(list):
         self.n_sub_waves += 1
         
         if self.n_sub_waves == self.compress_wave_infor.tensor_shape[0]:
-            # print(self.tensor_list[-1].rank)
+            print(self.tensor_list[-1].rank)
             self.update_compress_wave_infor()
             self.n_sub_waves = 0
             
