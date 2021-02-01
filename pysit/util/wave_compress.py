@@ -95,7 +95,7 @@ class CompressWaveList(list):
         self.n_sub_waves += 1
         
         if self.n_sub_waves == self.compress_wave_infor.tensor_shape[0]:
-            print(self.tensor_list[-1].rank)
+            # print(self.tensor_list[-1].rank)
             self.update_compress_wave_infor()
             self.n_sub_waves = 0
             
