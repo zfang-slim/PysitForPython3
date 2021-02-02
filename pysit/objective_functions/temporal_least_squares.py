@@ -1,5 +1,5 @@
 
-
+import time
 import numpy as np
 import copy as copy
 
@@ -200,11 +200,15 @@ class TemporalLeastSquares(ObjectiveFunctionBase):
         else:
             wavefield = None
 
+        tt = time.time()
         r, adjoint_src = self._residual(shot, m0, dWaveOp=dWaveOp, wavefield=wavefield, **kwargs)
+        print('Forward: {0}s'.format(time.time()-tt))
 
         # Perform the migration or F* operation to get the gradient component
+        tt = time.time()
         g = self.modeling_tools.migrate_shot(
             shot, m0, adjoint_src, self.imaging_period, dWaveOp=dWaveOp, wavefield=wavefield)
+        print('Adjoint: {0}s'.format(time.time()-tt))
 
         if not ignore_minus:
             g = -1*g
