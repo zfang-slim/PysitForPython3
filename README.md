@@ -1,5 +1,5 @@
 # PysitForPython3
-This project is to convert the Pysit toolbox from Python 2 to Python 3.
+This branch is for the paper of FWI benchmark. 
 
 To use the branch of TensorCompress, you may need the additional packages including 
 
